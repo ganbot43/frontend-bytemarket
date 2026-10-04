@@ -1,0 +1,9 @@
+/* Copia ligera de assets/css/admin-panel.css — inyectada dinámicamente para admin layout */
+:root{--sp-bg:#f2f6fb;--sp-surface:#fff;--sp-primary:#00aeef}
+.smart-panel-admin{font-family:Nunito Sans,Segoe UI,system-ui,sans-serif}
+.smart-panel-admin .admin-shell__sidebar{background:#15202e}
+/* Scrollbar admin */
+.smart-panel-admin ::-webkit-scrollbar{width:10px;height:10px}
+.smart-panel-admin ::-webkit-scrollbar-thumb{background-color:rgba(12,25,40,0.10);border-radius:999px}
+.smart-panel-admin .admin-shell__sidebar::-webkit-scrollbar-thumb{background-color:rgba(255,255,255,0.16)}
+/* Mantener el archivo completo en assets para edición; esta copia solo se usa en runtime */

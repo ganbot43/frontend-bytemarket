@@ -1,0 +1,1124 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════
+   BYTEMARKET — DESIGN SYSTEM v4 · "Soft / Clean / Premium"
+   Capa de componentes de la zona pública (landing + tienda).
+
+   Las primitivas y la capa semántica base viven en
+   assets/css/tokens.css (carga global). Este archivo:
+     · expone las primitivas a Tailwind vía @theme
+     · mapea los nombres semánticos legados a la fundación
+     · define los componentes compartidos de tienda
+
+   Regla de superficie: cualquier bloque marcado .cp-dark
+   invierte la fundación y todo lo de abajo se adapta solo.
+═══════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════
+   1. PRIMITIVAS EXPUESTAS A TAILWIND
+   Valores literales (Tailwind necesita color parseable para
+   los modificadores de opacidad). Deben coincidir con
+   tokens.css §1 — esa es la fuente de verdad.
+═══════════════════════════════════════════════════════ */
+@theme {
+  /* ── Cyan de marca ── */
+  --cp-electric: #00aeef;
+  --cp-sky: #50d0ff;
+  --cp-sky-light: #7dd3fc;
+  --cp-mist: #c0e8ff;
+  --cp-white: #ffffff;
+
+  /* ── Navy / profundidad ── */
+  --cp-navy: #071e52;
+  --cp-navy-mid: #0f2d6b;
+  --cp-blue: #1245c4;
+  --cp-blue-mid: #1a5fb4;
+  --cp-deep: #003f8a;
+
+  /* ── Neutros — slate, no azul teñido ──
+     Es la diferencia visual real con la versión anterior: teñir de
+     azul cada borde y cada fondo lavaba la interfaz. El cyan solo
+     debe aparecer donde es intencional. ── */
+  --cp-offwhite: #f8fafc;
+  --cp-frost: #f1f5f9;
+  --cp-ice: #e6ecf2;
+
+  /* ── Neutros oscuros (bandas de marca puntuales) ── */
+  --cp-dark: #0a0a0a;
+  --cp-dark-raised: #111827;
+  --cp-dark-section: #1e293b;
+  --cp-dark-border: #334155;
+
+  /* ── Text ── */
+  --cp-text-dark: #0f172a;
+  --cp-text-body: #334155;
+  --cp-text-muted: #64748b;
+  --cp-text-faint: #94a3b8;
+
+  /* ── Borders ── */
+  --cp-border: #eef2f7;
+  --cp-border-mid: #e6ecf2;
+  --cp-border-dark: #cbd5e1;
+
+  /* ── Semantic states ── */
+  --cp-success: #059669;
+  --cp-success-bg: #f0fbf6;
+  --cp-success-border: #bfead4;
+  --cp-success-text: #0a5c38;
+
+  --cp-warning: #d97706;
+  --cp-warning-bg: #fffbf0;
+  --cp-warning-border: #fadfa3;
+  --cp-warning-text: #7a4f00;
+
+  --cp-error: #dc2626;
+  --cp-error-bg: #fef4f4;
+  --cp-error-border: #fbd5d5;
+  --cp-error-text: #7f1d1d;
+
+  --cp-info-bg: #f4fbff;
+  --cp-info-border: #d6efff;
+  --cp-info-text: #071e52;
+}
+
+/* ═══════════════════════════════════════════════════════
+   2. SEMÁNTICA — puente a la fundación (tokens.css §6/§7)
+   Todo lo que apunta a --surface-* / --ink-* / --line* se
+   invierte automáticamente dentro de .cp-dark.
+═══════════════════════════════════════════════════════ */
+:root {
+  /* ── Brand ── */
+  --brand-primary: var(--cp-navy);
+  --brand-primary-hover: var(--cp-navy-mid);
+  --brand-accent: var(--accent);
+  --brand-accent-hover: var(--accent-strong);
+
+  /* ── Backgrounds (se invierten en .cp-dark) ── */
+  --bg-page: var(--surface-page);
+  --bg-alt: var(--surface-sunken);
+  --bg-section: var(--surface-section);
+  --bg-surface: var(--surface-raised);
+  --bg-muted: var(--surface-sunken);
+  --bg-overlay: var(--overlay);
+
+  /* ── Cards & contenedores ── */
+  --card-bg: var(--surface-raised);
+  --card-bg-alt: var(--surface-sunken);
+  --card-border: var(--line-soft);
+  --card-border-hover: var(--line);
+  --card-shadow: var(--shadow-sm);
+  --card-shadow-hover: var(--shadow-md);
+  --card-shadow-sm: var(--shadow-xs);
+
+  /* ── Text ── */
+  --text-primary: var(--ink-strong);
+  --text-body: var(--ink-body);
+  --text-muted: var(--ink-muted);
+  --text-faint: var(--ink-faint);
+  --text-inverse: var(--ink-inverse);
+  --text-link: var(--accent-strong);
+  --text-link-hover: var(--accent);
+  --text-accent: var(--accent);
+
+  /* ── Borders ── */
+  --border-light: var(--line-soft);
+  --border-mid: var(--line);
+  --border-strong: var(--line-strong);
+  --border-action: var(--action-bg);
+
+  /* ── Buttons ── */
+  --btn-primary-bg: var(--action-bg);
+  --btn-primary-hover: var(--action-bg-hover);
+  --btn-primary-text: var(--action-ink);
+  --btn-secondary-bg: var(--cp-blue);
+  --btn-secondary-hover: var(--cp-navy);
+  --btn-secondary-text: #ffffff;
+  --btn-accent-bg: var(--accent);
+  --btn-accent-hover: var(--accent-strong);
+  --btn-accent-text: var(--accent-ink);
+  --btn-outline-border: var(--line);
+  --btn-outline-text: var(--ink-strong);
+  --btn-outline-hover: var(--surface-inset);
+  --btn-soft-bg: var(--surface-inset);
+  --btn-soft-border: var(--line-soft);
+  --btn-soft-text: var(--ink-strong);
+  --btn-ghost-border: var(--line-soft);
+  --btn-ghost-text: var(--ink-muted);
+  --btn-ghost-hover: var(--surface-inset);
+
+  /* ── Gradientes — solo bandas de marca y scrims sobre foto ── */
+  --grad-hero: linear-gradient(135deg, #f4fbff 0%, #e8f6ff 100%);
+  --grad-section: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  --grad-cta: var(--grad-brand);
+  --grad-sky: linear-gradient(135deg, #00aeef 0%, #50d0ff 100%);
+  --grad-promo: var(--grad-brand);
+  --grad-card: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+  --grad-accent: var(--edge-lit);
+
+  /* ── Línea técnica (firma de marca) ── */
+  --line-brand: var(--edge-lit);
+
+  /* ── Radius ── */
+  --r-xs: var(--radius-xs);
+  --r-sm: var(--radius-sm);
+  --r-md: var(--radius);
+  --r-lg: var(--radius-lg);
+  --r-xl: var(--radius-xl);
+  --r-pill: var(--radius-pill);
+
+  /* ── Spacing scale ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Layout ── */
+  --container-width: var(--container-max);
+
+  /* ── Transitions ── */
+  --ease-snappy: var(--ease-out);
+
+  /* ── Glow ── */
+  --glow-electric: var(--shadow-focus);
+  --glow-navy: 0 0 0 3px rgba(7, 30, 82, 0.12);
+  --glow-soft: var(--glow-accent);
+}
+
+/* ═══════════════════════════════════════════════════════
+   3. RESET
+═══════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-body);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--t-base) var(--ease-smooth);
+}
+
+/* ═══════════════════════════════════════════════════════
+   4. TIPOGRAFÍA
+═══════════════════════════════════════════════════════ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-primary);
+  /* Los títulos no deben partir en una sola palabra huérfana */
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-black);
+}
+h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-black);
+}
+h3 {
+  font-size: var(--fs-h3);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+h4 {
+  font-size: var(--fs-h4);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-snug);
+}
+h5 {
+  font-size: var(--fs-body);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-snug);
+}
+h6 {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-snug);
+}
+
+p {
+  margin: 0;
+  color: var(--text-body);
+  text-wrap: pretty;
+}
+
+/* Cifras tabulares en precios, stock y tablas: las columnas
+   dejan de bailar cuando cambian los dígitos. */
+.num,
+.price,
+td,
+th,
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.heading-display {
+  font-family: var(--font-display);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.02;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+
+.heading-display em,
+h1 em,
+h2 em,
+h3 em {
+  font-style: normal;
+  color: var(--accent-strong);
+}
+
+.text-display {
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-display);
+}
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+/* Versalita de sección — el "eyebrow" del sistema */
+.text-label,
+.cp-eyebrow {
+  display: inline-block;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+
+/* ═══════════════════════════════════════════════════════
+   5. CONTAINER & RITMO DE SECCIÓN
+═══════════════════════════════════════════════════════ */
+.container,
+.cp-container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+.section,
+.cp-section {
+  padding-block: var(--section-y);
+}
+
+.section-sm,
+.cp-section--sm {
+  padding-block: var(--section-y-sm);
+}
+
+.section-lg {
+  padding-block: calc(var(--section-y) * 1.25);
+}
+
+/* Banda alterna — rompe el blanco sin introducir un color nuevo */
+.cp-section--tint {
+  background: var(--surface-sunken);
+}
+
+.cp-section--accent {
+  background: var(--accent-quiet);
+}
+
+/* ── Cabecera de sección — un solo patrón en toda la tienda:
+      título a la izquierda, enlace "ver todo" a la derecha.
+      Repetirlo es lo que hace que la página se lea ordenada. ── */
+.cp-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.cp-head__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cp-head__title {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-display);
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.cp-head__sub {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  max-width: 56ch;
+}
+
+.cp-head__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  transition:
+    border-color var(--t-base) var(--ease-smooth),
+    background var(--t-base) var(--ease-smooth),
+    color var(--t-base) var(--ease-smooth);
+}
+
+.cp-head__link:hover {
+  border-color: var(--accent-line);
+  background: var(--accent-quiet);
+  color: var(--accent-strong);
+}
+
+.cp-head__link svg {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--t-base) var(--ease-smooth);
+}
+
+.cp-head__link:hover svg {
+  transform: translateX(2px);
+}
+
+@media (max-width: 640px) {
+  .cp-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   6. BOTONES
+   Sin levitación ni rebote: cambian de color y de filete.
+═══════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-6);
+  border-radius: var(--r-sm);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-tight);
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background var(--t-base) var(--ease-smooth),
+    box-shadow var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth),
+    color var(--t-base) var(--ease-smooth);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Primario — comprar, acción principal */
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover);
+  color: var(--btn-primary-text);
+}
+
+/* Secundario */
+.btn-secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--btn-secondary-hover);
+  color: var(--btn-secondary-text);
+}
+
+/* Acento eléctrico — ofertas, destacados */
+.btn-accent {
+  background: var(--btn-accent-bg);
+  color: var(--btn-accent-text);
+  font-weight: var(--fw-bold);
+}
+.btn-accent:hover:not(:disabled) {
+  background: var(--btn-accent-hover);
+  color: #fff;
+}
+
+/* Outline — acción secundaria visible */
+.btn-outline {
+  background: var(--surface-raised);
+  color: var(--btn-outline-text);
+  border-color: var(--btn-outline-border);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--btn-outline-hover);
+  border-color: var(--line-strong);
+}
+
+/* Soft — filtros, acciones suaves */
+.btn-soft {
+  background: var(--btn-soft-bg);
+  color: var(--btn-soft-text);
+  border-color: var(--btn-soft-border);
+}
+.btn-soft:hover:not(:disabled) {
+  background: var(--accent-quiet);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+
+/* Ghost — cancelar, cerrar */
+.btn-ghost {
+  background: transparent;
+  color: var(--btn-ghost-text);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--btn-ghost-hover);
+  color: var(--text-primary);
+}
+
+/* Tamaños */
+.btn-xs {
+  height: 30px;
+  padding: 0 12px;
+  font-size: var(--fs-2xs);
+}
+.btn-sm {
+  height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--fs-xs);
+}
+.btn-lg {
+  height: 52px;
+  padding: 0 var(--space-8);
+  font-size: var(--fs-body);
+}
+.btn-block {
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════
+   7. CARDS
+   La elevación la da el filete; la sombra solo separa del
+   fondo. Nada se levanta 4px al pasar el cursor.
+═══════════════════════════════════════════════════════ */
+.card,
+.cp-card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition:
+    box-shadow var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth);
+}
+
+.card:hover,
+.cp-card--hover:hover {
+  border-color: var(--card-border-hover);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.surface-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+/* ── Marco de imagen de producto ──
+   contain sobre superficie tenue: recortar una pantalla o una
+   batería esconde justo la pieza que el comprador viene a mirar. */
+.cp-media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-media);
+  overflow: hidden;
+}
+
+.cp-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.cp-media--cover img {
+  object-fit: cover;
+}
+
+/* ═══════════════════════════════════════════════════════
+   8. BADGES & ETIQUETAS
+═══════════════════════════════════════════════════════ */
+.badge,
+.cp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--r-xs);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.cp-badge--sale,
+.badge-navy {
+  background: var(--cp-navy);
+  color: #fff;
+}
+
+.cp-badge--new,
+.badge-electric {
+  background: var(--cp-electric);
+  color: var(--cp-navy);
+}
+
+.cp-badge--quiet,
+.badge-sky,
+.badge-new {
+  background: var(--surface-inset);
+  color: var(--text-muted);
+}
+
+.badge-blue {
+  background: var(--cp-blue);
+  color: #fff;
+}
+.badge-hot {
+  background: #fff6ee;
+  color: #b84e00;
+  border: 1px solid #ffdfc4;
+}
+.badge-ok {
+  background: var(--cp-success-bg);
+  color: var(--cp-success-text);
+  border: 1px solid var(--cp-success-border);
+}
+.badge-warn {
+  background: var(--cp-warning-bg);
+  color: var(--cp-warning-text);
+  border: 1px solid var(--cp-warning-border);
+}
+.badge-error {
+  background: var(--cp-error-bg);
+  color: var(--cp-error-text);
+  border: 1px solid var(--cp-error-border);
+}
+
+.badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   9. FORMULARIOS
+═══════════════════════════════════════════════════════ */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--text-body);
+  font-size: var(--fs-sm);
+  transition:
+    border-color var(--t-base) var(--ease-smooth),
+    box-shadow var(--t-base) var(--ease-smooth);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.cp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cp-field__label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.cp-input {
+  height: 44px;
+  width: 100%;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon + .cp-input,
+.input-icon + .input-pill {
+  padding-left: 2.75rem;
+}
+
+.input-pill {
+  height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-body);
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════
+   10. ALERTAS / ESTADOS SEMÁNTICOS
+═══════════════════════════════════════════════════════ */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: var(--fs-sm);
+}
+
+.alert strong {
+  display: block;
+  font-weight: var(--fw-bold);
+  margin-bottom: 1px;
+}
+
+.alert-success {
+  background: var(--cp-success-bg);
+  color: var(--cp-success-text);
+  border: 1px solid var(--cp-success-border);
+}
+.alert-warning {
+  background: var(--cp-warning-bg);
+  color: var(--cp-warning-text);
+  border: 1px solid var(--cp-warning-border);
+}
+.alert-error {
+  background: var(--cp-error-bg);
+  color: var(--cp-error-text);
+  border: 1px solid var(--cp-error-border);
+}
+.alert-info {
+  background: var(--cp-info-bg);
+  color: var(--cp-info-text);
+  border: 1px solid var(--cp-info-border);
+}
+
+/* ═══════════════════════════════════════════════════════
+   11. CHIPS / FILTROS
+═══════════════════════════════════════════════════════ */
+.cp-chip,
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth),
+    color var(--t-base) var(--ease-smooth);
+}
+
+.cp-chip:hover,
+.filter-chip:hover {
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+  background: var(--accent-quiet);
+}
+
+.cp-chip.active,
+.filter-chip.active {
+  background: var(--cp-navy);
+  color: #fff;
+  border-color: var(--cp-navy);
+  font-weight: var(--fw-semibold);
+}
+
+/* ═══════════════════════════════════════════════════════
+   12. RAIL HORIZONTAL
+   Carrusel por scroll nativo: sin librería, con snap. En
+   móvil todas las filas de producto se deslizan así.
+═══════════════════════════════════════════════════════ */
+.cp-rail {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 1fr);
+  gap: var(--space-4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--container-pad);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.cp-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.cp-rail > * {
+  scroll-snap-align: start;
+}
+
+/* Botones de desplazamiento del rail */
+.cp-rail-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  transition:
+    background var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth),
+    opacity var(--t-base) var(--ease-smooth);
+}
+
+.cp-rail-btn:hover:not(:disabled) {
+  background: var(--accent-quiet);
+  border-color: var(--accent-line);
+  color: var(--accent-strong);
+}
+
+.cp-rail-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cp-rail-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   13. GRID DE PRODUCTOS
+═══════════════════════════════════════════════════════ */
+.cp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--space-5);
+}
+
+@media (max-width: 860px) {
+  .cp-grid {
+    grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    gap: var(--space-3);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   14. SKELETON
+═══════════════════════════════════════════════════════ */
+.cp-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-inset);
+  border-radius: var(--r-sm);
+}
+
+.cp-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.6),
+    transparent
+  );
+  animation: cp-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes cp-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   15. PRECIOS
+═══════════════════════════════════════════════════════ */
+.cp-price {
+  font-size: 1.25rem;
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.cp-price--was,
+.price-original {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--text-faint);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════════════════
+   16. UTILIDADES
+═══════════════════════════════════════════════════════ */
+.cp-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cp-hairline {
+  height: 1px;
+  background: var(--line-soft);
+  border: 0;
+}
+
+.sku {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  color: var(--accent-strong);
+  background: var(--accent-quiet);
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  display: inline-block;
+}
+
+.section-divider {
+  width: 36px;
+  height: 2px;
+  background: var(--grad-sky);
+  border-radius: var(--r-pill);
+}
+
+.dot-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+.dot-divider::before,
+.dot-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+.cart-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: var(--cp-electric);
+  color: var(--cp-navy);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-black);
+}
+
+/* Scroll reveal — clase utilitaria para JS */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity var(--t-slow) var(--ease-out),
+    transform var(--t-slow) var(--ease-out);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   17. SCROLLBAR
+═══════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--cp-border-dark);
+  border-radius: var(--r-pill);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cp-text-faint);
+  background-clip: padding-box;
+}
+
+/* ═══════════════════════════════════════════════════════
+   18. RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  :root {
+    --header-height: 64px;
+    --catbar-height: 0px;
+    --container-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .btn-lg {
+    height: 48px;
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .btn {
+    height: 42px;
+    padding: 0 var(--space-5);
+    font-size: var(--fs-xs);
+  }
+}

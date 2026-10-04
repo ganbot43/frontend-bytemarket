@@ -1,0 +1,1266 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+/* Tailwind is loaded via CDN */
+/* ═══════════════════════════════════════════════════════
+   BYTEMARKET — DESIGN SYSTEM v2
+   Identidad visual basada en logo: navy · blue · electric
+   Paleta Light & Airy — oscuros solo en acciones clave
+═══════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════
+   1. DESIGN TOKENS — RAW VALUES
+═══════════════════════════════════════════════════════ */
+:root {
+  /* — Colors — */
+  --cp-navy: #071e52;
+  --cp-blue: #1245c4;
+  --cp-electric: #00aaff;
+  --cp-sky: #5ac8fa;
+  --cp-white: #ffffff;
+  --cp-offwhite: #f8fafc;
+  --cp-frost: #f1f5f9;
+  --cp-ice: #e2e8f0;
+
+  /* — Text — */
+  --cp-text-dark: #0f172a;
+  --cp-text-body: #334155;
+  --cp-text-muted: #64748b;
+  --cp-text-faint: #94a3b8;
+
+  /* — Borders — */
+  --cp-border: #e2e8f0;
+  --cp-border-mid: #cbd5e1;
+  --cp-border-dark: #94a3b8;
+}
+
+/* ═══════════════════════════════════════════════════════
+   2. CSS CUSTOM PROPERTIES — SEMANTIC TOKENS
+═══════════════════════════════════════════════════════ */
+:root {
+  /* ── Brand ── */
+  --brand-primary: var(--cp-navy);
+  --brand-primary-hover: var(--cp-blue);
+  --brand-accent: var(--cp-electric);
+  --brand-accent-hover: var(--cp-sky);
+
+  /* ── Backgrounds (claro a oscuro) ── */
+  --bg-page: var(--cp-offwhite);
+  --bg-alt: var(--cp-frost);
+  --bg-section: var(--cp-ice);
+  --bg-surface: var(--cp-white);
+  --bg-muted: var(--cp-frost);
+  --bg-overlay: rgba(7, 30, 82, 0.45);
+
+  /* ── Cards & contenedores ── */
+  --card-bg: var(--cp-white);
+  --card-bg-alt: var(--cp-frost);
+  --card-border: var(--cp-border);
+  --card-border-hover: var(--cp-border-mid);
+  --card-shadow:
+    0 1px 3px rgba(7, 30, 82, 0.06), 0 4px 16px rgba(7, 30, 82, 0.05);
+  --card-shadow-hover:
+    0 4px 12px rgba(7, 30, 82, 0.1), 0 12px 32px rgba(7, 30, 82, 0.08);
+  --card-shadow-sm: 0 1px 4px rgba(7, 30, 82, 0.06);
+
+  /* ── Text ── */
+  --text-primary: var(--cp-text-dark);
+  --text-body: var(--cp-text-body);
+  --text-muted: var(--cp-text-muted);
+  --text-faint: var(--cp-text-faint);
+  --text-inverse: var(--cp-white);
+  --text-link: var(--cp-blue);
+  --text-link-hover: var(--cp-navy);
+  --text-accent: var(--cp-electric);
+
+  /* ── Borders ── */
+  --border-light: var(--cp-border);
+  --border-mid: var(--cp-border-mid);
+  --border-strong: var(--cp-border-dark);
+  --border-action: var(--cp-navy);
+
+  /* ── Buttons ── */
+  --btn-primary-bg: var(--cp-navy);
+  --btn-primary-hover: var(--cp-blue);
+  --btn-primary-text: #ffffff;
+  --btn-secondary-bg: var(--cp-blue);
+  --btn-secondary-hover: var(--cp-navy);
+  --btn-secondary-text: #ffffff;
+  --btn-accent-bg: var(--cp-electric);
+  --btn-accent-hover: var(--cp-sky);
+  --btn-accent-text: var(--cp-navy);
+  --btn-outline-border: var(--cp-navy);
+  --btn-outline-text: var(--cp-navy);
+  --btn-outline-hover: var(--cp-frost);
+  --btn-soft-bg: var(--cp-ice);
+  --btn-soft-border: var(--cp-border);
+  --btn-soft-text: var(--cp-navy);
+  --btn-ghost-border: var(--cp-border);
+  --btn-ghost-text: var(--cp-text-muted);
+  --btn-ghost-hover: var(--cp-frost);
+
+  /* ── Gradientes ── */
+  --grad-hero: linear-gradient(135deg, #eef8ff 0%, #dff1fb 60%, #c8e8f8 100%);
+  --grad-section: linear-gradient(135deg, #f7fbff 0%, #eef8ff 100%);
+  --grad-cta: linear-gradient(135deg, #071e52 0%, #1245c4 100%);
+  --grad-sky: linear-gradient(135deg, #00aaff 0%, #5ac8fa 100%);
+  --grad-promo: linear-gradient(135deg, #071e52 0%, #1245c4 60%, #00aaff 100%);
+  --grad-card: linear-gradient(160deg, #ffffff 0%, #eef8ff 100%);
+  --grad-accent: linear-gradient(
+    90deg,
+    transparent,
+    var(--cp-electric),
+    var(--cp-sky),
+    transparent
+  );
+
+  /* ── Línea técnica (firma de marca) ── */
+  --line-brand: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--cp-electric) 30%,
+    var(--cp-sky) 70%,
+    transparent 100%
+  );
+
+  /* ── Radius ── */
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* ── Spacing scale ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Typography ── */
+  --font-display:
+    "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-body:
+    "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", monospace;
+
+  /* ── Layout ── */
+  --container-width: 1280px;
+  --header-height: 72px;
+
+  /* ── Transitions ── */
+  --ease-snappy: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --t-fast: 0.15s;
+  --t-base: 0.22s;
+  --t-slow: 0.35s;
+
+  /* ── Glow ── */
+  --glow-electric: 0 0 0 3px rgba(0, 170, 255, 0.18);
+  --glow-navy: 0 0 0 3px rgba(7, 30, 82, 0.14);
+  --glow-soft: 0 4px 20px rgba(0, 170, 255, 0.22);
+}
+
+/* ═══════════════════════════════════════════════════════
+   3. RESET
+═══════════════════════════════════════════════════════ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-height);
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--text-body);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+  transition: color var(--t-base) var(--ease-smooth);
+}
+
+a:hover {
+  color: var(--text-link-hover);
+}
+
+/* ═══════════════════════════════════════════════════════
+   4. TYPOGRAPHY
+═══════════════════════════════════════════════════════ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+h3 {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+}
+h4 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+h5 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+h6 {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+  color: var(--text-body);
+}
+
+/* Variantes de heading */
+.heading-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.heading-display em,
+h1 em,
+h2 em,
+h3 em {
+  font-style: normal;
+  color: var(--cp-electric);
+}
+
+.text-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.text-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cp-electric);
+}
+
+/* ═══════════════════════════════════════════════════════
+   5. CONTAINER & LAYOUT
+═══════════════════════════════════════════════════════ */
+.container {
+  width: 100%;
+  max-width: var(--container-width);
+  margin-inline: auto;
+  padding-inline: var(--space-8);
+}
+
+.section {
+  padding-block: var(--space-20);
+}
+
+.section-sm {
+  padding-block: var(--space-12);
+}
+
+.section-lg {
+  padding-block: var(--space-24);
+}
+
+/* ═══════════════════════════════════════════════════════
+   6. HEADER
+═══════════════════════════════════════════════════════ */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--header-height);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--cp-border);
+  /* Línea técnica de marca al fondo del header */
+  box-shadow:
+    0 1px 0 0 var(--cp-border),
+    0 2px 0 0 rgba(0, 170, 255, 0.12);
+}
+
+.site-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-brand);
+  opacity: 0;
+  transition: opacity var(--t-slow) var(--ease-smooth);
+}
+
+.site-header.scrolled::after {
+  opacity: 1;
+}
+
+/* Nav links */
+.nav-link {
+  position: relative;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition:
+    color var(--t-base) var(--ease-smooth),
+    background var(--t-base) var(--ease-smooth);
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-alt);
+}
+
+.nav-link.active {
+  color: var(--text-primary);
+  background: var(--cp-frost);
+  font-weight: 600;
+}
+
+/* Nav pill (CTA en nav) */
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition:
+    transform var(--t-fast) var(--ease-snappy),
+    background var(--t-base) var(--ease-smooth),
+    box-shadow var(--t-base) var(--ease-smooth);
+}
+
+.nav-pill:hover {
+  transform: translateY(-1px);
+}
+
+/* Mega menu */
+.mega-menu {
+  position: absolute;
+  top: calc(var(--header-height) + 4px);
+  left: 0;
+  right: 0;
+  background: var(--cp-white);
+  border-bottom: 1px solid var(--cp-border);
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* ═══════════════════════════════════════════════════════
+   7. BOTONES
+═══════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-6);
+  border-radius: var(--r-pill);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    transform var(--t-fast) var(--ease-snappy),
+    background var(--t-base) var(--ease-smooth),
+    box-shadow var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth);
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Primario — comprar, acción principal */
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: 0 2px 8px rgba(7, 30, 82, 0.2);
+}
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+  box-shadow: 0 6px 20px rgba(7, 30, 82, 0.28);
+  color: var(--btn-primary-text);
+}
+
+/* Secundario — agregar al carrito */
+.btn-secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+}
+.btn-secondary:hover {
+  background: var(--btn-secondary-hover);
+  color: var(--btn-secondary-text);
+}
+
+/* Acento eléctrico — ofertas, destacados */
+.btn-accent {
+  background: var(--btn-accent-bg);
+  color: var(--btn-accent-text);
+  font-weight: 700;
+}
+.btn-accent:hover {
+  background: var(--btn-accent-hover);
+  box-shadow: var(--glow-soft);
+  color: var(--btn-accent-text);
+}
+
+/* Outline — acción secundaria visible */
+.btn-outline {
+  background: transparent;
+  color: var(--btn-outline-text);
+  border: 1.5px solid var(--btn-outline-border);
+}
+.btn-outline:hover {
+  background: var(--btn-outline-hover);
+}
+
+/* Soft — filtros, acciones suaves */
+.btn-soft {
+  background: var(--btn-soft-bg);
+  color: var(--btn-soft-text);
+  border: 1px solid var(--btn-soft-border);
+}
+.btn-soft:hover {
+  background: var(--cp-mist);
+  border-color: var(--cp-border-mid);
+}
+
+/* Ghost — cancelar, cerrar */
+.btn-ghost {
+  background: transparent;
+  color: var(--btn-ghost-text);
+  border: 1px solid var(--btn-ghost-border);
+}
+.btn-ghost:hover {
+  background: var(--btn-ghost-hover);
+}
+
+/* Tamaños */
+.btn-xs {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 0.75rem;
+}
+.btn-sm {
+  height: 34px;
+  padding: 0 var(--space-4);
+  font-size: 0.8rem;
+}
+.btn-lg {
+  height: 52px;
+  padding: 0 var(--space-8);
+  font-size: 1rem;
+}
+
+/* Botón con flecha (CTA hero) */
+.btn-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   8. CARDS
+═══════════════════════════════════════════════════════ */
+.card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition:
+    transform var(--t-base) var(--ease-snappy),
+    box-shadow var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--card-border-hover);
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Línea técnica en top al hacer hover */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--grad-sky);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-smooth);
+  z-index: 1;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Product card */
+.product-card {
+  position: relative;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition:
+    transform var(--t-base) var(--ease-snappy),
+    box-shadow var(--t-base) var(--ease-smooth),
+    border-color var(--t-base) var(--ease-smooth);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--card-border-hover);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.product-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--grad-sky);
+  opacity: 0;
+  transition: opacity var(--t-base) var(--ease-smooth);
+  z-index: 1;
+}
+
+.product-card:hover::before {
+  opacity: 1;
+}
+
+.product-card-img {
+  position: relative;
+  background: var(--grad-hero);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.product-card-body {
+  padding: var(--space-4) var(--space-5);
+}
+
+.product-card-price {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.product-card-price-old {
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+/* Surface card (info, categorías) */
+.surface-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--cp-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════
+   9. BADGES & ETIQUETAS
+═══════════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.badge-navy {
+  background: var(--cp-navy);
+  color: #fff;
+}
+.badge-blue {
+  background: var(--cp-blue);
+  color: #fff;
+}
+.badge-electric {
+  background: rgba(0, 170, 255, 0.1);
+  color: #004d80;
+  border: 1px solid rgba(0, 170, 255, 0.25);
+}
+.badge-sky {
+  background: var(--cp-ice);
+  color: var(--cp-navy);
+  border: 1px solid var(--cp-mist);
+}
+.badge-hot {
+  background: #fff4ec;
+  color: #b84e00;
+  border: 1px solid #ffd4b0;
+}
+.badge-new {
+  background: var(--cp-frost);
+  color: var(--cp-navy);
+  border: 1px solid var(--cp-border);
+}
+.badge-ok {
+  background: var(--cp-success-bg);
+  color: var(--cp-success-text);
+  border: 1px solid var(--cp-success-border);
+}
+.badge-warn {
+  background: var(--cp-warning-bg);
+  color: var(--cp-warning-text);
+  border: 1px solid var(--cp-warning-border);
+}
+.badge-error {
+  background: var(--cp-error-bg);
+  color: var(--cp-error-text);
+  border: 1px solid var(--cp-error-border);
+}
+
+/* Dot de estado */
+.badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   10. FORMULARIOS
+═══════════════════════════════════════════════════════ */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  background: var(--cp-white);
+  border: 1.5px solid var(--cp-border);
+  border-radius: var(--r-sm);
+  color: var(--text-body);
+  font-size: 0.875rem;
+  transition:
+    border-color var(--t-base) var(--ease-smooth),
+    box-shadow var(--t-base) var(--ease-smooth);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--cp-electric);
+  box-shadow: var(--glow-electric);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+/* Input pill (buscador) */
+.input-pill {
+  height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--cp-border);
+  background: var(--cp-white);
+  color: var(--text-body);
+  width: 100%;
+}
+
+.input-pill:focus {
+  border-color: var(--cp-electric);
+  box-shadow: var(--glow-electric);
+}
+
+.input-wrap {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon + .input-pill {
+  padding-left: 2.75rem;
+}
+
+/* ═══════════════════════════════════════════════════════
+   11. ALERTAS / ESTADOS SEMÁNTICOS
+═══════════════════════════════════════════════════════ */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--r-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.alert-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 0.875rem;
+}
+
+.alert strong {
+  display: block;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  margin-bottom: 1px;
+}
+
+.alert-success {
+  background: var(--cp-success-bg);
+  color: var(--cp-success-text);
+  border: 1px solid var(--cp-success-border);
+}
+
+.alert-warning {
+  background: var(--cp-warning-bg);
+  color: var(--cp-warning-text);
+  border: 1px solid var(--cp-warning-border);
+}
+
+.alert-error {
+  background: var(--cp-error-bg);
+  color: var(--cp-error-text);
+  border: 1px solid var(--cp-error-border);
+}
+
+.alert-info {
+  background: var(--cp-info-bg);
+  color: var(--cp-info-text);
+  border: 1px solid var(--cp-info-border);
+}
+
+/* ═══════════════════════════════════════════════════════
+   12. HERO
+═══════════════════════════════════════════════════════ */
+.hero {
+  position: relative;
+  background: var(--grad-hero);
+  border-bottom: 1px solid var(--cp-border);
+  overflow: hidden;
+}
+
+/* Decoración de circuito (SVG inline en el componente) */
+.hero-circuit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 14px;
+  border-radius: var(--r-pill);
+  background: var(--cp-white);
+  border: 1px solid var(--cp-mist);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--cp-blue);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cp-electric);
+  box-shadow: 0 0 8px var(--cp-electric);
+  flex-shrink: 0;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  color: var(--cp-navy);
+}
+
+.hero-title em {
+  font-style: normal;
+  color: var(--cp-electric);
+}
+
+.hero-subtitle {
+  font-size: clamp(0.9rem, 1.5vw, 1.0625rem);
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 440px;
+}
+
+/* Stat chip dentro del hero */
+.hero-stat {
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border);
+  border-radius: var(--r-md);
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+}
+
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--cp-navy);
+}
+
+.hero-stat-num em {
+  font-style: normal;
+  color: var(--cp-electric);
+}
+
+.hero-stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ═══════════════════════════════════════════════════════
+   13. BANNERS PROMOCIONALES
+═══════════════════════════════════════════════════════ */
+.promo-banner {
+  position: relative;
+  background: var(--cp-navy);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+/* Línea técnica animada en el banner */
+.promo-banner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-brand);
+}
+
+.promo-banner-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cp-electric);
+  margin-bottom: var(--space-2);
+}
+
+.promo-banner-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+
+.promo-banner-title em {
+  font-style: normal;
+  color: var(--cp-sky);
+}
+
+.promo-banner-sub {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: var(--space-1);
+}
+
+/* ═══════════════════════════════════════════════════════
+   14. SECCIONES ESPECIALES
+═══════════════════════════════════════════════════════ */
+
+/* Section con fondo ice */
+.section-ice {
+  background: var(--cp-ice);
+  border-top: 1px solid var(--cp-border);
+  border-bottom: 1px solid var(--cp-border);
+}
+
+/* Section con fondo frost */
+.section-frost {
+  background: var(--cp-frost);
+  border-top: 1px solid var(--cp-border);
+  border-bottom: 1px solid var(--cp-border);
+}
+
+/* Section CTA — navy full */
+.section-cta {
+  background: var(--cp-navy);
+  position: relative;
+  overflow: hidden;
+}
+
+.section-cta::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--line-brand);
+}
+
+/* Section divider visual */
+.section-divider {
+  width: 40px;
+  height: 2px;
+  background: var(--grad-sky);
+  border-radius: var(--r-pill);
+}
+
+/* ═══════════════════════════════════════════════════════
+   15. FILTROS Y SIDEBAR
+═══════════════════════════════════════════════════════ */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 34px;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-pill);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--cp-border);
+  background: var(--cp-white);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--t-base) var(--ease-smooth);
+}
+
+.filter-chip:hover {
+  border-color: var(--cp-border-mid);
+  color: var(--text-primary);
+  background: var(--cp-frost);
+}
+
+.filter-chip.active {
+  background: var(--cp-navy);
+  color: #fff;
+  border-color: var(--cp-navy);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════
+   16. CARRITO / TOAST
+═══════════════════════════════════════════════════════ */
+.cart-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cp-electric);
+  color: var(--cp-navy);
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+
+.cart-mini {
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--card-shadow-hover);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════
+   17. FOOTER
+═══════════════════════════════════════════════════════ */
+.site-footer {
+  position: relative;
+  background: var(--cp-frost);
+  border-top: 1px solid var(--cp-border);
+  color: var(--text-muted);
+}
+
+.site-footer a {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  transition: color var(--t-base) var(--ease-smooth);
+}
+
+.site-footer a:hover {
+  color: var(--cp-electric);
+}
+
+.footer-logo {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--cp-navy);
+}
+
+.footer-logo em {
+  font-style: normal;
+  color: var(--cp-electric);
+}
+
+.footer-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cp-navy);
+}
+
+/* ═══════════════════════════════════════════════════════
+   18. UTILIDADES VISUALES
+═══════════════════════════════════════════════════════ */
+
+/* Línea técnica (firma ByteMarket) */
+.brand-line {
+  height: 2px;
+  background: var(--line-brand);
+  border: none;
+}
+
+/* Separador con dot */
+.dot-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+.dot-divider::before,
+.dot-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--cp-border);
+}
+
+/* Precio tachado */
+.price-original {
+  font-size: 0.875rem;
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+/* SKU / referencia técnica */
+.sku {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--cp-electric);
+  background: rgba(0, 170, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  display: inline-block;
+}
+
+/* Rating stars */
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cp-navy);
+}
+
+/* Scroll reveal — clase utilitaria para JS */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--t-slow) var(--ease-snappy),
+    transform var(--t-slow) var(--ease-snappy);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════
+   19. SCROLLBAR
+═══════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--cp-frost);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--cp-mist);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cp-sky);
+}
+
+/* ═══════════════════════════════════════════════════════
+   20. SELECTION
+═══════════════════════════════════════════════════════ */
+::selection {
+  background: rgba(0, 170, 255, 0.15);
+  color: var(--cp-navy);
+}
+
+/* ═══════════════════════════════════════════════════════
+   21. RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  :root {
+    --header-height: 64px;
+    --container-width: 100%;
+  }
+  .container {
+    padding-inline: var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding-inline: var(--space-5);
+  }
+  .section {
+    padding-block: var(--space-12);
+  }
+  .section-lg {
+    padding-block: var(--space-16);
+  }
+  .card,
+  .product-card,
+  .surface-card {
+    border-radius: var(--r-md);
+  }
+  .btn-lg {
+    height: 48px;
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding-inline: var(--space-4);
+  }
+  .card,
+  .product-card {
+    border-radius: 14px;
+  }
+  .btn {
+    height: 42px;
+    padding: 0 var(--space-5);
+    font-size: 0.8125rem;
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "hash": "27d5a099",
+  "configHash": "e7731a69",
+  "lockfileHash": "26a5bd77",
+  "browserHash": "b1755e35",
+  "optimized": {
+    "@fortawesome/free-brands-svg-icons": {
+      "src": "../../../node_modules/@fortawesome/free-brands-svg-icons/index.mjs",
+      "file": "@fortawesome_free-brands-svg-icons.js",
+      "fileHash": "d6628728",
+      "needsInterop": false
+    },
+    "errx": {
+      "src": "../../../node_modules/errx/dist/index.mjs",
+      "file": "errx.js",
+      "fileHash": "e23e5410",
+      "needsInterop": false
+    },
+    "@vue/devtools-core": {
+      "src": "../../../node_modules/@vue/devtools-core/dist/index.js",
+      "file": "@vue_devtools-core.js",
+      "fileHash": "4e39d636",
+      "needsInterop": false
+    },
+    "@vue/devtools-kit": {
+      "src": "../../../node_modules/@vue/devtools-kit/dist/index.js",
+      "file": "@vue_devtools-kit.js",
+      "fileHash": "53e3b84c",
+      "needsInterop": false
+    },
+    "pinia-plugin-persistedstate": {
+      "src": "../../../node_modules/pinia-plugin-persistedstate/dist/index.js",
+      "file": "pinia-plugin-persistedstate.js",
+      "fileHash": "585c5ba6",
+      "needsInterop": false
+    },
+    "lucide-vue-next": {
+      "src": "../../../node_modules/lucide-vue-next/dist/esm/lucide-vue-next.js",
+      "file": "lucide-vue-next.js",
+      "fileHash": "52ea100d",
+      "needsInterop": false
+    },
+    "xlsx": {
+      "src": "../../../node_modules/xlsx/xlsx.mjs",
+      "file": "xlsx.js",
+      "fileHash": "86641ff5",
+      "needsInterop": false
+    },
+    "jspdf": {
+      "src": "../../../node_modules/jspdf/dist/jspdf.es.min.js",
+      "file": "jspdf.js",
+      "fileHash": "39e08fe1",
+      "needsInterop": false
+    },
+    "jspdf-autotable": {
+      "src": "../../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
+      "file": "jspdf-autotable.js",
+      "fileHash": "64d4d842",
+      "needsInterop": false
+    },
+    "vue-chartjs": {
+      "src": "../../../node_modules/vue-chartjs/dist/index.js",
+      "file": "vue-chartjs.js",
+      "fileHash": "948f2187",
+      "needsInterop": false
+    },
+    "chart.js": {
+      "src": "../../../node_modules/chart.js/dist/chart.js",
+      "file": "chart__js.js",
+      "fileHash": "83f2ffae",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "html2canvas.esm-YLEZXNA4": {
+      "file": "html2canvas__esm-YLEZXNA4.js"
+    },
+    "purify.es-RUWTM6FN": {
+      "file": "purify__es-RUWTM6FN.js"
+    },
+    "index.es-SMYLE3WH": {
+      "file": "index__es-SMYLE3WH.js"
+    },
+    "chunk-X5CFM7YP": {
+      "file": "chunk-X5CFM7YP.js"
+    },
+    "chunk-UFM2WFK7": {
+      "file": "chunk-UFM2WFK7.js"
+    },
+    "chunk-ZNVVWOFG": {
+      "file": "chunk-ZNVVWOFG.js"
+    },
+    "chunk-PX6F3LHL": {
+      "file": "chunk-PX6F3LHL.js"
+    }
+  }
+}

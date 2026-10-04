@@ -1,0 +1,2710 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ============================================================
+  Smart Panel — Global Admin Design System
+  assets/css/admin-panel.css
+  ============================================================ */
+
+/* ── Google Fonts (import must be at top for PostCSS) ── */
+
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+.smart-panel-admin {
+
+  /* — Palette —
+     Misma rampa que la tienda (assets/css/tokens.css §1). Los nombres
+     --sp-blue-* se conservan para no tocar las 2000 líneas de reglas
+     que los referencian, pero los valores ya son los de la marca. */
+  --sp-blue-50: #f4fbff;   /* velo cyan */
+  --sp-blue-100: #e8f6ff;  /* azul niebla */
+  --sp-blue-200: #c0e8ff;  /* azul hielo */
+  --sp-blue-400: #50d0ff;  /* cyan claro */
+  --sp-blue-500: #00aeef;  /* CYAN MARCA */
+  --sp-blue-600: #0077c8;  /* azul eléctrico */
+  --sp-blue-700: #003f8a;  /* azul marino */
+  --sp-blue-900: #071e52;  /* navy del logo */
+
+  --sp-slate-0: #ffffff;
+  --sp-slate-50: #f8fafc;
+  --sp-slate-100: #f1f5f9;
+  --sp-slate-150: #eef2f7;
+  --sp-slate-200: #e6ecf2;
+  --sp-slate-300: #cbd5e1;
+  --sp-slate-400: #94a3b8;
+  --sp-slate-500: #64748b;
+  --sp-slate-600: #475569;
+  --sp-slate-700: #334155;
+  --sp-slate-800: #1e293b;
+  --sp-slate-900: #0f172a;
+
+  --sp-green-500: #10b981;
+  --sp-green-soft: rgba(16, 185, 129, 0.11);
+
+  --sp-amber-500: #f59e0b;
+  --sp-amber-soft: rgba(245, 158, 11, 0.12);
+
+  --sp-red-500: #ef4444;
+  --sp-red-soft: rgba(239, 68, 68, 0.1);
+
+  /* — Semantic colors — */
+  /* Sobre superficie clara el cyan no llega a contraste para un botón
+     sólido con texto blanco: la acción primaria es navy, igual que en
+     la tienda. El cyan vive en acentos, foco y estados activos. */
+  --sp-primary: var(--sp-blue-900);
+  --sp-primary-hover: #0f2d6b;
+  --sp-primary-soft: rgba(0, 174, 239, 0.10);
+  --sp-primary-ink: var(--sp-blue-700);
+  --sp-accent: var(--sp-blue-500);
+
+  /* Color de los botones de acción. Sólido a propósito: el degradado
+     anterior cruzaba de cyan claro a navy y el arranque se leía como
+     fluorescente sobre fondo blanco. */
+  --sp-action: var(--sp-blue-600);
+  --sp-action-hover: #005ba8;
+
+  --sp-success: var(--sp-green-500);
+  --sp-success-soft: var(--sp-green-soft);
+  --sp-warning: var(--sp-amber-500);
+  --sp-warning-soft: var(--sp-amber-soft);
+  --sp-danger: var(--sp-red-500);
+  --sp-danger-soft: var(--sp-red-soft);
+
+  /* — Surfaces — */
+  --sp-bg: #f6f9fc;
+  --sp-surface: rgba(255, 255, 255, 0.95);
+  --sp-surface-solid: #ffffff;
+  --sp-surface-muted: var(--sp-slate-50);
+  --sp-surface-subtle: var(--sp-slate-100);
+
+  /* — Borders — */
+  --sp-border: #e6ecf2;
+  --sp-border-strong: #cbd5e1;
+  /* Usados por reportes y los modales de pedidos; faltaban y las
+     reglas que los referencian no pintaban nada. */
+  --sp-border-soft: #eef2f7;
+  --sp-primary-border: rgba(0, 174, 239, 0.28);
+
+  /* — Text — */
+  --sp-text: #334155;
+  --sp-text-strong: #0f172a;
+  --sp-text-muted: #64748b;
+  /* No baja de 3:1 sobre blanco: es texto pequeño de apoyo
+     (pistas, contadores) y por debajo deja de leerse. */
+  --sp-text-soft: #7d8ea6;
+  --sp-text-inverse: #ffffff;
+
+  /* — Sidebar — */
+  --sp-sidebar-bg: #071e52;
+  --sp-sidebar-border: rgba(255, 255, 255, 0.07);
+  --sp-sidebar-text: rgba(192, 232, 255, 0.62);
+  --sp-sidebar-text-hover: rgba(232, 246, 255, 0.92);
+  --sp-sidebar-text-active: #ffffff;
+  --sp-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sp-sidebar-active-bg: rgba(0, 174, 239, 0.16);
+  --sp-sidebar-active-dot: var(--sp-blue-500);
+  --sp-sidebar-label: rgba(255, 255, 255, 0.22);
+  --sp-sidebar-brand-name: #e8f6ff;
+  --sp-sidebar-brand-role: rgba(255, 255, 255, 0.28);
+  --sp-sidebar-logo-bg: rgba(255, 255, 255, 0.08);
+  --sp-sidebar-footer-link: rgba(255, 255, 255, 0.25);
+  --sp-sidebar-footer-hover: rgba(255, 255, 255, 0.60);
+  --sp-sidebar-footer-bg: rgba(255, 255, 255, 0.05);
+
+  /* — Topbar — */
+  --sp-topbar-bg: rgba(255, 255, 255, 0.88);
+  --sp-topbar-border: rgba(220, 230, 240, 0.90);
+
+  /* — Shadows — */
+  --sp-shadow-xs: 0 1px 2px rgba(15, 45, 107, 0.05);
+  --sp-shadow-sm: 0 1px 2px rgba(15, 45, 107, 0.04), 0 4px 12px rgba(15, 45, 107, 0.045);
+  --sp-shadow-md: 0 2px 4px rgba(15, 45, 107, 0.04), 0 10px 28px rgba(15, 45, 107, 0.07);
+  --sp-shadow-lg: 0 4px 10px rgba(15, 45, 107, 0.05), 0 22px 52px rgba(15, 45, 107, 0.10);
+
+  /* — Radii — */
+  --sp-radius-xs: 6px;
+  --sp-radius-sm: 10px;
+  --sp-radius-md: 14px;
+  --sp-radius-lg: 18px;
+  --sp-radius-xl: 22px;
+  --sp-radius-2xl: 26px;
+  --sp-radius-pill: 999px;
+
+  /* — Typography — */
+  --sp-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sp-font-display: var(--sp-font);
+
+  --sp-text-xs: 0.72rem;
+  --sp-text-sm: 0.8125rem;
+  --sp-text-base: 0.9rem;
+  --sp-text-md: 1rem;
+  --sp-text-lg: 1.125rem;
+  --sp-text-xl: 1.375rem;
+  --sp-text-2xl: 1.65rem;
+  --sp-text-3xl: 2rem;
+
+  /* — Transitions — */
+  --sp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sp-t-fast: 130ms;
+  --sp-t: 190ms;
+  --sp-t-slow: 260ms;
+
+  /* ── Legacy aliases (keep components working) ── */
+  --admin-bg: var(--sp-bg);
+  --admin-surface: var(--sp-surface);
+  --admin-surface-strong: var(--sp-surface-solid);
+  --admin-surface-soft: var(--sp-surface-muted);
+  --admin-surface-muted: var(--sp-surface-subtle);
+  --admin-border: var(--sp-border);
+  --admin-border-strong: var(--sp-border-strong);
+  --admin-text: var(--sp-text);
+  --admin-text-strong: var(--sp-text-strong);
+  --admin-text-muted: var(--sp-text-muted);
+  --admin-text-soft: var(--sp-text-soft);
+  --admin-primary: var(--sp-primary);
+  --admin-primary-hover: var(--sp-primary-hover);
+  --admin-primary-soft: var(--sp-primary-soft);
+  --admin-primary-ink: var(--sp-primary-ink);
+  --admin-accent: var(--sp-success);
+  --admin-accent-soft: var(--sp-success-soft);
+  --admin-warning: var(--sp-warning);
+  --admin-warning-soft: var(--sp-warning-soft);
+  --admin-danger: var(--sp-danger);
+  --admin-danger-soft: var(--sp-danger-soft);
+  --admin-shadow-sm: var(--sp-shadow-sm);
+  --admin-shadow-md: var(--sp-shadow-md);
+  --admin-shadow-lg: var(--sp-shadow-lg);
+  --admin-radius-sm: var(--sp-radius-sm);
+  --admin-radius-md: var(--sp-radius-md);
+  --admin-radius-lg: var(--sp-radius-lg);
+  --admin-radius-xl: var(--sp-radius-xl);
+  --admin-radius-pill: var(--sp-radius-pill);
+  --admin-font-sans: var(--sp-font);
+  --admin-font-display: var(--sp-font-display);
+  --admin-transition-fast: var(--sp-t-fast) var(--sp-ease);
+  --admin-transition: var(--sp-t) var(--sp-ease);
+  --admin-transition-slow: var(--sp-t-slow) var(--sp-ease);
+}
+
+/* ============================================================
+   2. BASE / RESET
+   ============================================================ */
+.smart-panel-admin,
+.smart-panel-admin * {
+  box-sizing: border-box;
+}
+
+.smart-panel-admin {
+  min-height: 100vh;
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-base);
+  color: var(--sp-text);
+  /* Fondo plano: los dos halos radiales (azul y verde) teñían toda la
+     interfaz y peleaban con el cyan de marca. */
+  background: var(--sp-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Headings ── */
+.smart-panel-admin :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--sp-font-display);
+  color: var(--sp-text-strong);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* ── Inline text ── */
+.smart-panel-admin :where(p, span, small, label, td, th, li, a) {
+  font-family: var(--sp-font);
+}
+
+/* ── Links ── */
+.smart-panel-admin :where(a) {
+  color: var(--sp-primary);
+  text-decoration: none;
+  transition: color var(--sp-t) var(--sp-ease), opacity var(--sp-t) var(--sp-ease);
+}
+
+.smart-panel-admin :where(a:hover) {
+  color: var(--sp-primary-hover);
+}
+
+/* ── Form controls ── */
+.smart-panel-admin :where(button, [role="button"], input, textarea, select) {
+  font: inherit;
+  transition:
+    background-color var(--sp-t) var(--sp-ease),
+    color var(--sp-t) var(--sp-ease),
+    border-color var(--sp-t) var(--sp-ease),
+    box-shadow var(--sp-t) var(--sp-ease),
+    transform var(--sp-t) var(--sp-ease),
+    opacity var(--sp-t) var(--sp-ease);
+}
+
+.smart-panel-admin :where(input, textarea, select) {
+  width: 100%;
+  min-height: 2.6rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-md);
+  background: var(--sp-surface-solid);
+  color: var(--sp-text);
+  font-size: var(--sp-text-base);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), var(--sp-shadow-xs);
+}
+
+.smart-panel-admin :where(input::placeholder, textarea::placeholder) {
+  color: var(--sp-text-soft);
+}
+
+.smart-panel-admin :where(input:focus, textarea:focus, select:focus) {
+  outline: none;
+  border-color: rgba(0, 174, 239, 0.6);
+  box-shadow: 0 0 0 3.5px var(--sp-primary-soft), var(--sp-shadow-xs);
+}
+
+/* ── Table ── */
+.smart-panel-admin :where(table) {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.smart-panel-admin :where(th) {
+  color: var(--sp-text-soft);
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.smart-panel-admin :where(td) {
+  color: var(--sp-text);
+  font-size: var(--sp-text-sm);
+}
+
+/* ── Media ── */
+.smart-panel-admin :where(img, svg) {
+  display: block;
+  max-width: 100%;
+}
+
+/* ============================================================
+   3. SHELL LAYOUT
+   ============================================================ */
+.smart-panel-admin.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.smart-panel-admin .admin-shell__sidebar {
+  flex: 0 0 15.5rem;
+  width: 15.5rem;
+  min-width: 15.5rem;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--sp-sidebar-bg);
+  border-right: 1px solid var(--sp-sidebar-border);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  position: relative;
+  z-index: 10;
+}
+
+/* Content area */
+.smart-panel-admin .admin-shell__content {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+}
+
+/* Topbar */
+.smart-panel-admin .admin-shell__topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--sp-topbar-bg);
+  border-bottom: 1px solid var(--sp-topbar-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7), var(--sp-shadow-xs);
+}
+
+/* Main */
+.smart-panel-admin .admin-shell__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+/* ============================================================
+   4. TAILWIND OVERRIDE BRIDGE
+   (maps common Tailwind utility classes → design tokens)
+   ============================================================ */
+
+/* Surfaces */
+.smart-panel-admin :where(.bg-white, .bg-gray-50, .bg-gray-100,
+  .dark\:bg-gray-900, .dark\:bg-gray-950,
+  .dark\:bg-gray-800, .dark\:bg-gray-800\/40,
+  .dark\:bg-gray-800\/50) {
+  background: var(--sp-surface) !important;
+  color: var(--sp-text) !important;
+}
+
+/* Borders */
+.smart-panel-admin :where(.border-gray-100, .border-gray-200,
+  .dark\:border-gray-800, .divide-gray-50,
+  .dark\:divide-gray-800) {
+  border-color: var(--sp-border) !important;
+}
+
+/* Shadows */
+.smart-panel-admin :where(.shadow-sm, .shadow, .shadow-md) {
+  box-shadow: var(--sp-shadow-sm) !important;
+}
+
+/* Radii */
+.smart-panel-admin :where(.rounded-2xl) {
+  border-radius: var(--sp-radius-xl) !important;
+}
+
+.smart-panel-admin :where(.rounded-xl) {
+  border-radius: var(--sp-radius-lg) !important;
+}
+
+.smart-panel-admin :where(.rounded-lg) {
+  border-radius: var(--sp-radius-md) !important;
+}
+
+/* Text colors */
+.smart-panel-admin :where(.text-gray-900, .text-gray-800,
+  .dark\:text-gray-100) {
+  color: var(--sp-text-strong) !important;
+}
+
+.smart-panel-admin :where(.text-gray-700, .text-gray-600,
+  .text-gray-500, .text-gray-400,
+  .dark\:text-gray-300, .dark\:text-gray-400) {
+  color: var(--sp-text-muted) !important;
+}
+
+/* Primary colors */
+.smart-panel-admin :where(.bg-primary-500, .bg-primary-600) {
+  background-color: var(--sp-primary) !important;
+}
+
+.smart-panel-admin :where(.text-primary-600, .text-primary-700) {
+  color: var(--sp-primary) !important;
+}
+
+/* Hover row */
+.smart-panel-admin :where(.hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover,
+  .dark\:hover\:bg-gray-800\/40:hover, .dark\:hover\:bg-gray-800\/50:hover) {
+  background: rgba(0, 174, 239, 0.05) !important;
+}
+
+/* ============================================================
+   5. COMPONENT CLASSES
+   ============================================================ */
+
+/* — Card / surface — */
+.smart-panel-admin :where(.admin-card, .admin-surface) {
+  background: var(--sp-surface-solid);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-xl);
+  box-shadow: var(--sp-shadow-sm);
+}
+
+.smart-panel-admin :where(.admin-card--elevated) {
+  box-shadow: var(--sp-shadow-md);
+}
+
+/* — Page title — */
+.smart-panel-admin :where(.admin-page-title) {
+  font-size: clamp(1.5rem, 1.1rem + 1vw, 2.1rem);
+  line-height: 1.06;
+  letter-spacing: -0.038em;
+  margin: 0;
+}
+
+.smart-panel-admin :where(.admin-page-subtitle) {
+  color: var(--sp-text-muted);
+  font-size: var(--sp-text-sm);
+  margin-top: 0.3rem;
+  font-weight: 500;
+}
+
+/* — Toolbar — */
+.smart-panel-admin :where(.admin-toolbar) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+/* — Grid — */
+.smart-panel-admin :where(.admin-grid) {
+  display: grid;
+  gap: 1rem;
+}
+
+.smart-panel-admin :where(.admin-grid--cards) {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* — Table wrapper — */
+.smart-panel-admin :where(.admin-table-wrap) {
+  overflow: hidden;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-xl);
+  background: var(--sp-surface-solid);
+  box-shadow: var(--sp-shadow-sm);
+}
+
+.smart-panel-admin :where(.admin-table-wrap table) {
+  background: transparent;
+}
+
+.smart-panel-admin :where(.admin-table-wrap thead) {
+  background: linear-gradient(180deg, var(--sp-slate-50) 0%, var(--sp-slate-100) 100%);
+}
+
+.smart-panel-admin :where(.admin-table-wrap tbody tr) {
+  transition: background-color var(--sp-t) var(--sp-ease);
+}
+
+.smart-panel-admin :where(.admin-table-wrap tbody tr:hover) {
+  background: rgba(0, 174, 239, 0.04);
+}
+
+/* — Buttons — */
+.smart-panel-admin :where(.admin-button, .admin-chip, .admin-pill) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: var(--sp-radius-pill);
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition:
+    transform var(--sp-t-fast) var(--sp-ease),
+    box-shadow var(--sp-t-fast) var(--sp-ease),
+    background-color var(--sp-t-fast) var(--sp-ease),
+    color var(--sp-t-fast) var(--sp-ease);
+}
+
+.smart-panel-admin :where(.admin-button:hover, .admin-chip:hover) {
+  transform: translateY(-1px);
+}
+
+.smart-panel-admin :where(.admin-button--primary) {
+  background: var(--sp-action);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(15, 45, 107, 0.16);
+}
+
+.smart-panel-admin :where(.admin-button--primary:hover) {
+  box-shadow: 0 4px 12px rgba(15, 45, 107, 0.22);
+}
+
+.smart-panel-admin :where(.admin-button--ghost) {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--sp-text);
+  border: 1px solid var(--sp-border);
+  box-shadow: var(--sp-shadow-xs);
+}
+
+.smart-panel-admin :where(.admin-button--ghost:hover) {
+  background: var(--sp-surface-solid);
+}
+
+.smart-panel-admin :where(.admin-button--danger) {
+  background: var(--sp-danger-soft);
+  color: var(--sp-danger);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+}
+
+.smart-panel-admin :where(.admin-button--danger:hover) {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+/* — Chip / Pill — */
+.smart-panel-admin :where(.admin-chip) {
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  color: var(--sp-text);
+  padding: 0.4rem 0.7rem;
+  font-size: var(--sp-text-xs);
+}
+
+.smart-panel-admin :where(.admin-pill) {
+  padding: 0.4rem 0.75rem;
+  background: var(--sp-primary-soft);
+  color: var(--sp-primary-ink);
+  border: 1px solid rgba(0, 174, 239, 0.14);
+  font-size: var(--sp-text-xs);
+}
+
+/* — Status pills — */
+.smart-panel-admin :where(.pill-success) {
+  background: var(--sp-success-soft);
+  color: #0a7a56;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+}
+
+.smart-panel-admin :where(.pill-warning) {
+  background: var(--sp-warning-soft);
+  color: #92600a;
+  border: 1px solid rgba(245, 158, 11, 0.20);
+}
+
+.smart-panel-admin :where(.pill-danger) {
+  background: var(--sp-danger-soft);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+/* — Field — */
+.smart-panel-admin :where(.admin-field) {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.smart-panel-admin :where(.admin-field__label) {
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  color: var(--sp-text);
+  letter-spacing: 0.005em;
+}
+
+.smart-panel-admin :where(.admin-field__hint) {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-muted);
+}
+
+/* — Divider — */
+.smart-panel-admin :where(.admin-divider) {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sp-border) 20%, var(--sp-border) 80%, transparent);
+  border: none;
+}
+
+/* — Focus ring — */
+.smart-panel-admin :where(.admin-focus-ring:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 3.5px var(--sp-primary-soft);
+}
+
+/* ============================================================
+   6. SCROLLBAR — admin panel scope (reworked)
+   - Use scoped selectors (avoid universal `*` on pseudo-elements)
+   - Use `background-clip: padding-box` to prevent visual artifacts
+   - Provide different coloring for dark sidebar vs content
+   ============================================================ */
+
+/* Generic admin scrollbars (content areas, tables, modals) */
+.smart-panel-admin ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+
+.smart-panel-admin ::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.smart-panel-admin ::-webkit-scrollbar-thumb {
+  background-color: rgba(12, 25, 40, 0.10) !important;
+  /* subtle neutral */
+  border-radius: 999px;
+  border: 3px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+.smart-panel-admin ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(12, 25, 40, 0.18) !important;
+}
+
+.smart-panel-admin ::-webkit-scrollbar-thumb:active {
+  background-color: rgba(12, 25, 40, 0.28) !important;
+}
+
+.smart-panel-admin ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox: color and width for admin scope */
+.smart-panel-admin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(12, 25, 40, 0.10) transparent;
+}
+
+/* Body scroll when admin is active (applies to top-level scroll) */
+html:has(.smart-panel-admin) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(12, 25, 40, 0.10) transparent;
+}
+
+html:has(.smart-panel-admin)::-webkit-scrollbar {
+  width: 10px;
+}
+
+html:has(.smart-panel-admin)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html:has(.smart-panel-admin)::-webkit-scrollbar-thumb {
+  background-color: rgba(12, 25, 40, 0.10) !important;
+  border-radius: 999px;
+  border: 3px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(12, 25, 40, 0.18) !important;
+}
+
+/* Sidebar: darker, white-ish thumb for contrast */
+.smart-panel-admin .admin-shell__sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.smart-panel-admin .admin-shell__sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.16) !important;
+  border-radius: 999px;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+.smart-panel-admin .admin-shell__sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.smart-panel-admin .admin-shell__sidebar {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+/* Modal backdrop (teleported) */
+.sp-modal-backdrop ::-webkit-scrollbar {
+  width: 10px;
+}
+
+.sp-modal-backdrop ::-webkit-scrollbar-thumb {
+  background-color: rgba(12, 25, 40, 0.10);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+.sp-modal-backdrop {
+  scrollbar-color: rgba(12, 25, 40, 0.10) transparent;
+}
+
+/* ============================================================
+   7. ANIMATIONS
+   ============================================================ */
+.smart-panel-admin :where(.admin-fade-in) {
+  animation: sp-fade-in 220ms var(--sp-ease) both;
+}
+
+.smart-panel-admin :where(.admin-lift) {
+  animation: sp-lift 250ms var(--sp-ease) both;
+}
+
+@keyframes sp-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sp-lift {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.987);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================================
+   6. FOOTER
+   ============================================================ */
+.smart-panel-admin .admin-shell__footer {
+  position: relative;
+  border-top: 1px solid var(--sp-border);
+  background: linear-gradient(180deg, rgba(248, 251, 255, 0.5), rgba(242, 247, 252, 0.8));
+  padding: 1rem 1.5rem;
+  margin-top: auto;
+  text-align: center;
+}
+
+.smart-panel-admin .admin-footer-text {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-muted);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.smart-panel-admin .admin-footer-brand {
+  color: var(--sp-primary);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition: color var(--sp-t) var(--sp-ease);
+}
+
+.smart-panel-admin .admin-footer-brand:hover {
+  color: var(--sp-action);
+}
+
+/* ============================================================
+   7. RESPONSIVE
+   ============================================================ */
+@media (max-width: 1280px) {
+  .smart-panel-admin .admin-shell__sidebar {
+    flex-basis: 14rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .smart-panel-admin {
+    --sp-radius-xl: 1.1rem;
+    --sp-radius-lg: 0.9rem;
+  }
+
+  .smart-panel-admin .admin-shell {
+    flex-direction: column;
+  }
+
+  .smart-panel-admin .admin-shell__sidebar {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 0;
+    height: 0;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .smart-panel-admin .admin-shell__content {
+    width: 100%;
+  }
+
+  .smart-panel-admin .admin-shell__main {
+    padding: 0.9rem;
+  }
+
+  .smart-panel-admin .sp-sidebar--static {
+    display: none;
+  }
+
+  .smart-panel-admin .sp-sidebar--drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 40;
+    width: min(86vw, 18rem);
+    height: 100dvh;
+    max-height: 100dvh;
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.24);
+    border-right: 1px solid var(--sp-sidebar-border);
+  }
+
+  .smart-panel-admin :where(.admin-toolbar) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ============================================================
+   8. TOPBAR COMPONENT  (.sp-topbar)
+   ============================================================ */
+
+.smart-panel-admin .sp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  height: 3.5rem;
+  background: var(--sp-topbar-bg);
+  border-bottom: 1px solid var(--sp-topbar-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72),
+    var(--sp-shadow-xs);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* ── Título ── */
+.smart-panel-admin .sp-topbar__title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.smart-panel-admin .sp-topbar__section-label {
+  font-size: var(--sp-text-xs);
+  font-weight: 600;
+  color: var(--sp-text-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.smart-panel-admin .sp-topbar__sep {
+  color: var(--sp-text-soft);
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+}
+
+.smart-panel-admin .sp-topbar__page-title {
+  font-size: var(--sp-text-md);
+  font-weight: 800;
+  color: var(--sp-text-strong);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+
+/* ── Acciones ── */
+.smart-panel-admin .sp-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Reloj ── */
+.smart-panel-admin .sp-topbar__clock {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--sp-text-xs);
+  font-weight: 600;
+  color: var(--sp-text-soft);
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-pill);
+  padding: 0.3rem 0.65rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Divisor vertical ── */
+.smart-panel-admin .sp-topbar__divider {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--sp-border);
+  flex-shrink: 0;
+}
+
+/* ── Usuario ── */
+.smart-panel-admin .sp-topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.smart-panel-admin .sp-topbar__avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-action);
+  color: #fff;
+  font-size: var(--sp-text-xs);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(15, 45, 107, 0.16);
+  flex-shrink: 0;
+}
+
+.smart-panel-admin .sp-topbar__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  line-height: 1;
+}
+
+.smart-panel-admin .sp-topbar__user-name {
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  color: var(--sp-text-strong);
+}
+
+.smart-panel-admin .sp-topbar__user-role {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  font-weight: 500;
+}
+
+/* ── Botón logout ── */
+.smart-panel-admin .sp-topbar__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--sp-radius-pill);
+  border: 1px solid rgba(239, 68, 68, 0.20);
+  background: var(--sp-danger-soft);
+  color: var(--sp-danger);
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color var(--sp-t-fast) var(--sp-ease),
+    box-shadow var(--sp-t-fast) var(--sp-ease),
+    transform var(--sp-t-fast) var(--sp-ease),
+    opacity var(--sp-t-fast) var(--sp-ease);
+}
+
+.smart-panel-admin .sp-topbar__logout:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.16);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  transform: translateY(-1px);
+}
+
+.smart-panel-admin .sp-topbar__logout:disabled,
+.smart-panel-admin .sp-topbar__logout--loading {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.smart-panel-admin .sp-topbar__logout-label {
+  display: none;
+}
+
+/* ── Spinner ── */
+.smart-panel-admin .sp-topbar__spinner {
+  animation: sp-spin 0.8s linear infinite;
+}
+
+@keyframes sp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ── */
+@media (min-width: 640px) {
+  .smart-panel-admin .sp-topbar__logout-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 640px) {
+  .smart-panel-admin .sp-topbar {
+    padding: 0 1rem;
+  }
+
+  .smart-panel-admin .sp-topbar__user-info,
+  .smart-panel-admin .sp-topbar__clock {
+    display: none;
+  }
+
+  .smart-panel-admin .sp-topbar__actions {
+    gap: 0.5rem;
+  }
+}
+
+/* ============================================================
+   9. DRAWER GLOBAL  (.sp-drawer)
+   Teleported to <body> — tokens redeclarados aquí porque
+   el elemento vive fuera de .smart-panel-admin
+   ============================================================ */
+
+/* ── Token bridge (redeclara en :root para que el drawer los vea) ── */
+:root {
+  --sp-blue-400: #50d0ff;
+  --sp-blue-500: #00aeef;
+  --sp-blue-900: #071e52;
+  --sp-primary: #071e52;
+  --sp-primary-hover: #0f2d6b;
+  --sp-primary-soft: rgba(0, 174, 239, 0.10);
+  --sp-primary-ink: #003f8a;
+  --sp-accent: #00aeef;
+  --sp-action: #0077c8;
+  --sp-action-hover: #005ba8;
+
+  --sp-danger: #ef4444;
+  --sp-danger-soft: rgba(239, 68, 68, 0.10);
+
+  --sp-success: #10b981;
+  --sp-success-soft: rgba(16, 185, 129, 0.11);
+
+  --sp-border: #e6ecf2;
+  --sp-border-strong: #cbd5e1;
+  /* Usados por reportes y los modales de pedidos; faltaban y las
+     reglas que los referencian no pintaban nada. */
+  --sp-border-soft: #eef2f7;
+  --sp-primary-border: rgba(0, 174, 239, 0.28);
+
+  --sp-surface-solid: #ffffff;
+  --sp-surface-muted: #f8fafc;
+  --sp-surface-subtle: #f1f5f9;
+  --sp-slate-50: #f8fafc;
+
+  --sp-text: #334155;
+  --sp-text-strong: #0f172a;
+  --sp-text-muted: #64748b;
+  /* No baja de 3:1 sobre blanco: es texto pequeño de apoyo
+     (pistas, contadores) y por debajo deja de leerse. */
+  --sp-text-soft: #7d8ea6;
+
+  /* Sidebar tokens (needed for teleported mobile drawer) */
+  --sp-sidebar-bg: #071e52;
+  --sp-sidebar-border: rgba(255, 255, 255, 0.07);
+  --sp-sidebar-text: rgba(192, 232, 255, 0.62);
+  --sp-sidebar-text-hover: rgba(232, 246, 255, 0.92);
+  --sp-sidebar-text-active: #ffffff;
+  --sp-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sp-sidebar-active-bg: rgba(0, 174, 239, 0.16);
+  --sp-sidebar-active-dot: #00aeef;
+  --sp-sidebar-label: rgba(255, 255, 255, 0.22);
+  --sp-sidebar-brand-name: #e8f6ff;
+  --sp-sidebar-brand-role: rgba(255, 255, 255, 0.28);
+  --sp-sidebar-logo-bg: rgba(255, 255, 255, 0.08);
+  --sp-sidebar-footer-link: rgba(255, 255, 255, 0.25);
+  --sp-sidebar-footer-hover: rgba(255, 255, 255, 0.60);
+  --sp-sidebar-footer-bg: rgba(255, 255, 255, 0.05);
+
+  --sp-shadow-xs: 0 1px 2px rgba(15, 45, 107, 0.05);
+  --sp-shadow-sm: 0 1px 2px rgba(15, 45, 107, 0.04), 0 4px 12px rgba(15, 45, 107, 0.045);
+
+  --sp-radius-xs: 6px;
+  --sp-radius-sm: 10px;
+  --sp-radius-md: 14px;
+  --sp-radius-lg: 18px;
+  --sp-radius-xl: 22px;
+  --sp-radius-2xl: 26px;
+  --sp-radius-pill: 999px;
+
+  --sp-font: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --sp-text-xs: 0.72rem;
+  --sp-text-sm: 0.8125rem;
+  --sp-text-base: 0.9rem;
+  --sp-text-md: 1rem;
+  --sp-text-xl: 1.375rem;
+
+  --sp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --sp-t-fast: 130ms;
+  --sp-t: 190ms;
+  --sp-t-slow: 260ms;
+}
+
+/* ── Overlay ── */
+.sp-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(15, 45, 107, 0.38);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* ── Panel ── */
+.sp-drawer-panel {
+  position: fixed;
+  inset-block: 0;
+  right: 0;
+  z-index: 50;
+  /* Aísla el repintado: lo que cambie dentro del panel no obliga al
+     navegador a recalcular el resto de la página. */
+  contain: layout paint;
+  width: min(26rem, 100vw);
+  background: var(--sp-surface-solid);
+  border-left: 1px solid var(--sp-border);
+  box-shadow: -12px 0 48px rgba(15, 45, 107, 0.14);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--sp-font);
+  color: var(--sp-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.sp-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.35rem 1.5rem 1.1rem;
+  border-bottom: 1px solid var(--sp-border);
+  background: linear-gradient(180deg, var(--sp-slate-50) 0%, var(--sp-surface-solid) 100%);
+  flex-shrink: 0;
+}
+
+.sp-drawer-header__eyebrow {
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.2rem;
+}
+
+.sp-drawer-header__title {
+  font-size: var(--sp-text-xl);
+  font-weight: 800;
+  color: var(--sp-text-strong);
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1.15;
+  font-family: var(--sp-font);
+}
+
+.sp-drawer-close {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  border-radius: var(--sp-radius-xs);
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface-subtle);
+  color: var(--sp-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--sp-font);
+  transition: background var(--sp-t-fast) var(--sp-ease), color var(--sp-t-fast) var(--sp-ease), transform var(--sp-t-fast) var(--sp-ease);
+}
+
+.sp-drawer-close:hover {
+  background: var(--sp-danger-soft);
+  color: var(--sp-danger);
+  transform: scale(1.06);
+}
+
+/* ── Body ── */
+.sp-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* Al llegar al final, el scroll saltaba a la página de detrás: eso es
+     lo que se siente como un tirón. `contain` lo detiene en el panel. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Reserva el carril de la barra para que el contenido no se desplace
+     lateralmente cuando aparece. */
+  scrollbar-gutter: stable;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Footer ── */
+.sp-drawer-footer {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--sp-border);
+  background: linear-gradient(0deg, var(--sp-slate-50) 0%, var(--sp-surface-solid) 100%);
+  flex-shrink: 0;
+}
+
+/* ── Botones del footer ── */
+.sp-drawer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--sp-radius-pill);
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  font-family: var(--sp-font);
+  border: none;
+  cursor: pointer;
+  transition:
+    transform var(--sp-t-fast) var(--sp-ease),
+    box-shadow var(--sp-t-fast) var(--sp-ease),
+    background var(--sp-t-fast) var(--sp-ease);
+}
+
+.sp-drawer-btn--ghost {
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  color: var(--sp-text-muted);
+}
+
+.sp-drawer-btn--ghost:hover {
+  background: var(--sp-surface-solid);
+  transform: translateY(-1px);
+}
+
+.sp-drawer-btn--primary {
+  background: var(--sp-action);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(15, 45, 107, 0.16);
+}
+
+.sp-drawer-btn--primary:hover {
+  background: var(--sp-action-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 45, 107, 0.22);
+}
+
+.sp-drawer-btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Form helpers (reutilizables dentro del drawer) ── */
+.sp-drawer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sp-drawer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.sp-drawer-label {
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-text);
+  letter-spacing: 0.01em;
+  font-family: var(--sp-font);
+}
+
+.sp-drawer-req {
+  color: var(--sp-danger);
+}
+
+.sp-drawer-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-md);
+  background: var(--sp-surface-solid);
+  color: var(--sp-text);
+  font-size: var(--sp-text-sm);
+  font-family: var(--sp-font);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), var(--sp-shadow-xs);
+  transition: border-color var(--sp-t) var(--sp-ease), box-shadow var(--sp-t) var(--sp-ease);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.sp-drawer-input:focus {
+  outline: none;
+  border-color: rgba(0, 174, 239, 0.55);
+  box-shadow: 0 0 0 3.5px var(--sp-primary-soft), var(--sp-shadow-xs);
+}
+
+.sp-drawer-input::placeholder {
+  color: var(--sp-text-soft);
+}
+
+.sp-drawer-textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.sp-drawer-select {
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+  cursor: pointer;
+}
+
+.sp-drawer-hint {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  font-family: var(--sp-font);
+}
+
+.sp-drawer-error {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-danger);
+  background: var(--sp-danger-soft);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--sp-radius-md);
+  padding: 0.55rem 0.85rem;
+  font-weight: 600;
+  font-family: var(--sp-font);
+  margin: 0;
+}
+
+/* ── Switches ── */
+.sp-drawer-switches {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  background: var(--sp-surface-muted);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-md);
+}
+
+.sp-drawer-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.sp-drawer-switch__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sp-drawer-switch__track {
+  width: 2.2rem;
+  height: 1.2rem;
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-border);
+  position: relative;
+  transition: background 200ms var(--sp-ease);
+  flex-shrink: 0;
+}
+
+.sp-drawer-switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: calc(1.2rem - 4px);
+  height: calc(1.2rem - 4px);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: transform 200ms var(--sp-ease);
+}
+
+.sp-drawer-switch__input:checked~.sp-drawer-switch__track {
+  background: var(--sp-primary);
+}
+
+.sp-drawer-switch__input:checked~.sp-drawer-switch__track .sp-drawer-switch__thumb {
+  transform: translateX(1rem);
+}
+
+.sp-drawer-switch__label {
+  font-size: var(--sp-text-xs);
+  font-weight: 600;
+  color: var(--sp-text);
+  font-family: var(--sp-font);
+}
+
+/* ── Spinner ── */
+.sp-drawer-spin {
+  animation: sp-drawer-spin 0.7s linear infinite;
+}
+
+@keyframes sp-drawer-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Vue transitions ── */
+/* El desenfoque se apaga mientras dura el movimiento. backdrop-filter
+   obliga a recapturar y desenfocar todo el fondo en cada fotograma: con
+   el panel deslizándose por encima, el área a recalcular cambia
+   constantemente y la animación baja a unos pocos fps. Se aplica al
+   terminar, que es cuando se aprecia. */
+.sp-drawer-overlay-enter-active,
+.sp-drawer-overlay-leave-active {
+  transition: opacity 220ms var(--sp-ease);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  will-change: opacity;
+}
+
+.sp-drawer-overlay-enter-from,
+.sp-drawer-overlay-leave-to {
+  opacity: 0;
+}
+
+/* will-change promueve el panel a su propia capa antes de empezar, de
+   modo que el desplazamiento no repinta la sombra ni el contenido en
+   cada fotograma. Solo durante la animación: dejarlo fijo reserva
+   memoria de vídeo sin motivo. */
+.sp-drawer-panel-enter-active,
+.sp-drawer-panel-leave-active {
+  transition: transform 260ms var(--sp-ease);
+  will-change: transform;
+}
+
+.sp-drawer-panel-enter-from,
+.sp-drawer-panel-leave-to {
+  transform: translateX(100%);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .sp-drawer-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ============================================================
+   10. TABLE GLOBAL  (.sp-table-*)
+   ============================================================ */
+
+/* ── Wrapper ── */
+.sp-table-wrap {
+  background: var(--sp-surface-solid);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-xl);
+  box-shadow: var(--sp-shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: var(--sp-table-max-h, calc(100vh - 15rem));
+}
+
+.sp-table-scroll {
+  overflow: auto;
+  flex: 1;
+  /* Desplazamiento horizontal contenido: al llegar al borde no debe
+     tirar de la navegación del navegador (gesto de «atrás»). */
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Table base ── */
+.sp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--sp-font);
+}
+
+/* ── Head ── */
+.sp-table thead {
+  background: linear-gradient(180deg, var(--sp-slate-50) 0%, var(--sp-slate-100) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.sp-table .sp-th {
+  padding: 0.85rem 1.1rem;
+  text-align: left;
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-text-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--sp-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: inherit;
+  z-index: 1;
+}
+
+.sp-table .sp-th--center {
+  text-align: center;
+}
+
+.sp-table .sp-th--right {
+  text-align: right;
+}
+
+/* ── Body ── */
+.sp-table .sp-tr {
+  transition: background-color 160ms var(--sp-ease);
+}
+
+.sp-table .sp-tr:hover {
+  background: rgba(0, 174, 239, 0.035);
+}
+
+.sp-table .sp-tr:last-child .sp-td {
+  border-bottom: none;
+}
+
+.sp-table .sp-td {
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--sp-border);
+  vertical-align: middle;
+  font-size: var(--sp-text-sm);
+  color: var(--sp-text);
+}
+
+.sp-table .sp-td--center {
+  text-align: center;
+}
+
+.sp-table .sp-td--right {
+  text-align: right;
+}
+
+.sp-table .sp-td--muted {
+  color: var(--sp-text-muted);
+}
+
+.sp-table .sp-td--mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Cell helpers ── */
+.sp-table-img {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--sp-radius-sm);
+  overflow: hidden;
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-text-soft);
+}
+
+.sp-table-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sp-table-title {
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  color: var(--sp-text-strong);
+  margin: 0 0 0.15rem;
+  line-height: 1.3;
+}
+
+.sp-table-sub {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  margin: 0;
+}
+
+.sp-table-amount {
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  color: var(--sp-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-table-num {
+  font-size: var(--sp-text-sm);
+  font-weight: 600;
+  color: var(--sp-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-table-num--low {
+  color: var(--sp-danger);
+}
+
+/* ── Action buttons ── */
+.sp-table-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.sp-table-btn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--sp-radius-xs);
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--sp-text-muted);
+  transition:
+    background var(--sp-t-fast) var(--sp-ease),
+    color var(--sp-t-fast) var(--sp-ease),
+    border-color var(--sp-t-fast) var(--sp-ease),
+    transform var(--sp-t-fast) var(--sp-ease),
+    box-shadow var(--sp-t-fast) var(--sp-ease);
+  font-family: var(--sp-font);
+}
+
+.sp-table-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--sp-shadow-xs);
+}
+
+.sp-table-btn--edit:hover {
+  background: var(--sp-primary-soft);
+  color: var(--sp-primary);
+  border-color: rgba(0, 174, 239, 0.2);
+}
+
+.sp-table-btn--del:hover {
+  background: var(--sp-danger-soft);
+  color: var(--sp-danger);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.sp-table-btn--view:hover {
+  background: var(--sp-success-soft);
+  color: var(--sp-success);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* ── Badges / pills ── */
+.sp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--sp-radius-pill);
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  font-family: var(--sp-font);
+  white-space: nowrap;
+}
+
+.sp-badge__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sp-badge--success {
+  background: var(--sp-success-soft);
+  color: #0a7a56;
+  border: 1px solid rgba(16, 185, 129, 0.18);
+}
+
+.sp-badge--success .sp-badge__dot {
+  background: var(--sp-success);
+}
+
+.sp-badge--danger {
+  background: var(--sp-danger-soft);
+  color: #b91c1c;
+  border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+.sp-badge--danger .sp-badge__dot {
+  background: var(--sp-danger);
+}
+
+.sp-badge--warning {
+  background: var(--sp-warning-soft);
+  color: #92600a;
+  border: 1px solid rgba(245, 158, 11, 0.20);
+}
+
+.sp-badge--warning .sp-badge__dot {
+  background: var(--sp-warning);
+}
+
+.sp-badge--neutral {
+  background: var(--sp-surface-subtle);
+  color: var(--sp-text-muted);
+  border: 1px solid var(--sp-border);
+}
+
+.sp-badge--neutral .sp-badge__dot {
+  background: var(--sp-text-soft);
+}
+
+.sp-badge--primary {
+  background: var(--sp-primary-soft);
+  color: var(--sp-primary-ink);
+  border: 1px solid rgba(0, 174, 239, 0.14);
+}
+
+.sp-badge--primary .sp-badge__dot {
+  background: var(--sp-primary);
+}
+
+/* ── Empty state ── */
+.sp-table-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+.sp-table-empty__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sp-table-empty__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--sp-radius-lg);
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-text-soft);
+}
+
+.sp-table-empty__msg {
+  font-size: var(--sp-text-sm);
+  color: var(--sp-text-muted);
+  font-weight: 600;
+  margin: 0;
+  font-family: var(--sp-font);
+}
+
+.sp-table-empty__cta {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-primary);
+  font-weight: 700;
+  background: var(--sp-primary-soft);
+  border: 1px solid rgba(0, 174, 239, 0.15);
+  border-radius: var(--sp-radius-pill);
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font-family: var(--sp-font);
+  transition: background var(--sp-t-fast) var(--sp-ease);
+}
+
+.sp-table-empty__cta:hover {
+  background: rgba(0, 174, 239, 0.15);
+}
+
+/* ── Toolbar (encabezado de página con título + acción) ── */
+.sp-page-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sp-page-toolbar__title {
+  font-size: clamp(1.35rem, 1rem + 1vw, 1.8rem);
+  font-weight: 800;
+  color: var(--sp-text-strong);
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1.1;
+  font-family: var(--sp-font);
+}
+
+.sp-page-toolbar__sub {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  margin: 0.2rem 0 0;
+  font-weight: 500;
+  font-family: var(--sp-font);
+}
+
+/* ── Botón primario de página (Nuevo / Crear) ── */
+.sp-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-action);
+  color: #fff;
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 45, 107, 0.16);
+  transition:
+    transform var(--sp-t-fast) var(--sp-ease),
+    box-shadow var(--sp-t-fast) var(--sp-ease);
+  font-family: var(--sp-font);
+}
+
+.sp-page-btn:hover {
+  background: var(--sp-action-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 45, 107, 0.22);
+}
+
+.sp-page-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .sp-page-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sp-page-btn {
+    align-self: flex-start;
+  }
+}
+
+/* ============================================================
+   11. SIDEBAR RESPONSIVE  (.sp-sidebar — mobile drawer)
+   ============================================================ */
+
+/* ── Botón hamburguesa (solo mobile, vive en el topbar) ── */
+.smart-panel-admin .sp-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: var(--sp-radius-xs);
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface-subtle);
+  color: var(--sp-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--sp-t-fast) var(--sp-ease),
+    color var(--sp-t-fast) var(--sp-ease);
+}
+
+.smart-panel-admin .sp-sidebar-toggle:hover {
+  background: var(--sp-primary-soft);
+  color: var(--sp-primary);
+  border-color: rgba(0, 174, 239, 0.2);
+}
+
+/* ── Overlay oscuro detrás del drawer ── */
+.sp-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(10, 16, 28, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+/* ── Transiciones Vue ── */
+.sp-sidebar-overlay-enter-active,
+.sp-sidebar-overlay-leave-active {
+  transition: opacity 220ms var(--sp-ease);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  will-change: opacity;
+}
+
+.sp-sidebar-overlay-enter-from,
+.sp-sidebar-overlay-leave-to {
+  opacity: 0;
+}
+
+.sp-sidebar-drawer-enter-active,
+.sp-sidebar-drawer-leave-active {
+  transition: transform 270ms var(--sp-ease);
+  will-change: transform;
+}
+
+.sp-sidebar-drawer-enter-from,
+.sp-sidebar-drawer-leave-to {
+  transform: translateX(-100%);
+}
+
+/* Drawer real: vive en <body> por Teleport, por eso no debe depender de .smart-panel-admin */
+.sp-sidebar--drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  width: 15.5rem;
+  max-width: calc(100vw - 0.75rem);
+  height: 100dvh;
+  max-height: 100dvh;
+  background: var(--sp-sidebar-bg);
+  pointer-events: auto;
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.24);
+  border-right: 1px solid var(--sp-sidebar-border);
+  overflow: hidden;
+}
+
+/* Fuerza el tema del sidebar móvil con los tokens globales del panel */
+.sp-sidebar--drawer .sp-sidebar-inner {
+  width: 100%;
+  background: var(--sp-sidebar-bg);
+  border-right: 1px solid var(--sp-sidebar-border);
+  color: var(--sp-sidebar-text);
+}
+
+.sp-sidebar--drawer .sp-nav-group__label {
+  color: var(--sp-sidebar-label);
+}
+
+.sp-sidebar--drawer .sp-nav-item {
+  color: var(--sp-sidebar-text);
+}
+
+.sp-sidebar--drawer .sp-nav-item:hover:not(.sp-nav-item--active) {
+  color: var(--sp-sidebar-text-hover);
+  background: var(--sp-sidebar-hover-bg);
+}
+
+.sp-sidebar--drawer .sp-nav-item--active {
+  color: var(--sp-sidebar-text-active);
+  background: var(--sp-sidebar-active-bg);
+}
+
+/* ── Responsive: mobile ── */
+@media (max-width: 768px) {
+  .smart-panel-admin .admin-shell__sidebar {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .smart-panel-admin .sp-topbar {
+    position: relative;
+    padding-left: 3.2rem;
+  }
+
+  .smart-panel-admin .sp-topbar__title-group {
+    min-width: 0;
+  }
+
+  /* Muestra el botón hamburguesa en el topbar */
+  .smart-panel-admin .sp-sidebar-toggle {
+    display: inline-flex;
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+}
+
+/* ============================================================
+   12. MODAL GLOBAL  (.sp-modal-*)
+   ============================================================ */
+
+/* ── Backdrop ── */
+.sp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 18, 34, 0.52);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+}
+
+/* ── Box ── */
+.sp-modal-box {
+  background: var(--sp-surface-solid);
+  border-radius: var(--sp-radius-xl);
+  width: 100%;
+  max-width: 880px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 32px 80px rgba(15, 45, 107, 0.22),
+    0 8px 28px rgba(15, 45, 107, 0.12);
+}
+
+/* ── Header ── */
+.sp-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem 1.75rem 1.1rem;
+  border-bottom: 1px solid var(--sp-border);
+  background: linear-gradient(180deg, var(--sp-slate-50) 0%, var(--sp-surface-solid) 100%);
+  flex-shrink: 0;
+}
+
+.sp-modal-header__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.sp-modal-header__title {
+  font-size: var(--sp-text-xl);
+  font-weight: 800;
+  color: var(--sp-text-strong);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0;
+  font-family: var(--sp-font-display);
+}
+
+.sp-modal-header__sub {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.sp-modal-header__meta {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  font-weight: 500;
+}
+
+/* ── Close button ── */
+.sp-modal-close {
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  border-radius: var(--sp-radius-xs);
+  border: 1px solid var(--sp-border);
+  background: var(--sp-surface-subtle);
+  color: var(--sp-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: var(--sp-font);
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition:
+    background var(--sp-t-fast) var(--sp-ease),
+    color var(--sp-t-fast) var(--sp-ease),
+    border-color var(--sp-t-fast) var(--sp-ease),
+    transform var(--sp-t-fast) var(--sp-ease);
+  margin-top: 0.1rem;
+}
+
+.sp-modal-close:hover {
+  background: var(--sp-danger-soft);
+  color: var(--sp-danger);
+  border-color: rgba(239, 68, 68, 0.2);
+  transform: scale(1.06);
+}
+
+/* ── Body ── */
+.sp-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 1.75rem;
+  /* El scroll no se propaga a la página de detrás. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+/* ── Footer ── */
+.sp-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 1rem 1.75rem;
+  border-top: 1px solid var(--sp-border);
+  background: linear-gradient(0deg, var(--sp-slate-50) 0%, var(--sp-surface-solid) 100%);
+  flex-shrink: 0;
+}
+
+/* ── Loading / error state ── */
+.sp-modal-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3.5rem 2rem;
+  text-align: center;
+}
+
+.sp-modal-state__text {
+  font-size: var(--sp-text-sm);
+  color: var(--sp-text-muted);
+  font-weight: 500;
+  margin: 0;
+}
+
+.sp-modal-state__actions {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+/* ── Vue transition ── */
+.sp-modal-enter-active {
+  transition: opacity 0.2s var(--sp-ease);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  will-change: opacity;
+}
+
+.sp-modal-leave-active {
+  transition: opacity 0.15s var(--sp-ease);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  will-change: opacity;
+}
+
+.sp-modal-enter-from,
+.sp-modal-leave-to {
+  opacity: 0;
+}
+
+.sp-modal-enter-active .sp-modal-box {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s var(--sp-ease);
+  will-change: transform, opacity;
+}
+
+.sp-modal-leave-active .sp-modal-box {
+  transition:
+    transform 0.15s var(--sp-ease),
+    opacity 0.15s var(--sp-ease);
+}
+
+.sp-modal-enter-from .sp-modal-box {
+  transform: translateY(18px) scale(0.975);
+  opacity: 0;
+}
+
+.sp-modal-leave-to .sp-modal-box {
+  transform: translateY(6px) scale(0.99);
+  opacity: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .sp-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .sp-modal-box {
+    max-width: 100%;
+    max-height: 95dvh;
+    border-radius: var(--sp-radius-xl) var(--sp-radius-xl) 0 0;
+  }
+
+  .sp-modal-body {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .sp-modal-header {
+    padding: 1.1rem 1.25rem 0.9rem;
+  }
+
+  .sp-modal-footer {
+    padding: 0.85rem 1.25rem;
+  }
+}
+
+
+/* ── Modal backdrop ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-box {
+  background: var(--sp-surface, #ffffff);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 24px 64px rgba(0, 0, 0, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Modal transition ── */
+.modal-enter-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-active .modal-box {
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s ease;
+}
+
+.modal-leave-active .modal-box {
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.modal-enter-from .modal-box {
+  transform: translateY(16px) scale(0.98);
+  opacity: 0;
+}
+
+.modal-leave-to .modal-box {
+  transform: translateY(6px) scale(0.99);
+  opacity: 0;
+}
+/* ============================================================
+   14. AUTENTICACIÓN  (.sp-auth)
+   Login y registro comparten el lenguaje del panel: son su
+   puerta de entrada, no una página de la tienda. Vive aquí y
+   no en cada página para que ambas no dupliquen 300 líneas.
+   ============================================================ */
+
+.sp-auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  background: var(--sp-surface-solid);
+}
+
+/* ── Costado de marca ──
+   La misma superficie navy de la barra lateral: al entrar, el
+   usuario ya está viendo el panel. ── */
+.sp-auth__aside {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.5rem;
+  background: var(--sp-sidebar-bg);
+  overflow: hidden;
+}
+
+/* Retícula técnica tenue: textura sin introducir un color nuevo. */
+.sp-auth__aside::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(160deg, transparent 30%, #000 100%);
+  pointer-events: none;
+}
+
+.sp-auth__brand {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* El logo puede ser apaisado (logotipo con el nombre) o cuadrado
+   (isotipo): se fija el alto y se deja libre el ancho con un tope. */
+.sp-auth__brand img {
+  height: 40px;
+  width: auto;
+  max-width: 190px;
+  object-fit: contain;
+  object-position: left center;
+  /* Sobre la superficie navy un logotipo pensado para fondo claro
+     desaparece: se le da su propio respaldo. */
+  padding: 6px 10px;
+  border-radius: var(--sp-radius-xs);
+  background: #fff;
+}
+
+.sp-auth__brand-name {
+  font-size: var(--sp-text-md);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sp-sidebar-brand-name);
+}
+
+.sp-auth__brand-role {
+  display: block;
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sp-accent);
+}
+
+.sp-auth__pitch {
+  position: relative;
+  z-index: 1;
+  max-width: 34ch;
+}
+
+.sp-auth__pitch-title {
+  font-size: var(--sp-text-2xl);
+  font-weight: 800;
+  line-height: 1.16;
+  letter-spacing: -0.025em;
+  color: #fff;
+  margin-bottom: 0.6rem;
+}
+
+.sp-auth__pitch-text {
+  font-size: var(--sp-text-sm);
+  line-height: 1.6;
+  color: rgba(232, 246, 255, 0.7);
+}
+
+.sp-auth__foot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: var(--sp-text-xs);
+  color: rgba(232, 246, 255, 0.42);
+}
+
+.sp-auth__foot a {
+  color: rgba(232, 246, 255, 0.42);
+  text-decoration: none;
+  transition: color var(--sp-t) var(--sp-ease);
+}
+
+.sp-auth__foot a:hover {
+  color: var(--sp-accent);
+}
+
+/* ── Panel del formulario ── */
+.sp-auth__main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--sp-surface-solid);
+}
+
+.sp-auth__card {
+  width: 100%;
+  max-width: 25rem;
+}
+
+/* Sacudida en error: el mensaje solo no siempre se nota. */
+.sp-auth__card--shake {
+  animation: sp-auth-shake 0.4s var(--sp-ease);
+}
+
+@keyframes sp-auth-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.sp-auth__mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.75rem;
+}
+
+.sp-auth__mobile-brand img {
+  height: 32px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+/* El logo ya trae el nombre: el texto de al lado lo repetía. */
+.sp-auth__mobile-brand span {
+  display: none;
+}
+
+.sp-auth__title {
+  font-size: var(--sp-text-2xl);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--sp-text-strong);
+  margin-bottom: 0.3rem;
+}
+
+.sp-auth__sub {
+  font-size: var(--sp-text-sm);
+  color: var(--sp-text-muted);
+  margin-bottom: 1.75rem;
+}
+
+.sp-auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sp-auth__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sp-auth__label {
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-text);
+}
+
+.sp-auth__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sp-auth__icon {
+  position: absolute;
+  left: 0.85rem;
+  display: flex;
+  color: var(--sp-text-soft);
+  pointer-events: none;
+}
+
+.sp-auth__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sp-auth__input {
+  width: 100%;
+  height: 2.875rem;
+  padding: 0 0.9rem 0 2.55rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-surface-solid);
+  color: var(--sp-text-strong);
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-base);
+  transition:
+    border-color var(--sp-t) var(--sp-ease),
+    box-shadow var(--sp-t) var(--sp-ease);
+}
+
+.sp-auth__input::placeholder {
+  color: var(--sp-text-soft);
+}
+
+.sp-auth__input:focus {
+  outline: none;
+  border-color: var(--sp-accent);
+  box-shadow: 0 0 0 3px var(--sp-primary-soft);
+}
+
+.sp-auth__input--pw {
+  padding-right: 2.75rem;
+}
+
+.sp-auth__toggle {
+  position: absolute;
+  right: 0.35rem;
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--sp-radius-xs);
+  background: transparent;
+  color: var(--sp-text-soft);
+  cursor: pointer;
+  transition: color var(--sp-t) var(--sp-ease);
+}
+
+.sp-auth__toggle:hover {
+  color: var(--sp-text);
+}
+
+.sp-auth__toggle svg {
+  width: 17px;
+  height: 17px;
+}
+
+.sp-auth__hint {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+}
+
+.sp-auth__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-danger-soft);
+  color: #a81f1f;
+  font-size: var(--sp-text-sm);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.sp-auth__error svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sp-auth__submit {
+  height: 2.875rem;
+  margin-top: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-primary);
+  color: var(--sp-text-inverse);
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-base);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background var(--sp-t) var(--sp-ease);
+}
+
+.sp-auth__submit:hover:not(:disabled) {
+  background: var(--sp-primary-hover);
+}
+
+.sp-auth__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sp-auth__spin {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: sp-auth-spin 0.7s linear infinite;
+}
+
+@keyframes sp-auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+.sp-auth__alt {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sp-border);
+  font-size: var(--sp-text-sm);
+  color: var(--sp-text-muted);
+  text-align: center;
+}
+
+.sp-auth__alt a {
+  color: var(--sp-primary-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sp-auth__alt a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sp-auth__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  font-size: var(--sp-text-xs);
+  font-weight: 600;
+  color: var(--sp-text-soft);
+  text-decoration: none;
+  transition: color var(--sp-t) var(--sp-ease);
+}
+
+.sp-auth__back:hover {
+  color: var(--sp-text);
+}
+
+.sp-auth__back svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ── Responsive ──
+   Por debajo de 900px el costado de marca desaparece: en móvil
+   robaría la mitad de la pantalla al formulario. ── */
+@media (max-width: 900px) {
+  .sp-auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sp-auth__aside {
+    display: none;
+  }
+
+  .sp-auth__mobile-brand {
+    display: flex;
+  }
+
+  .sp-auth__main {
+    padding: 2rem 1.25rem;
+    background: var(--sp-bg);
+  }
+
+  .sp-auth__card {
+    padding: 1.75rem 1.5rem;
+    border: 1px solid var(--sp-border);
+    border-radius: var(--sp-radius-lg);
+    background: var(--sp-surface-solid);
+    box-shadow: var(--sp-shadow-sm);
+  }
+}

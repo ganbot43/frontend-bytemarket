@@ -1,0 +1,174 @@
+─── JOYMAR DESIGN TOKENS ───
+:root {
+    /* Brand Colors */
+    --magenta: #B01883;
+    --magenta-dark: #7A0F5C;
+    --magenta-tint: #F5E6F0;
+    --yellow: #F7D21E;
+    --yellow-spark: #FFD735;
+    --yellow-tint: #FFFBEA;
+
+    /* Backgrounds */
+    --bg: #F8F6F2;
+    --bg-alt: #FFFFFF;
+    --bg-section: #F2EDE6;
+    --surface: #FFFFFF;
+
+    /* Borders */
+    --border: #E8E3DB;
+    --border-strong: #D4CCC0;
+
+    /* Typography */
+    --text-title: #1A1A1A;
+    --text-body: #4A4A4A;
+    --text-muted: #7A7A7A;
+    --text-subtle: #A09890;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 4px rgba(0, 0, 0, .06);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, .09);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, .12);
+    --glow-magenta: 0 0 20px rgba(176, 24, 131, .18);
+    --glow-yellow: 0 0 20px rgba(247, 210, 30, .28);
+
+    /* Border Radius */
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 20px;
+}
+
+/* ─── BASE RESET ─── */
+/* *,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+} */
+
+body {
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-body);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--text-title);
+    line-height: 1.2;
+}
+
+img {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ─── UTILITIES ─── */
+/* .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+} */
+
+/* @media (max-width: 640px) {
+    .container {
+        padding: 0 18px;
+    }
+} */
+
+/* ─── WHATSAPP FLOAT ─── */
+.wa-float {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.wa-float-tooltip {
+    background: var(--text-title);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .4rem .85rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
+}
+
+.wa-float:hover .wa-float-tooltip {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.wa-float-btn {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #25D366;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(37, 211, 102, .4);
+    transition: transform .18s ease, box-shadow .18s ease;
+    color: #fff;
+    position: relative;
+}
+
+.wa-float-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 8px 28px rgba(37, 211, 102, .5);
+}
+
+.wa-float-btn svg {
+    width: 28px;
+    height: 28px;
+    fill: currentColor;
+}
+
+.wa-float-btn::before {
+    content: '';
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: rgba(37, 211, 102, .35);
+    animation: waPulse 2.4s ease infinite;
+}
+
+@keyframes waPulse {
+    0% {
+        transform: scale(1);
+        opacity: .8;
+    }
+
+    70% {
+        transform: scale(1.55);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1.55);
+        opacity: 0;
+    }
+}

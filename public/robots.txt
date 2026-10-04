@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://celparts.pe/sitemap.xml
+Host: celparts.pe

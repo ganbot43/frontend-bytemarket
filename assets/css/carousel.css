@@ -1,0 +1,25 @@
+.carousel {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.group {
+  display: flex;
+  width: max-content; /* Permite que el contenido se extienda horizontalmente */
+  animation: spin 30s linear infinite; /* Aumenté a 30s para que sea más suave */
+}
+
+/* Pausa la animación cuando el usuario pone el mouse encima */
+.group:hover {
+  animation-play-state: paused;
+}
+
+@keyframes spin {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%); /* Crucial: Solo hasta la mitad del ancho total */
+  }
+}
