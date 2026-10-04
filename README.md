@@ -60,6 +60,41 @@ Las credenciales se leen del `.env`, que **no se versiona**. Mira
 NUXT_API_GATEWAY_URL=http://localhost:8085
 ```
 
+## API propia del frontend
+
+Casi todo `/api/**` se reenvía tal cual al gateway. Las únicas rutas que
+resuelve Nuxt por su cuenta son las de sesión, porque el token no debe
+llegar nunca al navegador:
+
+| Método | Ruta | Qué hace |
+|---|---|---|
+| `POST` | `/api/auth/login` | Llama al gateway, guarda el JWT en la **sesión sellada** y devuelve solo `{user}` |
+| `POST` | `/api/auth/register` | Registra y deja la sesión iniciada |
+| `POST` | `/api/auth/logout` | Cierra sesión y limpia la cookie |
+| `GET` | `/api/auth/me` | Usuario de la sesión, sin llamar al backend |
+| `*` | `/api/**` | Todo lo demás: proxy al gateway con el JWT como `Bearer` |
+
+El token vive en una cookie sellada y cifrada (`nuxt-auth-utils`), no en
+`localStorage`: así no es accesible desde JavaScript del navegador.
+
+## Páginas
+
+| Ruta | Qué es |
+|---|---|
+| `/` | Portada: carrusel, categorías, lo más pedido |
+| `/productos` · `/productos/{slug}` | Catálogo con filtros y ficha de producto |
+| `/checkout` | Finalizar compra |
+| `/pedido/{code}` | Seguimiento de un pedido |
+| `/mi-cuenta` · `/mi-cuenta/pedidos` | Datos del cliente y su historial |
+| `/favoritos` | Lista de deseos |
+| `/libro-de-reclamaciones` | Reclamos (obligatorio en Perú) |
+| `/terminos` · `/privacidad` · `/sobre-nosotros` | Páginas informativas |
+| `/login` | Inicio de sesión |
+| `/admin` | Panel: productos, categorías, banners, inventario, pedidos, métodos de pago, cupones, reclamaciones y reportes |
+
+`/admin` exige rol `admin` o `superadmin`; a un cliente lo manda a
+`/mi-cuenta`.
+
 ## Estructura
 
 ```
