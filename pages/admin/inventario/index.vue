@@ -160,33 +160,7 @@
         </table>
       </div>
 
-      <div class="sp-table-footer" style="
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0.75rem 1rem;
-          gap: 1rem;
-        ">
-        <div class="sp-table-meta">
-          Página {{ page + 1 }} — {{ total }} registros
-        </div>
-        <div style="display: flex; gap: 0.35rem; align-items: center">
-          <button v-for="p in totalPages" :key="p" @click="
-            page = p - 1;
-          fetchMovements();
-          " :disabled="p - 1 === page" class="sp-table-btn" style="
-              min-width: 36px;
-              padding: 0.45rem 0.6rem;
-              font-size: 0.875rem;
-            " :style="{
-              fontWeight: p - 1 === page ? 600 : 400,
-              background: p - 1 === page ? '#3b82f6' : 'transparent',
-              color: p - 1 === page ? 'white' : 'inherit',
-            }">
-            {{ p }}
-          </button>
-        </div>
-      </div>
+      <SharedPaginacion v-model:pagina="page" :total="total" :limite="limit" />
     </div>
 
     <!-- DRAWER: inline form -->
@@ -345,6 +319,8 @@ function applyFilters() {
 const totalPages = computed<number>(() => {
   return Math.ceil((total.value || 0) / limit.value);
 });
+
+watch(page, () => fetchMovements())
 
 onMounted(() => {
   fetchMovements();

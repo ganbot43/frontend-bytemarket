@@ -12,6 +12,20 @@
         Nuevo producto
       </button>
     </div>
+    <SharedBarraTabla v-model="busqueda" placeholder="Buscar por nombre o descripción…">
+      <template #filtros>
+        <select v-model="filtroCategoria" class="sp-drawer-input sp-drawer-select bt-select">
+          <option :value="null">Todas las categorías</option>
+          <option v-for="c in categoryOptions" :key="c.value" :value="c.value">{{ c.label }}</option>
+        </select>
+        <select v-model="filtroEstado" class="sp-drawer-input sp-drawer-select bt-select">
+          <option :value="null">Activos e inactivos</option>
+          <option :value="1">Solo activos</option>
+          <option :value="0">Solo inactivos</option>
+        </select>
+      </template>
+    </SharedBarraTabla>
+
     <div class="sp-table-wrap">
       <div class="sp-table-scroll">
         <table class="sp-table">
@@ -24,7 +38,7 @@
               <th class="sp-th">Nuevo</th>
               <th class="sp-th">Estado</th>
               <th class="sp-th">Fecha</th>
-              <th class="sp-th" style="width: 100px">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -87,16 +101,7 @@
         </table>
       </div>
 
-      <div class="sp-table-footer"
-        style="display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; gap:1rem">
-        <div class="sp-table-meta">Página {{ page + 1 }} — {{ total }} registros</div>
-        <div style="display:flex; gap:0.35rem; align-items:center">
-          <button v-for="p in totalPages" :key="p" @click="page = p - 1; fetchProducts()" :disabled="p - 1 === page"
-            class="sp-table-btn" style="min-width:36px; padding:.45rem .6rem; font-size:0.875rem"
-            :style="{ fontWeight: p - 1 === page ? 600 : 400, background: p - 1 === page ? '#3b82f6' : 'transparent', color: p - 1 === page ? 'white' : 'inherit' }">{{
-            p }}</button>
-        </div>
-      </div>
+      <SharedPaginacion v-model:pagina="page" :total="total" :limite="limit" />
     </div>
 
     <!-- ══ DRAWER ══ -->
@@ -183,21 +188,76 @@
                   placeholder="0.00" />
               </div>
               <div class="sp-drawer-field">
-                <label class="sp-drawer-label">Precio antes (S/)</label>
-                <input v-model.number="form.comparePrice" type="number" step="0.01" min="0" class="sp-drawer-input"
-                  placeholder="Opcional" />
-                <p class="sp-drawer-hint">
-                  <template v-if="descuentoPct">
-                    Se mostrará <strong>-{{ descuentoPct }}%</strong> en la tienda.
-                  </template>
-                  <template v-else>
-                    Déjalo vacío si no hay rebaja. Debe ser mayor al precio actual.
-                  </template>
-                </p>
-              </div>
-              <div class="sp-drawer-field">
                 <label class="sp-drawer-label">Stock</label>
                 <input v-model.number="form.stock" type="number" min="0" class="sp-drawer-input" placeholder="0" />
+              </div>
+            </div>
+
+            <!-- ══ Oferta ══
+                 Antes eran dos campos sueltos, "Precio" y "Precio antes", y
+                 había que meter el rebajado en el primero y el original en el
+                 segundo: justo al revés de como se piensa una oferta. Ahora
+                 se activa, se escribe el precio normal y se elige el
+                 descuento; el precio de venta se calcula solo. -->
+            <div class="of" :class="{ 'of--on': enOferta }">
+              <button type="button" class="of__head" @click="alternarOferta">
+                <span class="of__head-txt">
+                  <span class="of__title">
+                    <Tag class="w-4 h-4" stroke-width="2" />
+                    Producto en oferta
+                  </span>
+                  <span class="of__sub">
+                    {{ enOferta
+                      ? "La tienda mostrará el precio tachado y la etiqueta de descuento."
+                      : "Actívalo para vender este producto rebajado." }}
+                  </span>
+                </span>
+                <span class="of__track" :class="{ 'of__track--on': enOferta }">
+                  <span class="of__knob" />
+                </span>
+              </button>
+
+              <div v-if="enOferta" class="of__body">
+                <div class="of__row">
+                  <div class="sp-drawer-field">
+                    <label class="sp-drawer-label">Precio normal (S/)</label>
+                    <input v-model.number="form.comparePrice" type="number" step="0.01" min="0"
+                      class="sp-drawer-input" placeholder="0.00" />
+                    <p class="sp-drawer-hint">Se verá tachado.</p>
+                  </div>
+                  <div class="sp-drawer-field">
+                    <label class="sp-drawer-label">Precio de oferta (S/)</label>
+                    <input v-model.number="form.price" type="number" step="0.01" min="0"
+                      class="sp-drawer-input" placeholder="0.00" />
+                    <p class="sp-drawer-hint">Es lo que se cobra.</p>
+                  </div>
+                </div>
+
+                <div class="of__atajos">
+                  <span class="of__atajos-lbl">Calcular desde el precio normal</span>
+                  <div class="of__chips">
+                    <button v-for="pct in [10, 15, 20, 25, 30, 50]" :key="pct" type="button"
+                      class="of__chip" :class="{ 'of__chip--on': descuentoPct === pct }"
+                      @click="aplicarDescuento(pct)">−{{ pct }}%</button>
+                  </div>
+                </div>
+
+                <!-- Vista previa: evita tener que abrir la tienda para
+                     comprobar si la rebaja quedó como se esperaba. -->
+                <div class="of__preview">
+                  <span class="of__preview-lbl">Así se verá en la tienda</span>
+                  <div class="of__precios">
+                    <strong class="of__ahora">{{ formatPrice.format(Number(form.price) || 0) }}</strong>
+                    <span v-if="descuentoPct > 0" class="of__antes">
+                      {{ formatPrice.format(Number(form.comparePrice) || 0) }}
+                    </span>
+                    <span v-if="descuentoPct > 0" class="of__badge">−{{ descuentoPct }}%</span>
+                  </div>
+                  <p v-if="avisoOferta" class="of__aviso">{{ avisoOferta }}</p>
+                  <p v-else-if="ahorroOferta" class="of__ahorro">
+                    El cliente ahorra {{ formatPrice.format(ahorroOferta) }}.
+                  </p>
+                </div>
               </div>
             </div>
             <div class="sp-drawer-row">
@@ -263,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Image, Pencil, Trash2, Inbox, X, ImagePlus, AlertCircle, Loader2, Check } from "lucide-vue-next";
+import { Plus, Image, Pencil, Trash2, Inbox, X, ImagePlus, AlertCircle, Loader2, Check, Tag } from "lucide-vue-next";
 import type { Product } from "~/types"
 definePageMeta({ middleware: "auth", layout: "admin" })
 useSeoMeta({ title: "Productos — Admin" })
@@ -272,6 +332,10 @@ const formatPrice = useFormatPrice()
 const { formatDateTime } = useFormatDateTime()
 
 // ── Paginación ──
+const busqueda = ref("")
+const filtroCategoria = ref<number | null>(null)
+const filtroEstado = ref<number | null>(null)
+
 const page = ref<number>(0)
 const limit = ref<number>(10)
 const total = ref<number>(0)
@@ -284,7 +348,14 @@ async function fetchProducts() {
   loading.value = true
   try {
     const res: any = await $fetch('/api/admin/products', {
-      query: { limit: limit.value, offset: page.value * limit.value }
+      query: {
+        limit: limit.value,
+        offset: page.value * limit.value,
+        // undefined no viaja en la query; null sí lo haría como "null".
+        q: busqueda.value.trim() || undefined,
+        categoryId: filtroCategoria.value ?? undefined,
+        isActive: filtroEstado.value ?? undefined,
+      }
     })
     products.value = res?.data ?? []
     total.value = res?.total ?? products.value.length
@@ -292,6 +363,14 @@ async function fetchProducts() {
     loading.value = false
   }
 }
+
+/* Al cambiar un filtro hay que volver al principio: si estabas en la
+   página 3 y el resultado tiene una sola, la tabla saldría vacía. */
+watch([busqueda, filtroCategoria, filtroEstado], () => {
+  page.value = 0
+  fetchProducts()
+})
+watch(page, () => fetchProducts())
 
 onMounted(() => fetchProducts())
 
@@ -397,6 +476,7 @@ function openDrawer(product?: any) {
   imgError.value = ""
   if (product) {
     editingId.value = product.id
+    enOferta.value = Number(product.comparePrice) > Number(product.price)
     Object.assign(form, {
       name: product.name,
       price: product.price,
@@ -413,6 +493,7 @@ function openDrawer(product?: any) {
     images.value = product.images?.map((i: any) => i.url) ?? []
   } else {
     editingId.value = null
+    enOferta.value = false
     Object.assign(form, emptyForm())
     images.value = []
   }
@@ -441,6 +522,50 @@ const descuentoPct = computed(() => {
   const ahora = Number(form.price)
   if (!antes || !ahora || antes <= ahora) return 0
   return Math.round(((antes - ahora) / antes) * 100)
+})
+
+/* El modelo guarda dos números: price es lo que se cobra y comparePrice el
+   tachado. Que haya oferta no es un campo, es que comparePrice supere a
+   price; este ref solo gobierna el formulario. */
+const enOferta = ref(false)
+
+function alternarOferta() {
+  if (enOferta.value) {
+    enOferta.value = false
+    form.comparePrice = null
+    return
+  }
+  enOferta.value = true
+  // El precio que ya tenía pasa a ser el normal: así el atajo de descuento
+  // tiene desde dónde calcular sin pedir nada más.
+  if (!form.comparePrice || Number(form.comparePrice) <= Number(form.price)) {
+    form.comparePrice = Number(form.price) || null
+  }
+}
+
+function aplicarDescuento(pct: number) {
+  const normal = Number(form.comparePrice) || Number(form.price)
+  if (!normal) return
+  form.comparePrice = normal
+  form.price = Math.round(normal * (1 - pct / 100) * 100) / 100
+}
+
+const avisoOferta = computed(() => {
+  if (!enOferta.value) return ""
+  const antes = Number(form.comparePrice)
+  const ahora = Number(form.price)
+  if (!antes) return "Escribe el precio normal."
+  if (!ahora) return "Escribe el precio de oferta."
+  if (antes <= ahora) {
+    return "El precio de oferta tiene que ser menor que el normal; si no, la tienda no pintará ninguna rebaja."
+  }
+  return ""
+})
+
+const ahorroOferta = computed(() => {
+  const antes = Number(form.comparePrice)
+  const ahora = Number(form.price)
+  return antes > ahora ? Math.round((antes - ahora) * 100) / 100 : 0
 })
 
 async function save() {
@@ -495,6 +620,227 @@ async function deleteProduct(id: number) {
 </script>
 
 <style scoped>
+.bt-select {
+  width: auto;
+  min-width: 11rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-size: var(--sp-text-sm);
+}
+
+/* ══ Bloque de oferta ══ */
+.of {
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-lg);
+  background: var(--sp-surface);
+  overflow: hidden;
+  transition: border-color var(--sp-t) var(--sp-ease);
+}
+
+.of--on {
+  border-color: var(--sp-primary-border);
+}
+
+.of__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--sp-font);
+}
+
+.of--on .of__head {
+  background: var(--sp-primary-soft);
+}
+
+.of__head-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.of__title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--sp-text-sm);
+  font-weight: 700;
+  color: var(--sp-text-strong);
+}
+
+.of--on .of__title {
+  color: var(--sp-primary-ink);
+}
+
+.of__sub {
+  font-size: 0.72rem;
+  color: var(--sp-text-muted);
+  line-height: 1.45;
+}
+
+.of__track {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 1.35rem;
+  padding: 2px;
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-slate-300);
+  transition: background var(--sp-t) var(--sp-ease);
+}
+
+.of__track--on {
+  background: var(--sp-primary);
+}
+
+.of__knob {
+  display: block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--sp-shadow-xs);
+  transition: transform var(--sp-t) var(--sp-ease);
+}
+
+.of__track--on .of__knob {
+  transform: translateX(1.05rem);
+}
+
+.of__body {
+  padding: 0.95rem 0.85rem 0.85rem;
+  border-top: 1px solid var(--sp-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.of__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ── Atajos de descuento ── */
+.of__atajos-lbl {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sp-text-muted);
+}
+
+.of__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.of__chip {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-pill);
+  background: var(--sp-surface);
+  color: var(--sp-text-muted);
+  font-family: var(--sp-font);
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background var(--sp-t) var(--sp-ease),
+    border-color var(--sp-t) var(--sp-ease),
+    color var(--sp-t) var(--sp-ease);
+}
+
+.of__chip:hover {
+  border-color: var(--sp-border-strong);
+  color: var(--sp-text);
+}
+
+.of__chip--on {
+  background: var(--sp-primary);
+  border-color: var(--sp-primary);
+  color: #fff;
+}
+
+/* ── Vista previa ── */
+.of__preview {
+  padding: 0.75rem;
+  border: 1px dashed var(--sp-border-strong);
+  border-radius: var(--sp-radius-md);
+  background: var(--sp-surface-muted);
+}
+
+.of__preview-lbl {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sp-text-muted);
+}
+
+.of__precios {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.of__ahora {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sp-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.of__antes {
+  font-size: 0.92rem;
+  color: var(--sp-text-muted);
+  text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
+}
+
+.of__badge {
+  padding: 0.12rem 0.42rem;
+  border-radius: var(--sp-radius-xs);
+  background: var(--sp-danger);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.of__aviso {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--sp-danger);
+}
+
+.of__ahorro {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sp-success);
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .of__row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* (sin cambios — igual al original) */
 .prod-page {
   display: flex;

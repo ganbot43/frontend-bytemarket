@@ -18,6 +18,8 @@
     </div>
 
     <!-- Table wrapper -->
+    <SharedBarraTabla v-model="busqueda" placeholder="Buscar por nombre, titular o cuenta…" />
+
     <div class="sp-table-wrap">
       <div class="sp-table-scroll">
         <table class="sp-table">
@@ -28,7 +30,7 @@
               <th class="sp-th">Número de cuenta</th>
               <th class="sp-th">Titular</th>
               <th class="sp-th sp-th--center">Estado</th>
-              <th class="sp-th sp-th--center">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +118,7 @@
 
               <!-- Actions -->
               <td class="sp-td sp-td--center">
-                <div class="sp-table-actions" style="justify-content: center">
+                <div class="sp-table-actions">
                   <button
                     class="sp-table-btn sp-table-btn--edit"
                     @click="openForm(pm)"
@@ -137,7 +139,9 @@
           </tbody>
         </table>
       </div>
+      <SharedPaginacion v-model:pagina="pagina" :total="total" :limite="limite" />
     </div>
+
 
     <!-- ══════════════════════════════════════
          DRAWER — Crear / Editar
@@ -351,7 +355,12 @@ useSeoMeta({ title: "Métodos de Pago — Admin" });
 const { data, refresh } = useFetch<{ data: any[] }>(
   "/api/admin/payment-methods",
 );
-const methods = computed(() => data.value?.data ?? []);
+const _todos = computed(() => data.value?.data ?? []);
+
+/* La API devuelve la lista completa, así que buscar y paginar aquí es
+   exacto: no hay registros fuera del navegador. */
+const { busqueda, pagina, items: methods, total, limite } =
+  useTablaLocal(_todos, ["label", "accountName", "accountNumber", "type"]);
 
 const showDrawer = ref(false);
 const editItem = ref<any>(null);

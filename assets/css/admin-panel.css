@@ -1344,6 +1344,10 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
   background-position: right 0.75rem center;
   padding-right: 2rem;
   cursor: pointer;
+  /* Dibuja su propio chevron, así que tiene que tapar el nativo. Sin esto,
+     usar la clase sin .sp-drawer-input pintaba las dos flechas. */
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .sp-drawer-hint {
@@ -1639,6 +1643,10 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
 .sp-table-actions {
   display: flex;
   gap: 0.35rem;
+  /* Centradas en todas las tablas: la columna es estrecha y fija, y
+     alinearlas a la izquierda en unos módulos y al centro en otros hacía
+     que los iconos bailaran de sitio al cambiar de pantalla. */
+  justify-content: center;
 }
 
 .sp-table-btn {

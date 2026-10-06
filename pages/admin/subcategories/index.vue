@@ -13,6 +13,8 @@
       </button>
     </div>
 
+    <SharedBarraTabla v-model="busqueda" placeholder="Buscar por nombre, slug o categoría…" />
+
     <div class="sp-table-wrap">
       <div class="sp-table-scroll">
         <table class="sp-table">
@@ -24,7 +26,7 @@
               <th class="sp-th">Orden</th>
               <th class="sp-th">Estado</th>
               <th class="sp-th">Fecha</th>
-              <th class="sp-th" style="width: 100px">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +74,9 @@
           </tbody>
         </table>
       </div>
+      <SharedPaginacion v-model:pagina="pagina" :total="total" :limite="limite" />
     </div>
+
 
     <Teleport to="body">
       <Transition name="sp-drawer-overlay">
@@ -142,7 +146,12 @@ useSeoMeta({ title: "Subcategorías — Admin" });
 
 const { data, refresh } = await useFetch<{ data: any[] }>("/api/admin/subcategories");
 const { data: categoriesData } = await useFetch("/api/admin/categories");
-const items = computed(() => data.value?.data ?? []);
+const _todos = computed(() => data.value?.data ?? []);
+
+/* La API devuelve la lista completa, así que buscar y paginar aquí es
+   exacto: no hay registros fuera del navegador. */
+const { busqueda, pagina, items: items, total, limite } =
+  useTablaLocal(_todos, ["name", "slug", "category.name"]);
 const { formatDateTime } = useFormatDateTime();
 
 const drawerOpen = ref(false);

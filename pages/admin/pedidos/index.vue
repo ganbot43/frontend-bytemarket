@@ -9,6 +9,8 @@
       </div>
     </div>
 
+    <SharedBarraTabla v-model="busqueda" placeholder="Buscar por código, cliente o teléfono…" />
+
     <!-- Filtros -->
     <div class="orders-filters">
       <button v-for="s in statusOptions" :key="s.value" class="orders-filter-btn"
@@ -28,7 +30,7 @@
               <th class="sp-th">Total</th>
               <th class="sp-th">Estado</th>
               <th class="sp-th">Fecha</th>
-              <th class="sp-th" style="width: 60px" />
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -48,10 +50,12 @@
               <td class="sp-td sp-td--muted">
                 <span class="orders-date">{{ formatDateTime(order.createdAt) }}</span>
               </td>
-              <td class="sp-td" @click.stop>
-                <button class="sp-table-btn sp-table-btn--view" title="Ver pedido" @click="openOrder(order.id)">
-                  <Eye class="w-3.5 h-3.5" stroke-width="2" />
-                </button>
+              <td class="sp-td sp-td--center" @click.stop>
+                <div class="sp-table-actions">
+                  <button class="sp-table-btn sp-table-btn--view" title="Ver pedido" @click="openOrder(order.id)">
+                    <Eye class="w-3.5 h-3.5" stroke-width="2" />
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="!orders.length">
@@ -70,16 +74,7 @@
         </table>
       </div>
 
-      <div class="sp-table-footer"
-        style="display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; gap:1rem">
-        <div class="sp-table-meta">Página {{ page + 1 }} — {{ total }} registros</div>
-        <div style="display:flex; gap:0.35rem; align-items:center">
-          <button v-for="p in totalPages" :key="p" @click="page = p - 1; fetchOrders()" :disabled="p - 1 === page"
-            class="sp-table-btn" style="min-width:36px; padding:.45rem .6rem; font-size:0.875rem"
-            :style="{ fontWeight: p - 1 === page ? 600 : 400, background: p - 1 === page ? '#3b82f6' : 'transparent', color: p - 1 === page ? 'white' : 'inherit' }">{{
-            p }}</button>
-        </div>
-      </div>
+      <SharedPaginacion v-model:pagina="page" :total="total" :limite="limit" />
     </div>
 
     <!-- Modal -->
@@ -111,6 +106,7 @@ const limit = ref<number>(10)
 const total = ref<number>(0)
 const orders = ref<any[]>([])
 const statusFilter = ref<string>("")
+const busqueda = ref("")
 
 const totalPages = computed<number>(() => Math.ceil((total.value || 0) / limit.value))
 
@@ -118,6 +114,7 @@ async function fetchOrders() {
   try {
     const query: any = { limit: limit.value, offset: page.value * limit.value }
     if (statusFilter.value) query.status = statusFilter.value
+    if (busqueda.value.trim()) query.q = busqueda.value.trim()
     const res: any = await $fetch("/api/admin/orders", { query })
     orders.value = res?.data ?? []
     total.value = res?.total ?? orders.value.length
@@ -131,6 +128,12 @@ function setStatusFilter(value: string) {
   page.value = 0
   fetchOrders()
 }
+
+watch(busqueda, () => {
+  page.value = 0
+  fetchOrders()
+})
+watch(page, () => fetchOrders())
 
 onMounted(() => {
   fetchOrders()

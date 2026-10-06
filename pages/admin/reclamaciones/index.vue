@@ -18,6 +18,8 @@
     </div>
 
     <!-- ══ TABLE ══ -->
+    <SharedBarraTabla v-model="busqueda" placeholder="Buscar por código o cliente…" />
+
     <div class="sp-table-wrap">
       <div class="sp-table-scroll">
         <table class="sp-table">
@@ -28,7 +30,7 @@
               <th class="sp-th">Tipo</th>
               <th class="sp-th sp-th--center">Estado</th>
               <th class="sp-th">Fecha</th>
-              <th class="sp-th" style="width: 80px">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -87,7 +89,9 @@
           </tbody>
         </table>
       </div>
+      <SharedPaginacion v-model:pagina="pagina" :total="total" :limite="limite" />
     </div>
+
 
     <!-- ══ MODAL ══ -->
     <Teleport to="body">
@@ -118,7 +122,12 @@ definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Libro de Reclamaciones — Admin" });
 
 const { data, refresh } = await useFetch("/api/admin/reclamaciones");
-const items = computed(() => data.value ?? []);
+const _todos = computed(() => data.value ?? []);
+
+/* La API devuelve la lista completa, así que buscar y paginar aquí es
+   exacto: no hay registros fuera del navegador. */
+const { busqueda, pagina, items: items, total, limite } =
+  useTablaLocal(_todos, ["codigo", "nombre", "tipo"]);
 const { formatDateTime } = useFormatDateTime();
 
 const modalOpen = ref(false);
