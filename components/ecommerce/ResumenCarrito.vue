@@ -60,6 +60,10 @@
       </li>
     </ul>
 
+    <!-- Ranura del cupón: solo la rellena el checkout. El carrito lateral
+         no la usa porque el cupón se consume al confirmar el pedido. -->
+    <slot name="cupon" />
+
     <!-- ── Totales ── -->
     <dl class="rc__totals">
       <div>
@@ -72,6 +76,14 @@
         <dd>− {{ formatPrice.format(cartStore.discount) }}</dd>
       </div>
 
+      <div v-if="descuentoCupon > 0" class="rc__totals-save">
+        <dt>
+          Cupón
+          <span v-if="codigoCupon" class="rc__cupon-codigo">{{ codigoCupon }}</span>
+        </dt>
+        <dd>− {{ formatPrice.format(descuentoCupon) }}</dd>
+      </div>
+
       <div class="rc__totals-shipping">
         <dt>Envío</dt>
         <dd>Por coordinar</dd>
@@ -80,7 +92,7 @@
 
     <div class="rc__grand">
       <span>Total</span>
-      <strong>{{ formatPrice.format(cartStore.total) }}</strong>
+      <strong>{{ formatPrice.format(totalFinal) }}</strong>
     </div>
 
     <p class="rc__note">
@@ -97,10 +109,25 @@
 <script setup lang="ts">
 import type { CartItem } from "~/stores/cart";
 
-withDefaults(defineProps<{ editable?: boolean }>(), { editable: true });
+const props = withDefaults(
+  defineProps<{
+    editable?: boolean;
+    /* Descuento ya validado por el backend; el resumen solo lo pinta.
+       Ver EcommerceCampoCupon. */
+    descuentoCupon?: number;
+    codigoCupon?: string | null;
+  }>(),
+  { editable: true, descuentoCupon: 0, codigoCupon: null },
+);
 
 const cartStore = useCartStore();
 const formatPrice = useFormatPrice();
+
+/* Nunca por debajo de cero: un cupón de monto fijo mayor que el carrito
+   dejaría el total en negativo. El backend hace el mismo recorte. */
+const totalFinal = computed(() =>
+  Math.max(0, cartStore.total - (Number(props.descuentoCupon) || 0)),
+);
 
 const toNumber = (value: unknown) => {
   const n = Number(value);
@@ -116,6 +143,14 @@ const atMax = (item: CartItem) =>
 </script>
 
 <style scoped>
+.rc__cupon-codigo {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
 .rc {
   display: flex;
   flex-direction: column;

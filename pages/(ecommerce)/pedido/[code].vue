@@ -64,6 +64,22 @@
               </li>
             </ul>
 
+            <!-- El desglose solo aparece si hubo cupón: sin descuento,
+                 repetir el subtotal junto al total no aporta nada. -->
+            <dl v-if="Number(order.discountApplied) > 0" class="cf__breakdown">
+              <div>
+                <dt>Subtotal</dt>
+                <dd>{{ formatPrice.format(order.subtotal) }}</dd>
+              </div>
+              <div class="cf__breakdown-save">
+                <dt>
+                  Cupón
+                  <span v-if="order.couponCode" class="cf__coupon">{{ order.couponCode }}</span>
+                </dt>
+                <dd>− {{ formatPrice.format(order.discountApplied) }}</dd>
+              </div>
+            </dl>
+
             <div class="cf__total">
               <span>Total</span>
               <strong>{{ formatPrice.format(order.total) }}</strong>
@@ -338,6 +354,53 @@ async function copiar(valor: string) {
   color: var(--ink-strong);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.cf__breakdown {
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.cf__breakdown > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.cf__breakdown dt,
+.cf__breakdown dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink-muted, #64748b);
+}
+
+.cf__breakdown dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.cf__breakdown-save dt,
+.cf__breakdown-save dd {
+  color: #15803d;
+  font-weight: var(--fw-bold);
+}
+
+.cf__coupon {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+/* Con desglose arriba, el total ya no necesita su propia línea divisoria. */
+.cf__breakdown + .cf__total {
+  border-top: none;
+  padding-top: 0;
+  margin-top: var(--sp-1);
 }
 
 .cf__total {

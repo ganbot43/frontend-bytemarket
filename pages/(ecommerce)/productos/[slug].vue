@@ -53,6 +53,15 @@
       </div>
     </div>
 
+    <!-- ═══ Reseñas ═══
+         Antes de los relacionados: hablan de este producto, mientras que
+         los relacionados llevan al usuario a otra ficha. -->
+    <EcommerceResenasProducto
+      v-if="producto"
+      :producto-id="producto.id"
+      @resumen="resumenResenas = $event"
+    />
+
     <!-- ═══ Relacionados ═══
          Misma fila que la portada: el usuario ya sabe cómo se lee. -->
     <LandingFilaProductos
@@ -137,6 +146,11 @@ const similares = computed(() => similaresData.value?.data ?? []);
    Cada ficha necesita su propio título y descripción: antes todas
    compartían "Producto — ByteMarket", compitiendo entre sí. */
 const runtimeConfig = useRuntimeConfig();
+
+/* Resumen que emite EcommerceResenasProducto: alimenta el aggregateRating
+   de abajo, que es lo que pinta las estrellas en Google. Llega por evento
+   para no repetir la petición ni acoplarse a su clave de caché. */
+const resumenResenas = ref<{ average: number; total: number } | null>(null);
 const siteUrl = String(runtimeConfig.public.siteUrl || "https://bytemarket.pe").replace(/\/$/, "");
 
 const seoDescription = computed(
@@ -176,6 +190,15 @@ useHead(() => ({
             image: seoImage.value,
             sku: producto.value.slug,
             category: producto.value.category?.name,
+            ...((resumenResenas.value?.total ?? 0) > 0
+              ? {
+                  aggregateRating: {
+                    "@type": "AggregateRating",
+                    ratingValue: resumenResenas.value!.average,
+                    reviewCount: resumenResenas.value!.total,
+                  },
+                }
+              : {}),
             offers: {
               "@type": "Offer",
               url: `${siteUrl}/productos/${producto.value.slug}`,

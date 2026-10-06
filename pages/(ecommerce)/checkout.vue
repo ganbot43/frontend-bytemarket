@@ -245,7 +245,17 @@
 
             <!-- ═══ Resumen ═══ -->
             <div class="ck__aside">
-              <EcommerceResumenCarrito>
+              <EcommerceResumenCarrito
+                :descuento-cupon="cupon?.discount ?? 0"
+                :codigo-cupon="cupon?.code ?? null"
+              >
+                <template #cupon>
+                  <EcommerceCampoCupon
+                    :subtotal="cartStore.subtotal"
+                    @aplicado="cupon = $event"
+                  />
+                </template>
+
                 <template #acciones>
                   <p v-if="error" class="ck__error" role="alert">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
@@ -324,6 +334,10 @@ const { data: perfil } = await useFetch<{
   address: string | null;
   addressReference: string | null;
 }>("/api/mi-perfil", { default: () => null });
+
+/* Lo que devolvió /api/coupons/validate. Es una previsualización: el
+   importe que vale es el que recalcula order-service al confirmar. */
+const cupon = ref<{ code: string; discount: number } | null>(null);
 
 const form = reactive({
   customerName: "",
@@ -423,6 +437,10 @@ async function submitOrder() {
       method: "POST",
       body: {
         ...form,
+        /* Solo el código: el descuento lo vuelve a calcular el backend
+           contra los precios del catálogo. Mandar el importe desde aquí
+           dejaría el total a merced del navegador. */
+        couponCode: cupon.value?.code ?? null,
         items: cartStore.items.map((i) => ({
           productId: Number(i.id),
           quantity: Number(i.qty ?? 0),
