@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { 
-  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, BookOpen, CreditCard, Settings, ExternalLink, BarChart
+  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart
 } from "lucide-vue-next";
 
 const props = defineProps<{ user: any }>();
@@ -111,6 +111,16 @@ const baseItems = [
     to: "/admin/subcategories",
     label: "Subcategorías",
     icon: Layers,
+  },
+  {
+    to: "/admin/cupones",
+    label: "Cupones",
+    icon: Ticket,
+  },
+  {
+    to: "/admin/resenas",
+    label: "Reseñas",
+    icon: Star,
   },
   {
     to: "/admin/reclamaciones",
