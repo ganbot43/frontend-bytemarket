@@ -1,73 +1,73 @@
 {
-  "hash": "27d5a099",
-  "configHash": "e7731a69",
-  "lockfileHash": "26a5bd77",
-  "browserHash": "b1755e35",
+  "hash": "dfbfeb6b",
+  "configHash": "f7e165b0",
+  "lockfileHash": "e3980d60",
+  "browserHash": "3d1cccf3",
   "optimized": {
     "@fortawesome/free-brands-svg-icons": {
       "src": "../../../node_modules/@fortawesome/free-brands-svg-icons/index.mjs",
       "file": "@fortawesome_free-brands-svg-icons.js",
-      "fileHash": "d6628728",
+      "fileHash": "e2a1faa1",
       "needsInterop": false
     },
     "errx": {
       "src": "../../../node_modules/errx/dist/index.mjs",
       "file": "errx.js",
-      "fileHash": "e23e5410",
+      "fileHash": "50859243",
       "needsInterop": false
     },
     "@vue/devtools-core": {
       "src": "../../../node_modules/@vue/devtools-core/dist/index.js",
       "file": "@vue_devtools-core.js",
-      "fileHash": "4e39d636",
+      "fileHash": "d3d06162",
       "needsInterop": false
     },
     "@vue/devtools-kit": {
       "src": "../../../node_modules/@vue/devtools-kit/dist/index.js",
       "file": "@vue_devtools-kit.js",
-      "fileHash": "53e3b84c",
-      "needsInterop": false
-    },
-    "pinia-plugin-persistedstate": {
-      "src": "../../../node_modules/pinia-plugin-persistedstate/dist/index.js",
-      "file": "pinia-plugin-persistedstate.js",
-      "fileHash": "585c5ba6",
+      "fileHash": "5d0f0cd8",
       "needsInterop": false
     },
     "lucide-vue-next": {
       "src": "../../../node_modules/lucide-vue-next/dist/esm/lucide-vue-next.js",
       "file": "lucide-vue-next.js",
-      "fileHash": "52ea100d",
-      "needsInterop": false
-    },
-    "xlsx": {
-      "src": "../../../node_modules/xlsx/xlsx.mjs",
-      "file": "xlsx.js",
-      "fileHash": "86641ff5",
-      "needsInterop": false
-    },
-    "jspdf": {
-      "src": "../../../node_modules/jspdf/dist/jspdf.es.min.js",
-      "file": "jspdf.js",
-      "fileHash": "39e08fe1",
-      "needsInterop": false
-    },
-    "jspdf-autotable": {
-      "src": "../../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
-      "file": "jspdf-autotable.js",
-      "fileHash": "64d4d842",
+      "fileHash": "7f5d7fde",
       "needsInterop": false
     },
     "vue-chartjs": {
       "src": "../../../node_modules/vue-chartjs/dist/index.js",
       "file": "vue-chartjs.js",
-      "fileHash": "948f2187",
+      "fileHash": "c4fe40f4",
       "needsInterop": false
     },
     "chart.js": {
       "src": "../../../node_modules/chart.js/dist/chart.js",
       "file": "chart__js.js",
-      "fileHash": "83f2ffae",
+      "fileHash": "4229a241",
+      "needsInterop": false
+    },
+    "xlsx": {
+      "src": "../../../node_modules/xlsx/xlsx.mjs",
+      "file": "xlsx.js",
+      "fileHash": "f841ef78",
+      "needsInterop": false
+    },
+    "jspdf": {
+      "src": "../../../node_modules/jspdf/dist/jspdf.es.min.js",
+      "file": "jspdf.js",
+      "fileHash": "3160698c",
+      "needsInterop": false
+    },
+    "jspdf-autotable": {
+      "src": "../../../node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.mjs",
+      "file": "jspdf-autotable.js",
+      "fileHash": "49a7457c",
+      "needsInterop": false
+    },
+    "pinia-plugin-persistedstate": {
+      "src": "../../../node_modules/pinia-plugin-persistedstate/dist/index.js",
+      "file": "pinia-plugin-persistedstate.js",
+      "fileHash": "d0c94b57",
       "needsInterop": false
     }
   },
@@ -84,11 +84,11 @@
     "chunk-X5CFM7YP": {
       "file": "chunk-X5CFM7YP.js"
     },
-    "chunk-UFM2WFK7": {
-      "file": "chunk-UFM2WFK7.js"
-    },
     "chunk-ZNVVWOFG": {
       "file": "chunk-ZNVVWOFG.js"
+    },
+    "chunk-UFM2WFK7": {
+      "file": "chunk-UFM2WFK7.js"
     },
     "chunk-PX6F3LHL": {
       "file": "chunk-PX6F3LHL.js"
