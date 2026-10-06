@@ -1,0 +1,76 @@
+name: CI/CD — bytemarket-frontend
+
+# Este repositorio publica la imagen bytemarket-frontend y actualiza ÚNICAMENTE
+# el servicio "frontend" del servidor. No toca los otros seis ni la base de datos.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ── CI: construir y publicar en Docker Hub ──────────────────────
+  build-and-push:
+    name: Build y Push a Docker Hub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🔑 Login en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_NAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: 🛠️ Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # linux/amd64 porque los servidores de nube son Intel/AMD. Construir
+      # esto en un Mac con Apple Silicon daría arm64 y allá no arrancaría.
+      - name: 🔨 Build y Push imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ganbito/bytemarket-frontend:latest
+
+  # ── CD: actualizar el servidor ──────────────────────────────────
+  deploy:
+    name: Desplegar en el servidor
+    needs: build-and-push          # solo si la imagen se publicó bien
+    runs-on: ubuntu-latest
+    # Interruptor explícito: mientras no exista un servidor, este job se
+    # SALTA en vez de fallar. Se activa creando la variable de repositorio
+    # DEPLOY_ENABLED con el valor "true".
+    if: ${{ vars.DEPLOY_ENABLED == 'true' }}
+
+    steps:
+      - name: 🚀 Actualizar solo frontend
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ secrets.SERVER_PATH }}"
+
+            # Si no está el compose, parar aquí: seguir podría crear
+            # contenedores sueltos fuera del proyecto.
+            test -f docker-compose.prod.yml || {
+              echo "::error::No encuentro docker-compose.prod.yml en $(pwd)"
+              exit 1
+            }
+
+            docker compose -f docker-compose.prod.yml pull frontend
+
+            # --no-deps: recrea SOLO este contenedor. Sin esto, docker podría
+            # tocar los servicios de los que depende. Y nunca se usa "down",
+            # que apagaría todo, ni "-v", que borraría la base de datos.
+            docker compose -f docker-compose.prod.yml up -d --no-deps frontend
+
+            docker compose -f docker-compose.prod.yml ps frontend

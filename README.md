@@ -32,6 +32,33 @@ que no sea el del catálogo.
 
 ## Cómo levantarlo
 
+### Con Docker (recomendado)
+
+El frontend necesita el gateway respondiendo, así que lo normal es levantar
+todo junto desde la carpeta padre:
+
+```bash
+cd ..
+docker compose up -d
+```
+
+Queda en http://localhost:3000. Para ver su log o reconstruirlo tras un
+cambio:
+
+```bash
+docker compose logs -f frontend
+docker compose up -d --build frontend
+```
+
+El `Dockerfile` es multietapa: construye con Nuxt y la imagen final solo
+lleva `.output`, sin `node_modules` ni código fuente.
+
+> Se construye con **Node 26**, la misma versión con la que se generó el
+> `package-lock.json`. Con Node 22 el `npm ci` falla al leer las copias
+> anidadas de `unplugin`, porque npm 10 y npm 11 interpretan el lock distinto.
+
+### A mano
+
 Requisitos: **Node 20+** y el stack de microservicios arrancado (como mínimo
 el gateway en el 8085).
 
