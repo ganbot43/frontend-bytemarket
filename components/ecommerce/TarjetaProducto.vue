@@ -85,6 +85,9 @@ const props = defineProps<{ product?: DisplayProduct }>();
 
 const cartStore = useCartStore();
 const favorites = useFavoritesStore();
+/* Con sesión, el favorito además se guarda en la cuenta y sobrevive
+   al cambio de dispositivo. Sin ella sigue siendo solo del navegador. */
+const { loggedIn } = useUserSession();
 const toast = useAppToast();
 const formatPrice = useFormatPrice();
 const adding = ref(false);
@@ -109,14 +112,14 @@ const isFavorite = computed(() =>
 
 function toggleFavorite() {
   if (!props.product) return;
-  const added = favorites.toggle({
+  const added = favorites.toggleSincronizado({
     id: props.product.id,
     name: props.product.name,
     slug: props.product.slug,
     price: props.product.price,
     comparePrice: props.product.comparePrice ?? null,
     image: image.value,
-  });
+  }, loggedIn.value);
   toast.add({
     title: added ? "Guardado en favoritos" : "Quitado de favoritos",
     description: props.product.name,

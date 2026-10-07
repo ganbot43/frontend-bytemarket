@@ -189,6 +189,9 @@ const emit = defineEmits<{ agregarAlCarrito: [cantidad: number] }>();
 
 const formatPrice = useFormatPrice();
 const favorites = useFavoritesStore();
+/* Con sesión, el favorito además se guarda en la cuenta y sobrevive
+   al cambio de dispositivo. Sin ella sigue siendo solo del navegador. */
+const { loggedIn } = useUserSession();
 const toast = useAppToast();
 const { waLink } = useWhatsapp();
 
@@ -247,14 +250,14 @@ const isFavorite = computed(() =>
 
 function toggleFavorite() {
   if (!props.producto) return;
-  const added = favorites.toggle({
+  const added = favorites.toggleSincronizado({
     id: props.producto.id,
     name: props.producto.name,
     slug: props.producto.slug,
     price: props.producto.price,
     comparePrice: props.producto.comparePrice ?? null,
     image: image.value,
-  });
+  }, loggedIn.value);
   toast.add({
     title: added ? "Guardado en favoritos" : "Quitado de favoritos",
     description: props.producto.name,

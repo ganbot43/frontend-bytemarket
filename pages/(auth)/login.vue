@@ -147,6 +147,14 @@ async function login() {
     const { user } = useUserSession();
     const redirect = route.query.redirect as string | undefined;
 
+    /* Fusiona los favoritos del navegador con los de la cuenta antes de
+       navegar: justo después hay una recarga completa y el store se
+       rehidrata desde localStorage, así que este es el momento. Si falla,
+       no bloquea el inicio de sesión. */
+    if (user.value?.role === "customer") {
+      await useFavoritesStore().sincronizar();
+    }
+
     /* Recarga completa a propósito: el shell del panel y el de la
        tienda son distintos y la sesión debe rehidratarse limpia. */
     if (user.value?.role === "admin" || user.value?.role === "superadmin") {

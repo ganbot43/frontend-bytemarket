@@ -17,6 +17,12 @@ export const useAuthStore = defineStore('auth', {
       await fetchUserSession()
       this.user = data.user
       const role = data.user?.role
+
+      // Los favoritos guardados sin sesión pasan a la cuenta.
+      if (role === 'customer') {
+        await useFavoritesStore().sincronizar()
+      }
+
       await navigateTo(role === 'admin' || role === 'superadmin' ? '/admin' : '/mi-cuenta')
     },
     async logout() {
