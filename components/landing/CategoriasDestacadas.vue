@@ -29,7 +29,12 @@
         <li v-for="cat in visible" :key="cat.id">
           <NuxtLink :to="`/productos?categoria=${cat.slug}`" class="cd__item">
             <span class="cd__media">
-              <SharedImagen v-if="cat.image" :src="cat.image" :alt="cat.name" fit="cover" />
+              <SharedImagen
+                v-if="cat.imagenBanner"
+                :src="cat.imagenBanner"
+                :alt="cat.name"
+                fit="cover"
+              />
 
               <!-- Sin banner cargado, un icono según el tipo de pieza.
                    Las iniciales tomaban la letra de la conjunción:
@@ -71,11 +76,15 @@
 </template>
 
 <script setup lang="ts">
+/* Los nombres son los que devuelve /api/categories tal cual. imagenBanner
+   se llamaba aquí "image", y como useFetch solo afirma el tipo sin
+   comprobarlo, el campo llegaba siempre undefined: la imagen que se sube
+   desde /admin/categorias no se pintaba nunca y se caía al icono. */
 type Cat = {
   id: number;
   name: string;
   slug: string;
-  image: string | null;
+  imagenBanner: string | null;
   productCount: number;
 };
 

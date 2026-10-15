@@ -83,14 +83,22 @@ const sidebarRef = inject<{ openDrawer: () => void } | null>('sidebarRef', null)
 const { formatTime } = useFormatDateTime();
 
 /* ── Título de página ── */
+/* Una ruta que falte aquí no da error: cae al genérico "Admin", que es
+   justo lo que pasaba en media barra lateral. Tiene que haber una
+   entrada por cada página del menú. */
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard",
+  "/admin/reportes": "Reportes",
   "/admin/pedidos": "Pedidos",
   "/admin/productos": "Productos",
   "/admin/inventario": "Inventario",
   "/admin/categorias": "Categorías",
-  "/admin/metodos-pago": "Métodos de Pago",
+  "/admin/subcategories": "Subcategorías",
   "/admin/banners": "Banners",
+  "/admin/cupones": "Cupones",
+  "/admin/resenas": "Reseñas",
+  "/admin/reclamaciones": "Libro de Reclamaciones",
+  "/admin/metodos-pago": "Métodos de Pago",
   "/admin/configuracion": "Configuración",
 };
 

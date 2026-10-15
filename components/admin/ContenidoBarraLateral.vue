@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { 
-  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart
+  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart
 } from "lucide-vue-next";
 
 const props = defineProps<{ user: any }>();
@@ -111,6 +111,14 @@ const baseItems = [
     to: "/admin/subcategories",
     label: "Subcategorías",
     icon: Layers,
+  },
+  /* La página existía desde el principio pero no estaba enlazada aquí:
+     sin entrada en el menú, los banners de la portada solo se podían
+     editar escribiendo la URL a mano. */
+  {
+    to: "/admin/banners",
+    label: "Banners",
+    icon: GalleryHorizontalEnd,
   },
   {
     to: "/admin/cupones",
