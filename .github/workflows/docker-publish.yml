@@ -24,16 +24,24 @@ jobs:
           username: ${{ secrets.DOCKER_NAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      # Necesario para construir una arquitectura distinta a la del runner.
+      - name: 🧬 Configurar QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: 🛠️ Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # linux/amd64 porque los servidores de nube son Intel/AMD. Construir
-      # esto en un Mac con Apple Silicon daría arm64 y allá no arrancaría.
+      # amd64 para el servidor y arm64 para probar en Mac con Apple Silicon.
+      # Aquí sí cuesta: a diferencia de los servicios Java, la etapa de build
+      # NO se puede fijar al runner. Nitro empaqueta sharp dentro de .output
+      # con su binario nativo (sharp-linuxmusl-<arch>.node), así que compilar
+      # en amd64 y copiar el resultado a arm64 metería el binario equivocado.
+      # La imagen arm64 se construye emulada y tarda bastante más.
       - name: 🔨 Build y Push imagen
         uses: docker/build-push-action@v6
         with:
           context: .
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ganbito/bytemarket-frontend:latest
 
