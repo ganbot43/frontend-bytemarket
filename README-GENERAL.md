@@ -121,9 +121,11 @@ docker compose up -d --build frontend  # reconstruir solo uno
 
 ### Los datos
 
-Viven en el volumen `mysql-data` y sobreviven a `docker compose down`. El
-script `docker/mysql-init/01-bytemarket.sql` crea los esquemas y siembra los
-datos de ejemplo, pero **solo se ejecuta cuando el volumen está vacío**.
+Viven en el volumen `mysql-data` y sobreviven a `docker compose down`. No hay
+ningún `.sql` que importar: cada servicio crea su esquema al conectar
+(`createDatabaseIfNotExist=true`), Hibernate crea las tablas (`ddl-auto:
+update`) y su `DatabaseSeeder` mete los datos de ejemplo si la tabla está
+vacía. Por eso una base vacía queda lista sola en el primer arranque.
 
 ```bash
 docker compose down -v   # ⚠️ borra el volumen y con él la base
