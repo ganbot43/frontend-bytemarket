@@ -74,8 +74,6 @@ const pillars = [
 
 .about {
   background: var(--bg-alt);
-  border-top: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
   padding-block: var(--section-y-sm);
 }
 

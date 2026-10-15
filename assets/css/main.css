@@ -263,6 +263,9 @@ h6 {
 h1 {
   font-size: var(--fs-h1);
   font-weight: var(--fw-black);
+  /* Ya pisa los 48px: con el interlineado de los títulos medianos
+     las dos líneas de un h1 se separan de más. */
+  line-height: var(--leading-display);
 }
 h2 {
   font-size: var(--fs-h2);
@@ -312,7 +315,7 @@ input[type="number"] {
   font-size: var(--fs-display);
   font-weight: var(--fw-black);
   letter-spacing: var(--tracking-display);
-  line-height: 1.02;
+  line-height: var(--leading-display);
   color: var(--text-primary);
   text-wrap: balance;
 }
@@ -403,7 +406,7 @@ h3 em {
   font-weight: var(--fw-black);
   letter-spacing: var(--tracking-display);
   color: var(--text-primary);
-  line-height: 1.15;
+  line-height: var(--leading-display);
 }
 
 .cp-head__sub {

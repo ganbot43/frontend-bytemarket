@@ -1,21 +1,26 @@
 <template>
+  <!-- El fondo alterna banda a banda (blanco · tinte · blanco…) y es lo
+       único que separa una sección de la siguiente: no hay filetes entre
+       ellas. Por eso el tono se declara aquí, donde se ve el orden
+       completo, y no dentro de cada componente. -->
   <div class="home">
-    <!-- 1 · Portada — carrusel de banners + dos accesos fijos -->
+    <!-- 1 · Portada — carrusel de banners + dos accesos fijos · blanco -->
     <LandingHeroCarousel />
 
-    <!-- 2 · Promesas de servicio, en banda fina -->
+    <!-- 2 · Promesas de servicio, en banda fina · tinte -->
     <LandingBarraConfianza />
 
-    <!-- 3 · Categorías: la entrada real al catálogo -->
+    <!-- 3 · Categorías: la entrada real al catálogo · blanco -->
     <LandingCategoriasDestacadas />
 
-    <!-- 4 · Destacados en rejilla -->
+    <!-- 4 · Destacados en rejilla · tinte -->
     <LandingFilaProductos
       section-id="destacados"
       eyebrow="Selección de la tienda"
       title="Lo más pedido"
       subtitle="Las piezas que más salen del almacén, con stock confirmado."
       layout="grid"
+      tone="tint"
       :limit="8"
       :products="destacados"
       :loading="pendingDestacados"
@@ -24,16 +29,17 @@
       show-empty
     />
 
-    <!-- 5 · Corte visual: dos mensajes -->
+    <!-- 5 · Corte visual: dos mensajes · blanco -->
     <LandingBannerPromo variant="split" />
 
-    <!-- 6 · Novedades en carril -->
+    <!-- 6 · Novedades en carril · tinte -->
     <LandingFilaProductos
       section-id="nuevos-lanzamientos"
       eyebrow="Recién llegado"
       title="Últimos ingresos"
       subtitle="Lo que entró esta semana al almacén."
       layout="rail"
+      tone="tint"
       :limit="12"
       :products="novedades"
       :loading="pendingNovedades"
@@ -41,13 +47,13 @@
       link-label="Ver novedades"
     />
 
-    <!-- 7 · Banda de marca a todo el ancho -->
+    <!-- 7 · Banda de marca a todo el ancho · blanco, con tarjeta oscura -->
     <LandingBannerPromo variant="wide" />
 
-    <!-- 8 · Quiénes somos -->
+    <!-- 8 · Quiénes somos · tinte -->
     <LandingAboutSection />
 
-    <!-- 9 · Contacto -->
+    <!-- 9 · Contacto · blanco -->
     <LandingContactSection />
   </div>
 </template>

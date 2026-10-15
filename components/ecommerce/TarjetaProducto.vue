@@ -173,12 +173,16 @@ async function addToCart() {
   overflow: hidden;
   transition:
     border-color var(--t-base) var(--ease-smooth),
-    box-shadow var(--t-base) var(--ease-smooth);
+    background var(--t-base) var(--ease-smooth);
 }
 
+/* Al pasar por encima la tarjeta no se levanta. Ya responden el filete,
+   el nombre y la imagen, que crece un punto; la sombra era la cuarta
+   señal de lo mismo y la única que hacía flotar la rejilla entera en
+   cuanto el ratón la cruzaba. La elevación se queda para lo que de
+   verdad flota sobre la página: cabecera, buscador y cajón. */
 .pc:hover {
-  border-color: var(--line);
-  box-shadow: var(--shadow-md);
+  border-color: var(--line-strong);
 }
 
 .pc--out {

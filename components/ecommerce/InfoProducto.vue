@@ -299,11 +299,18 @@ function manejarAgregar() {
   color: var(--accent);
 }
 
+/* Escala propia, no el h1 de la tienda. El h1 subió a 48px para los
+   títulos de página, pero aquí el texto no es un titular redactado:
+   es el nombre del artículo, largo por obligación ("Kit Herramientas
+   Reparación Celular 20 piezas") y en una columna de media página. A
+   48px se parte en tres líneas y empuja el precio y el botón fuera del
+   primer golpe de vista. Se queda donde estaba, que era la medida
+   correcta para este contenido. */
 .ip__name {
-  font-size: var(--fs-h1);
+  font-size: clamp(1.75rem, 1.35rem + 1.9vw, 2.625rem);
   font-weight: var(--fw-black);
   letter-spacing: var(--tracking-display);
-  line-height: 1.14;
+  line-height: var(--leading-display);
   color: var(--ink-strong);
 }
 

@@ -44,8 +44,10 @@ const items = [
 </script>
 
 <style scoped>
+/* Sin filetes arriba y abajo: el cambio de fondo ya marca el corte, y
+   un borde encima del cambio de color lo dice dos veces. Los filetes
+   que quedan dentro (entre las cuatro promesas) sí separan contenido. */
 .bc {
-  border-block: 1px solid var(--line-soft);
   background: var(--surface-sunken);
 }
 

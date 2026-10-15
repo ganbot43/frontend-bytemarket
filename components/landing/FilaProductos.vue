@@ -1,5 +1,10 @@
 <template>
-  <section v-if="loading || items.length || showEmpty" class="fp" :id="sectionId">
+  <section
+    v-if="loading || items.length || showEmpty"
+    class="fp"
+    :class="{ 'fp--tint': tone === 'tint' }"
+    :id="sectionId"
+  >
     <div class="cp-container">
       <header class="cp-head">
         <div class="cp-head__text">
@@ -95,6 +100,9 @@ const props = withDefaults(
     layout?: "rail" | "grid";
     limit?: number;
     sectionId?: string;
+    /* El fondo lo decide quien compone la página, no la fila: la
+       alternancia solo tiene sentido mirando las secciones vecinas. */
+    tone?: "page" | "tint";
     showEmpty?: boolean;
     emptyTitle?: string;
     emptyText?: string;
@@ -102,6 +110,7 @@ const props = withDefaults(
   {
     linkLabel: "Ver todo",
     layout: "rail",
+    tone: "page",
     limit: 10,
     showEmpty: false,
     emptyTitle: "Todavía no hay productos aquí",
@@ -162,6 +171,10 @@ onUnmounted(() => observer?.disconnect());
 <style scoped>
 .fp {
   padding-block: var(--section-y-sm);
+}
+
+.fp--tint {
+  background: var(--surface-sunken);
 }
 
 .fp__tools {
