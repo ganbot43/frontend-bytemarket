@@ -189,21 +189,29 @@ const pasoActual = computed(() => {
   return i === -1 ? 0 : i;
 });
 
+/* parseDateInput marca como UTC las fechas que llegan sin zona; con
+   new Date() a secas se leían como hora local y salían adelantadas.
+   Aquí se notaba el doble: la línea de tiempo del pedido mostraba cada
+   cambio de estado cinco horas por delante de cuando ocurrió. */
+const { parseDateInput } = useFormatDateTime();
+
 const formatearFecha = (valor: string) =>
-  new Date(valor).toLocaleDateString("es-PE", {
+  parseDateInput(valor)?.toLocaleDateString("es-PE", {
+    timeZone: "America/Lima",
     day: "2-digit",
     month: "long",
     year: "numeric",
-  });
+  }) ?? "—";
 
 const formatearFechaHora = (valor: string) =>
-  new Date(valor).toLocaleString("es-PE", {
+  parseDateInput(valor)?.toLocaleString("es-PE", {
+    timeZone: "America/Lima",
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+  }) ?? "—";
 </script>
 
 <style scoped>

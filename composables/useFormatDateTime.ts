@@ -1,11 +1,27 @@
 const PERU_TIME_ZONE = 'America/Lima'
 
+/* El backend guarda LocalDateTime, que no lleva zona, y los contenedores
+   corren en UTC. Así que la API devuelve "2026-10-03T07:23:51.321581":
+   sin Z y sin desfase. JavaScript, ante una fecha sin zona, la interpreta
+   como hora LOCAL — leía las 07:23 UTC como las 07:23 de Lima y pintaba
+   todo cinco horas adelantado. Formatear a America/Lima después no
+   arreglaba nada, porque el instante ya estaba mal.
+
+   Solo se marcan como UTC las fechas con hora y sin zona. Las de solo día
+   ("2026-10-03") se dejan intactas: el estándar ya las trata como UTC, y
+   tocarlas movería un día las fechas de cupones. */
+const SIN_ZONA = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/
+
 function parseDateInput(date: string | Date | null | undefined): Date | null {
   if (!date) return null
   if (date instanceof Date) {
     return Number.isNaN(date.getTime()) ? null : date
   }
-  const parsed = new Date(date.trim())
+  const texto = date.trim()
+  const normalizado = SIN_ZONA.test(texto)
+    ? `${texto.replace(' ', 'T')}Z`
+    : texto
+  const parsed = new Date(normalizado)
   return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 

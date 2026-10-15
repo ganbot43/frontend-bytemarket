@@ -139,7 +139,7 @@
               <td class="sp-td">{{ m.reason }}</td>
               <td class="sp-td">{{ m.createdByName || m.createdBy }}</td>
               <td class="sp-td sp-td--muted">
-                {{ new Date(m.createdAt).toLocaleString() }}
+                {{ formatDateTimeCompact(m.createdAt) }}
               </td>
             </tr>
             <tr v-if="!items.length">
@@ -242,6 +242,12 @@
 definePageMeta({ middleware: "auth", layout: "admin" });
 import { ref, reactive, onMounted, watch, computed } from "vue";
 import { useAppToast } from "~/composables/useToast";
+
+/* La fecha del movimiento se pintaba con new Date().toLocaleString(), que
+   lee como hora local una marca que viene en UTC sin zona: salía cinco
+   horas adelantada. El composable la interpreta bien y además deja el
+   mismo formato que el resto del panel. */
+const { formatDateTimeCompact } = useFormatDateTime();
 
 const showForm = ref<boolean>(false);
 const refreshKey = ref<number>(0);

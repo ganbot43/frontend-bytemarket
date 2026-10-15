@@ -126,12 +126,17 @@ const primerNombre = computed(() => {
 const contarArticulos = (items: any[] = []) =>
   items.reduce((acc, i) => acc + Number(i.quantity ?? 0), 0);
 
+/* parseDateInput marca como UTC las fechas que llegan sin zona; con
+   new Date() a secas se leían como hora local y salían adelantadas. */
+const { parseDateInput } = useFormatDateTime();
+
 const formatearFecha = (valor: string) =>
-  new Date(valor).toLocaleDateString("es-PE", {
+  parseDateInput(valor)?.toLocaleDateString("es-PE", {
+    timeZone: "America/Lima",
     day: "2-digit",
     month: "long",
     year: "numeric",
-  });
+  }) ?? "—";
 </script>
 
 <style scoped>
