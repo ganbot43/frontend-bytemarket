@@ -62,7 +62,7 @@
         <!-- Un solo logo, el que se configura en el panel. Antes eran
              dos imágenes y la del nombre estaba escrita a mano: al
              cambiar el logo desde Configuración solo cambiaba la mitad. -->
-        <NuxtLink to="/" class="hd__logo" :aria-label="`${nombre} — Inicio`">
+        <NuxtLink to="/" class="hd__logo" :aria-label="`${nombre} · Inicio`">
           <img :src="logo" :alt="nombre" class="hd__logo-img" />
         </NuxtLink>
 

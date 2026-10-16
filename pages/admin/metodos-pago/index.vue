@@ -90,13 +90,13 @@
               <!-- Account number -->
               <td class="sp-td sp-td--mono">
                 <span v-if="pm.accountNumber">{{ pm.accountNumber }}</span>
-                <span v-else class="sp-td--muted">—</span>
+                <span v-else class="sp-td--muted">–</span>
               </td>
 
               <!-- Account name -->
               <td class="sp-td">
                 <span v-if="pm.accountName">{{ pm.accountName }}</span>
-                <span v-else class="sp-td--muted">—</span>
+                <span v-else class="sp-td--muted">–</span>
               </td>
 
               <!-- Status -->
@@ -223,7 +223,7 @@
               <input
                 v-model="form.label"
                 class="sp-drawer-input"
-                placeholder="Ej: Yape — 999 999 999"
+                placeholder="Ej: Yape, 999 999 999"
                 @keyup.enter="save"
               />
             </div>
@@ -350,7 +350,7 @@
 import { Plus, CreditCard, Pencil, Trash2, X, Loader2, AlertCircle, Smartphone, Landmark, MonitorSmartphone } from "lucide-vue-next";
 
 definePageMeta({ middleware: ["auth", "superadmin"], layout: "admin" });
-useSeoMeta({ title: "Métodos de Pago — Admin" });
+useSeoMeta({ title: "Métodos de Pago · Admin" });
 
 const { data, refresh } = useFetch<{ data: any[] }>(
   "/api/admin/payment-methods",

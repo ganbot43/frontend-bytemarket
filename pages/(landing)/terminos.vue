@@ -88,9 +88,9 @@ const description =
   "Condiciones de compra, garantía, envíos y responsabilidades aplicables en ByteMarket.";
 
 useSeoMeta({
-  title: "Términos y condiciones — ByteMarket",
+  title: "Términos y condiciones · ByteMarket",
   description,
-  ogTitle: "Términos y condiciones — ByteMarket",
+  ogTitle: "Términos y condiciones · ByteMarket",
   ogDescription: description,
   ogType: "article",
   ogUrl: `${siteUrl}/terminos`,

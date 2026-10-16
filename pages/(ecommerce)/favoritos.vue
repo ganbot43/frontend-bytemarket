@@ -117,7 +117,7 @@ const formatPrice = useFormatPrice();
 /* Lista personal: no aporta nada a los buscadores y su contenido varía
    por visitante. */
 useSeoMeta({
-  title: "Favoritos — ByteMarket",
+  title: "Favoritos · ByteMarket",
   description: "Las piezas que guardaste para revisar más tarde.",
   robots: "noindex, nofollow",
 });

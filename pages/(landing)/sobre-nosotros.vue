@@ -21,11 +21,11 @@
            publicado, así que siempre dicen la verdad. -->
       <ul class="sn__figures">
         <li>
-          <span class="sn__fig-num">{{ pending ? "—" : piezas }}</span>
+          <span class="sn__fig-num">{{ pending ? "–" : piezas }}</span>
           <span class="sn__fig-label">Piezas en catálogo</span>
         </li>
         <li>
-          <span class="sn__fig-num">{{ pending ? "—" : categorias }}</span>
+          <span class="sn__fig-num">{{ pending ? "–" : categorias }}</span>
           <span class="sn__fig-label">Categorías</span>
         </li>
         <li>
@@ -72,9 +72,9 @@ const description =
   "Conoce ByteMarket: repuestos y accesorios para celulares en Perú, con compatibilidad declarada, garantía y envíos a todo el país.";
 
 useSeoMeta({
-  title: "Sobre nosotros — ByteMarket",
+  title: "Sobre nosotros · ByteMarket",
   description,
-  ogTitle: "Sobre nosotros — ByteMarket",
+  ogTitle: "Sobre nosotros · ByteMarket",
   ogDescription: description,
   ogType: "website",
   ogUrl: `${siteUrl}/sobre-nosotros`,

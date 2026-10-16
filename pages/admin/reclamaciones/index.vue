@@ -119,7 +119,7 @@ import { RefreshCcw, Eye, Inbox } from "lucide-vue-next";
 import ReclamacionesModal from './reclamacionesModal.vue';
 
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Libro de Reclamaciones — Admin" });
+useSeoMeta({ title: "Libro de Reclamaciones · Admin" });
 
 const { data, refresh } = await useFetch("/api/admin/reclamaciones");
 const _todos = computed(() => data.value ?? []);

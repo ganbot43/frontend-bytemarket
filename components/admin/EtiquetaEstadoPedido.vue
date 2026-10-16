@@ -47,9 +47,11 @@ const label = computed(() => statusMap[props.status] ?? props.status);
   color: #854d0e;
   border-color: #fde68a;
 }
+/* El punto marca un estado real, así que se queda. Lo que se quitó es el
+   latido en bucle: en una tabla con 20 pedidos pendientes había 20 puntos
+   latiendo a la vez, compitiendo por la atención sin señalar nada nuevo. */
 .status-badge--pending .status-badge-dot {
   background: #eab308;
-  animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
 /* ── Comprobante enviado ── */
@@ -60,7 +62,6 @@ const label = computed(() => statusMap[props.status] ?? props.status);
 }
 .status-badge--voucher_sent .status-badge-dot {
   background: #3b82f6;
-  animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
 /* ── Pago validado ── */
@@ -81,7 +82,6 @@ const label = computed(() => statusMap[props.status] ?? props.status);
 }
 .status-badge--in_preparation .status-badge-dot {
   background: #f97316;
-  animation: pulse-dot 1.2s ease-in-out infinite;
 }
 
 /* ── Entregado ── */
@@ -104,15 +104,4 @@ const label = computed(() => statusMap[props.status] ?? props.status);
   background: #ef4444;
 }
 
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.7);
-  }
-}
 </style>

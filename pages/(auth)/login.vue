@@ -105,7 +105,7 @@ const { fetch: fetchUserSession } = useUserSession();
 const { logo, nombre: companyName } = useLogo();
 
 useSeoMeta({
-  title: () => `Iniciar sesión — ${companyName.value}`,
+  title: () => `Iniciar sesión · ${companyName.value}`,
   description: "Accede a tu cuenta para ver tus pedidos y comprar más rápido.",
   robots: "noindex, nofollow",
 });

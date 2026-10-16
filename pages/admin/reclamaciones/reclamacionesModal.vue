@@ -63,7 +63,7 @@
             </div>
             <div class="rd-field">
               <span class="rd-field__key">Teléfono</span>
-              <a :href="`tel:${item.telefono}`" class="rd-field__val rd-link">{{ item.telefono || '—' }}</a>
+              <a :href="`tel:${item.telefono}`" class="rd-field__val rd-link">{{ item.telefono || '–' }}</a>
             </div>
             <div class="rd-field rd-field--full">
               <span class="rd-field__key">Email</span>
@@ -93,7 +93,7 @@
               <div class="rd-field">
                 <span class="rd-field__key">Monto</span>
                 <span class="rd-field__val rd-field__val--amount">
-                  {{ item.monto ? `S/ ${Number(item.monto).toFixed(2)}` : '—' }}
+                  {{ item.monto ? `S/ ${Number(item.monto).toFixed(2)}` : '–' }}
                 </span>
               </div>
               <div class="rd-field rd-field--full">

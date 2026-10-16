@@ -41,15 +41,15 @@
           </div>
           <div class="lr-business__item">
             <span class="lr-business__key">RUC</span>
-            <span class="lr-business__val">{{ business.ruc || "—" }}</span>
+            <span class="lr-business__val">{{ business.ruc || "–" }}</span>
           </div>
           <div class="lr-business__item">
             <span class="lr-business__key">Dirección</span>
-            <span class="lr-business__val">{{ business.address || "—" }}</span>
+            <span class="lr-business__val">{{ business.address || "–" }}</span>
           </div>
           <div class="lr-business__item">
             <span class="lr-business__key">Correo</span>
-            <span class="lr-business__val">{{ business.email || "—" }}</span>
+            <span class="lr-business__val">{{ business.email || "–" }}</span>
           </div>
         </div>
       </div>

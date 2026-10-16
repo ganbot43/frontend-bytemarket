@@ -34,7 +34,7 @@ function formatAmPm(value: string): string {
 export const useFormatDateTime = () => {
   const formatDateTimeCompact = (date: string | Date | null | undefined): string => {
     const parsed = parseDateInput(date)
-    if (!parsed) return '—'
+    if (!parsed) return '–'
     return formatAmPm(
       new Intl.DateTimeFormat('es-PE', {
         timeZone: PERU_TIME_ZONE,
@@ -46,7 +46,7 @@ export const useFormatDateTime = () => {
 
   const formatDateTime = (date: string | Date | null | undefined): string => {
     const parsed = parseDateInput(date)
-    if (!parsed) return '—'
+    if (!parsed) return '–'
     return formatAmPm(
       new Intl.DateTimeFormat('es-PE', {
         timeZone: PERU_TIME_ZONE,
@@ -63,7 +63,7 @@ export const useFormatDateTime = () => {
 
   const formatDate = (date: string | Date | null | undefined): string => {
     const parsed = parseDateInput(date)
-    if (!parsed) return '—'
+    if (!parsed) return '–'
     return new Intl.DateTimeFormat('es-PE', {
       timeZone: PERU_TIME_ZONE,
       year: 'numeric',
@@ -74,7 +74,7 @@ export const useFormatDateTime = () => {
 
   const formatTime = (date: string | Date | null | undefined): string => {
     const parsed = parseDateInput(date)
-    if (!parsed) return '—'
+    if (!parsed) return '–'
     return formatAmPm(
       new Intl.DateTimeFormat('es-PE', {
         timeZone: PERU_TIME_ZONE,
@@ -95,7 +95,7 @@ export const useFormatDateTime = () => {
     now: Date = new Date(),
   ): string => {
     const parsed = parseDateInput(date)
-    if (!parsed) return '—'
+    if (!parsed) return '–'
     const diff = now.getTime() - parsed.getTime()
     if (diff < 0) return 'Ahora mismo'
     const mins = Math.floor(diff / 60000)

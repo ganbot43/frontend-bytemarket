@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { Plus, Pencil, Trash2, Inbox, X, Loader2, Check } from "lucide-vue-next";
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Subcategorías — Admin" });
+useSeoMeta({ title: "Subcategorías · Admin" });
 
 const { data, refresh } = await useFetch<{ data: any[] }>("/api/admin/subcategories");
 const { data: categoriesData } = await useFetch("/api/admin/categories");

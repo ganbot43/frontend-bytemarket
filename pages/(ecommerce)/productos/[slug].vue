@@ -144,7 +144,7 @@ const similares = computed(() => similaresData.value?.data ?? []);
 
 /* ── SEO ──
    Cada ficha necesita su propio título y descripción: antes todas
-   compartían "Producto — ByteMarket", compitiendo entre sí. */
+   compartían "Producto · ByteMarket", compitiendo entre sí. */
 const runtimeConfig = useRuntimeConfig();
 
 /* Resumen que emite EcommerceResenasProducto: alimenta el aggregateRating
@@ -165,9 +165,9 @@ const seoImage = computed(() => {
 });
 
 useSeoMeta({
-  title: () => (producto.value?.name ? `${producto.value.name} — ByteMarket` : "Producto — ByteMarket"),
+  title: () => (producto.value?.name ? `${producto.value.name} · ByteMarket` : "Producto · ByteMarket"),
   description: seoDescription,
-  ogTitle: () => (producto.value?.name ? `${producto.value.name} — ByteMarket` : "Producto — ByteMarket"),
+  ogTitle: () => (producto.value?.name ? `${producto.value.name} · ByteMarket` : "Producto · ByteMarket"),
   ogDescription: seoDescription,
   ogType: "website",
   ogImage: seoImage,

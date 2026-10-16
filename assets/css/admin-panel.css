@@ -1650,6 +1650,11 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
 }
 
 .sp-table-btn {
+  /* El botón sigue midiendo 2rem a la vista, pero el área que recibe el
+     toque llega a 44px con el pseudo-elemento de abajo. Un dedo no tiene la
+     puntería de un cursor, y estos botones (editar, borrar, ver) están en
+     todas las tablas del panel. */
+  position: relative;
   width: 2rem;
   height: 2rem;
   border-radius: var(--sp-radius-xs);
@@ -1667,6 +1672,23 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
     transform var(--sp-t-fast) var(--sp-ease),
     box-shadow var(--sp-t-fast) var(--sp-ease);
   font-family: var(--sp-font);
+}
+
+/* Área táctil de 44px alrededor del botón, invisible y sin afectar al
+   layout. Solo en dispositivos de puntero grueso: con ratón sobra, y
+   ampliarla ahí haría que botones vecinos se solapen al pasar por encima. */
+@media (pointer: coarse) {
+  .sp-table-btn::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+
+  /* Y separación entre ellos, porque dos áreas de 44px pegadas se comportan
+     como un solo botón grande. */
+  .sp-table-actions {
+    gap: 0.5rem;
+  }
 }
 
 .sp-table-btn:hover {

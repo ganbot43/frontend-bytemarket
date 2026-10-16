@@ -165,7 +165,7 @@
         </div>
         <div>
           <dt>Código</dt>
-          <dd class="ip__mono">{{ producto?.slug ?? "—" }}</dd>
+          <dd class="ip__mono">{{ producto?.slug ?? "–" }}</dd>
         </div>
         <div>
           <dt>Disponibilidad</dt>

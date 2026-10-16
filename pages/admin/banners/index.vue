@@ -86,7 +86,7 @@
                 >
                   {{ banner.linkUrl }}
                 </p>
-                <span v-else class="sp-table-num">—</span>
+                <span v-else class="sp-table-num">–</span>
               </td>
 
               <td class="sp-td sp-td--center">
@@ -449,7 +449,7 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Banners — Admin" });
+useSeoMeta({ title: "Banners · Admin" });
 
 const { data, refresh } = await useFetch<{ data: any[] }>("/api/admin/banners");
 const _todos = computed(() => data.value?.data ?? []);

@@ -149,7 +149,7 @@ const { fetch: fetchUserSession } = useUserSession();
 const { logo, nombre: companyName } = useLogo();
 
 useSeoMeta({
-  title: () => `Crear cuenta — ${companyName.value}`,
+  title: () => `Crear cuenta · ${companyName.value}`,
   description: "Crea tu cuenta para seguir tus pedidos y comprar más rápido.",
   robots: "noindex, nofollow",
 });

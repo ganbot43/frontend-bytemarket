@@ -293,7 +293,7 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: ["auth", "superadmin"], layout: "admin" });
-useSeoMeta({ title: "Configuración — Admin" });
+useSeoMeta({ title: "Configuración · Admin" });
 
 const { data: config, refresh } = await useFetch<any>("/api/business-config");
 

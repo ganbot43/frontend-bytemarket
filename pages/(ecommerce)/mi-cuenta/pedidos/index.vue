@@ -97,7 +97,7 @@ const formatPrice = useFormatPrice();
 const { etiqueta } = useEstadoPedido();
 
 useSeoMeta({
-  title: "Mis pedidos — ByteMarket",
+  title: "Mis pedidos · ByteMarket",
   robots: "noindex, nofollow",
 });
 
@@ -136,7 +136,7 @@ const formatearFecha = (valor: string) =>
     day: "2-digit",
     month: "short",
     year: "numeric",
-  }) ?? "—";
+  }) ?? "–";
 </script>
 
 <style scoped>

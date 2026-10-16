@@ -362,7 +362,7 @@ import {
 } from "lucide-vue-next";
 
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Cupones — Admin" });
+useSeoMeta({ title: "Cupones · Admin" });
 
 const LIMITE = 20;
 const pagina = ref(0);

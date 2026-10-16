@@ -116,7 +116,7 @@
                   aria-label="Precio mínimo"
                   @keydown.enter="applyPrice"
                 />
-                <span aria-hidden="true">—</span>
+                <span aria-hidden="true">–</span>
                 <input
                   v-model.number="priceDraft.max"
                   type="number"
@@ -459,7 +459,7 @@ const activeFilters = computed(() => {
     const to = f.precioMax != null ? formatPrice.format(f.precioMax) : "sin tope";
     pills.push({
       key: "precio",
-      label: `${from} — ${to}`,
+      label: `${from} · ${to}`,
       clear: () => applyFilters({ precioMin: null, precioMax: null }),
     });
   }
@@ -561,7 +561,7 @@ onUnmounted(() => {
    Las páginas filtradas o paginadas generan combinaciones infinitas;
    solo la portada del catálogo se indexa. */
 useSeoMeta({
-  title: () => `${pageTitle.value} — ByteMarket`,
+  title: () => `${pageTitle.value} · ByteMarket`,
   description:
     "Catálogo de repuestos y accesorios para celulares: pantallas, baterías, flex, conectores y accesorios con garantía y envíos a todo el Perú.",
   robots: () =>

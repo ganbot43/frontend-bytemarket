@@ -33,7 +33,7 @@
     <div class="cp-container ft__main">
       <!-- Marca -->
       <div class="ft__brand">
-        <NuxtLink to="/" class="ft__logo" :aria-label="`${nombre} — Inicio`">
+        <NuxtLink to="/" class="ft__logo" :aria-label="`${nombre} · Inicio`">
           <img :src="logo" :alt="nombre" class="ft__logo-img" />
         </NuxtLink>
 

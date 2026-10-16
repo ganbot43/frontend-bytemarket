@@ -182,7 +182,7 @@ const loginHref = computed(
 );
 
 useSeoMeta({
-  title: () => `Pedido ${code.value} — ByteMarket`,
+  title: () => `Pedido ${code.value} · ByteMarket`,
   /* Página personal: no aporta a los buscadores y su contenido es
      distinto para cada visitante. */
   robots: "noindex, nofollow",

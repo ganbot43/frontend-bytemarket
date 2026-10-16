@@ -305,7 +305,7 @@ const { user } = useUserSession();
 const { waLink } = useWhatsapp();
 
 useSeoMeta({
-  title: "Finalizar pedido — ByteMarket",
+  title: "Finalizar pedido · ByteMarket",
   description: "Confirma tus datos de entrega y método de pago.",
   robots: "noindex, nofollow",
 });

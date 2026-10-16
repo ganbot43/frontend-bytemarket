@@ -297,7 +297,7 @@
 
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Categorías — Admin" });
+useSeoMeta({ title: "Categorías · Admin" });
 
 const { data, refresh } = await useFetch<{ data: any[] }>(
   "/api/admin/categories",

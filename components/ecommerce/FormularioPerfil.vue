@@ -27,11 +27,11 @@
       <dl class="fp__data">
         <div>
           <dt>Nombre</dt>
-          <dd>{{ perfil?.name || "—" }}</dd>
+          <dd>{{ perfil?.name || "–" }}</dd>
         </div>
         <div>
           <dt>Correo</dt>
-          <dd>{{ perfil?.email || "—" }}</dd>
+          <dd>{{ perfil?.email || "–" }}</dd>
         </div>
         <div>
           <dt>Teléfono</dt>

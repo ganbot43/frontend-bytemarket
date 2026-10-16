@@ -457,7 +457,7 @@ async function enviar() {
 }
 
 .rp__estrella--off {
-  color: var(--cp-slate-300);
+  color: var(--cp-text-faint);
 }
 
 .rp__textarea {

@@ -54,7 +54,9 @@
   --cp-text-dark: #0f172a;
   --cp-text-body: #334155;
   --cp-text-muted: #64748b;
-  --cp-text-faint: #94a3b8;
+  /* Era #94a3b8 (2.56:1 sobre blanco), que no llega ni al mínimo de texto
+     grande. #64748b da 4.76:1 y cumple AA para texto normal. */
+  --cp-text-faint: #64748b;
 
   /* ── Borders ── */
   --cp-border: #eef2f7;

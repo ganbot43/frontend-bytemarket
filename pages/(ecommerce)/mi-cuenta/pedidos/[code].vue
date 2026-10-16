@@ -180,7 +180,7 @@ const { data: order, pending } = await useFetch<any>(
 );
 
 useSeoMeta({
-  title: () => `Pedido ${route.params.code} — ByteMarket`,
+  title: () => `Pedido ${route.params.code} · ByteMarket`,
   robots: "noindex, nofollow",
 });
 
@@ -201,7 +201,7 @@ const formatearFecha = (valor: string) =>
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }) ?? "—";
+  }) ?? "–";
 
 const formatearFechaHora = (valor: string) =>
   parseDateInput(valor)?.toLocaleString("es-PE", {
@@ -211,7 +211,7 @@ const formatearFechaHora = (valor: string) =>
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }) ?? "—";
+  }) ?? "–";
 </script>
 
 <style scoped>

@@ -49,7 +49,7 @@
         :aria-current="i === index"
         @click="index = i"
       >
-        <SharedImagen :src="img.url" :alt="`${producto?.name ?? 'Producto'} — imagen ${i + 1}`" fit="contain" />
+        <SharedImagen :src="img.url" :alt="`${producto?.name ?? 'Producto'} · imagen ${i + 1}`" fit="contain" />
       </button>
     </div>
   </div>

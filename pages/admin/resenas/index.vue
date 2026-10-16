@@ -206,7 +206,7 @@ import {
 } from "lucide-vue-next";
 
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Reseñas — Admin" });
+useSeoMeta({ title: "Reseñas · Admin" });
 
 const LIMITE = 20;
 

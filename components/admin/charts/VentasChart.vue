@@ -109,7 +109,7 @@ const chartOptions = {
         drawBorder: false,
       },
       ticks: {
-        color: '#94a3b8',
+        color: '#64748b',
         font: { size: 12, family: 'Inter, sans-serif' }
       }
     },
@@ -120,7 +120,7 @@ const chartOptions = {
         drawTicks: false,
       },
       ticks: {
-        color: '#94a3b8',
+        color: '#64748b',
         padding: 10,
         font: { size: 12, family: 'Inter, sans-serif' },
         callback: (value: string | number) => `S/ ${value}`

@@ -10,15 +10,15 @@
          importa es el número; el recuadro decorado lo estorbaba. -->
     <ul class="rs__stats">
       <li>
-        <span class="rs__stat-num">{{ pending ? "—" : total }}</span>
+        <span class="rs__stat-num">{{ pending ? "–" : total }}</span>
         <span class="rs__stat-label">Pedidos en total</span>
       </li>
       <li>
-        <span class="rs__stat-num">{{ pending ? "—" : enProceso }}</span>
+        <span class="rs__stat-num">{{ pending ? "–" : enProceso }}</span>
         <span class="rs__stat-label">En proceso</span>
       </li>
       <li>
-        <span class="rs__stat-num">{{ pending ? "—" : entregados }}</span>
+        <span class="rs__stat-num">{{ pending ? "–" : entregados }}</span>
         <span class="rs__stat-label">Entregados</span>
       </li>
     </ul>
@@ -92,7 +92,7 @@ const formatPrice = useFormatPrice();
 const { ayuda } = useEstadoPedido();
 
 useSeoMeta({
-  title: "Mi cuenta — ByteMarket",
+  title: "Mi cuenta · ByteMarket",
   robots: "noindex, nofollow",
 });
 
@@ -136,7 +136,7 @@ const formatearFecha = (valor: string) =>
     day: "2-digit",
     month: "long",
     year: "numeric",
-  }) ?? "—";
+  }) ?? "–";
 </script>
 
 <style scoped>

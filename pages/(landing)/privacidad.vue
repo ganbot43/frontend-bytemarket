@@ -81,9 +81,9 @@ const description =
   "Qué datos recopila ByteMarket, para qué los usa, con quién los comparte y cómo ejercer tus derechos.";
 
 useSeoMeta({
-  title: "Política de privacidad — ByteMarket",
+  title: "Política de privacidad · ByteMarket",
   description,
-  ogTitle: "Política de privacidad — ByteMarket",
+  ogTitle: "Política de privacidad · ByteMarket",
   ogDescription: description,
   ogType: "article",
   ogUrl: `${siteUrl}/privacidad`,

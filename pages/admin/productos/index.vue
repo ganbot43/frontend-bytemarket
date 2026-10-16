@@ -326,7 +326,7 @@
 import { Plus, Image, Pencil, Trash2, Inbox, X, ImagePlus, AlertCircle, Loader2, Check, Tag } from "lucide-vue-next";
 import type { Product } from "~/types"
 definePageMeta({ middleware: "auth", layout: "admin" })
-useSeoMeta({ title: "Productos — Admin" })
+useSeoMeta({ title: "Productos · Admin" })
 
 const formatPrice = useFormatPrice()
 const { formatDateTime } = useFormatDateTime()
