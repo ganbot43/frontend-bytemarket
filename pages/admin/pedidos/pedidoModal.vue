@@ -143,6 +143,13 @@
                 <span class="pmo-payment__name">{{
                   order.paymentMethodLabel
                 }}</span>
+                <!-- Si el dinero entró o no. Es distinto del estado del
+                     pedido: uno puede estar entregado y sin cobrar, o
+                     cobrado y sin enviar. -->
+                <span
+                  class="pmo-pago"
+                  :class="order.estadoDePago === 'paid' ? 'pmo-pago--ok' : 'pmo-pago--due'"
+                >{{ order.estadoDePago === "paid" ? "Cobrado" : "Por cobrar" }}</span>
                 <!-- <span v-if="order.paymentMethodType" class="pmo-pill">{{
                   order.paymentMethodType
                 }}</span> -->
@@ -163,6 +170,15 @@
                   ><span class="pmo-mono">{{
                     order.paymentMethodAccountNumber
                   }}</span>
+                </div>
+                <div v-if="order.cashReceived != null" class="pmo-payment__row">
+                  <span>Recibido</span><span>{{ formatPrice.format(order.cashReceived) }}</span>
+                </div>
+                <div v-if="order.changeGiven != null" class="pmo-payment__row">
+                  <span>Vuelto</span><span>{{ formatPrice.format(order.changeGiven) }}</span>
+                </div>
+                <div class="pmo-payment__row">
+                  <span>Canal</span><span>{{ canalLabel(order.canal) }}</span>
                 </div>
                 <div v-if="order.paymentMethodQrUrl" class="pmo-payment__row">
                   <span>QR</span>
@@ -304,6 +320,14 @@
 </template>
 
 <script setup lang="ts">
+/* Nombre legible del canal; el backend resuelve el null de los pedidos
+   antiguos como "web". */
+const CANALES: Record<string, string> = {
+  web: "Tienda web", caja: "Caja", whatsapp: "WhatsApp",
+  instagram: "Instagram", facebook: "Facebook", telefono: "Teléfono", otro: "Otro",
+}
+const canalLabel = (c?: string) => CANALES[c ?? "web"] ?? c ?? "Tienda web"
+
 import { Loader2, AlertCircle, Package, Check, User, CreditCard, ExternalLink, ShoppingBag, CheckCircle2, History } from "lucide-vue-next";
 import type { Order } from "~/types";
 
@@ -405,6 +429,10 @@ const timelineLogs = computed(() =>
 </script>
 
 <style scoped>
+.pmo-pago { padding: 0.1rem 0.45rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+.pmo-pago--ok { background: #dcfce7; color: #15803d; }
+.pmo-pago--due { background: #fef3c7; color: #b45309; }
+
 /* ── Header ── */
 .pmo-header-inner {
   display: flex;

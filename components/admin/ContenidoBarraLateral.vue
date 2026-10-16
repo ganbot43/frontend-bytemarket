@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { 
-  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart
+  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart, Calculator, Users
 } from "lucide-vue-next";
 
 const props = defineProps<{ user: any }>();
@@ -81,6 +81,11 @@ const baseItems = [
     to: "/admin",
     label: "Dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    to: "/admin/caja",
+    label: "Caja",
+    icon: Calculator,
   },
   {
     to: "/admin/reportes",
@@ -142,6 +147,11 @@ const superadminItems = [
     to: "/admin/metodos-pago",
     label: "Métodos de Pago",
     icon: CreditCard,
+  },
+  {
+    to: "/admin/usuarios",
+    label: "Usuarios",
+    icon: Users,
   },
   {
     to: "/admin/configuracion",

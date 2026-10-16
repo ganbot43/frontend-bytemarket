@@ -1,0 +1,1257 @@
+<template>
+  <div class="caja-page">
+    <!-- Cabecera y cambio de modo -->
+    <div class="sp-page-toolbar">
+      <div>
+        <h1 class="sp-page-toolbar__title">{{ esPedido ? "Nuevo pedido" : "Caja" }}</h1>
+        <p class="sp-page-toolbar__sub">
+          {{ esPedido
+            ? "Registra un pedido que llegó por WhatsApp, redes o teléfono"
+            : "Venta en el local: cobra, calcula el vuelto y descuenta stock" }}
+        </p>
+      </div>
+      <div class="caja-modo">
+        <button class="caja-modo__btn" :class="{ 'caja-modo__btn--on': !esPedido }" @click="setModo(false)">
+          Caja
+        </button>
+        <button class="caja-modo__btn" :class="{ 'caja-modo__btn--on': esPedido }" @click="setModo(true)">
+          Pedido
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Comprobante de la venta cerrada ───────────────────── -->
+    <div v-if="hecho" class="caja-ticket-wrap">
+      <div id="caja-comprobante" class="caja-ticket">
+        <header class="caja-ticket__head">
+          <p class="caja-ticket__store">{{ negocio.name || nombre }}</p>
+          <p v-if="negocio.ruc" class="caja-ticket__meta">RUC {{ negocio.ruc }}</p>
+          <p v-if="negocio.address" class="caja-ticket__meta">{{ negocio.address }}</p>
+          <p v-if="negocio.whatsapp" class="caja-ticket__meta">{{ negocio.whatsapp }}</p>
+        </header>
+
+        <p class="caja-ticket__kind">Comprobante de venta</p>
+
+        <dl class="caja-ticket__info">
+          <div>
+            <dt>Nº</dt>
+            <dd class="caja-ticket__strong">{{ hecho.orderCode }}</dd>
+          </div>
+          <div>
+            <dt>Fecha</dt>
+            <dd>{{ hecho.fecha }}</dd>
+          </div>
+          <div>
+            <dt>Atendió</dt>
+            <dd>{{ hecho.cajero }}</dd>
+          </div>
+          <div v-if="hecho.cliente">
+            <dt>Cliente</dt>
+            <dd>{{ hecho.cliente }}</dd>
+          </div>
+        </dl>
+
+        <table class="caja-ticket__items">
+          <thead>
+            <tr>
+              <th class="caja-ticket__c">Cant</th>
+              <th>Descripción</th>
+              <th class="caja-ticket__num">P. Unit</th>
+              <th class="caja-ticket__num">Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="l in hecho.lineas" :key="l.productId">
+              <td class="caja-ticket__c">{{ l.quantity }}</td>
+              <td>{{ l.name }}</td>
+              <td class="caja-ticket__num">{{ l.unitPrice.toFixed(2) }}</td>
+              <td class="caja-ticket__num">{{ (l.unitPrice * l.quantity).toFixed(2) }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <dl class="caja-ticket__totals">
+          <div>
+            <dt>Subtotal</dt>
+            <dd>{{ money(hecho.subtotal) }}</dd>
+          </div>
+          <div v-if="hecho.descuento > 0" class="caja-ticket__desc">
+            <dt>Descuento{{ hecho.cupon ? ` (${hecho.cupon})` : "" }}</dt>
+            <dd>-{{ money(hecho.descuento) }}</dd>
+          </div>
+          <div class="caja-ticket__total">
+            <dt>TOTAL</dt>
+            <dd>{{ money(hecho.total) }}</dd>
+          </div>
+        </dl>
+
+        <dl class="caja-ticket__pago">
+          <div>
+            <dt>Forma de pago</dt>
+            <dd>{{ hecho.formaDePago }}</dd>
+          </div>
+          <template v-if="hecho.recibido != null">
+            <div>
+              <dt>Recibido</dt>
+              <dd>{{ money(hecho.recibido) }}</dd>
+            </div>
+            <div class="caja-ticket__vuelto">
+              <dt>Vuelto</dt>
+              <dd>{{ money(hecho.vuelto ?? 0) }}</dd>
+            </div>
+          </template>
+          <div>
+            <dt>Artículos</dt>
+            <dd>{{ hecho.unidades }}</dd>
+          </div>
+        </dl>
+
+        <footer class="caja-ticket__foot">
+          <p class="caja-ticket__thanks">¡Gracias por su compra!</p>
+          <!-- Se dice explícitamente porque esto NO es una boleta
+               electrónica de SUNAT: es el comprobante interno de la venta.
+               Darlo por fiscal sin estarlo es un problema legal, no de
+               diseño. -->
+          <p class="caja-ticket__legal">
+            Documento interno de venta. No es comprobante de pago electrónico.
+          </p>
+        </footer>
+      </div>
+
+      <div class="caja-ticket__actions">
+        <button class="sp-page-btn" @click="nuevaVenta">Nueva venta</button>
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="imprimir">Imprimir</button>
+        <a v-if="hecho.whatsapp" :href="hecho.whatsapp" target="_blank" rel="noopener"
+          class="sp-drawer-btn sp-drawer-btn--ghost">Avisar por WhatsApp</a>
+        <NuxtLink :to="`/admin/pedidos?buscar=${hecho.orderCode}`" class="sp-drawer-btn sp-drawer-btn--ghost">
+          Ver el pedido
+        </NuxtLink>
+      </div>
+    </div>
+    <!-- ── Pantalla de venta ─────────────────────────────────── -->
+    <div v-else class="caja-grid">
+      <!-- Catálogo -->
+      <section class="caja-catalogo">
+        <input ref="buscadorRef" v-model="q" class="caja-buscador" type="search"
+          placeholder="Busca por nombre, o escanea el código…" @keydown.enter.prevent="agregarDesdeBuscador" />
+
+        <p v-if="buscando" class="caja-hint">Buscando…</p>
+        <p v-else-if="!productos.length" class="caja-hint">
+          {{ q ? "Ningún producto coincide." : "No hay productos activos." }}
+        </p>
+
+        <div class="caja-productos">
+          <button v-for="p in productos" :key="p.id" class="caja-producto"
+            :class="{ 'caja-producto--off': sinStock(p) }" :disabled="sinStock(p)" @click="agregar(p)">
+            <SharedImagen :src="p.images?.[0]?.url" :alt="p.name" class="caja-producto__img" />
+            <span class="caja-producto__name">{{ p.name }}</span>
+            <span class="caja-producto__price">{{ money(p.price) }}</span>
+            <span class="caja-producto__stock" :class="{ 'caja-producto__stock--low': p.trackStock && p.stock <= 5 }">
+              {{ p.trackStock ? `${p.stock} en stock` : "sin control de stock" }}
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Venta en curso -->
+      <section class="caja-venta">
+        <h2 class="caja-venta__title">
+          Venta en curso
+          <span v-if="unidades" class="caja-venta__badge">{{ unidades }}</span>
+        </h2>
+
+        <p v-if="!lineas.length" class="caja-hint">
+          Toca un producto para agregarlo.
+        </p>
+
+        <ul v-else class="caja-lineas">
+          <li v-for="(l, i) in lineas" :key="l.productId" class="caja-linea">
+            <div class="caja-linea__top">
+              <span class="caja-linea__name">{{ l.name }}</span>
+              <button class="caja-linea__del" title="Quitar" @click="quitar(i)">&times;</button>
+            </div>
+            <div class="caja-linea__ctrl">
+              <div class="caja-step">
+                <button @click="paso(i, -1)" :disabled="l.quantity <= 1">&minus;</button>
+                <input v-model.number="l.quantity" type="number" min="1" max="999" />
+                <button @click="paso(i, 1)">+</button>
+              </div>
+              <label class="caja-precio">
+                <span>Precio</span>
+                <input v-model.number="l.unitPrice" type="number" min="0" step="0.10" />
+              </label>
+              <span class="caja-linea__sub">{{ money((l.unitPrice || 0) * (l.quantity || 0)) }}</span>
+            </div>
+            <p v-if="l.trackStock && l.quantity > l.stock" class="caja-linea__warn">
+              Solo quedan {{ l.stock }} unidades
+            </p>
+          </li>
+        </ul>
+
+        <!-- Datos del cliente: solo para pedidos -->
+        <div v-if="esPedido" class="caja-cliente">
+          <div class="caja-field">
+            <label>Canal</label>
+            <select v-model="canal" class="sp-drawer-input sp-drawer-select">
+              <option v-for="c in canales" :key="c.value" :value="c.value">{{ c.label }}</option>
+            </select>
+          </div>
+          <div class="caja-field">
+            <label>Nombre del cliente *</label>
+            <input v-model="cliente.customerName" type="text" class="sp-drawer-input" placeholder="Nombre y apellido" />
+          </div>
+          <div class="caja-field">
+            <label>Teléfono</label>
+            <input v-model="cliente.customerPhone" type="tel" class="sp-drawer-input" placeholder="987654321" />
+          </div>
+          <div class="caja-field">
+            <label>Correo</label>
+            <input v-model="cliente.customerEmail" type="email" class="sp-drawer-input" placeholder="cliente@correo.com" />
+          </div>
+          <div class="caja-field caja-field--wide">
+            <label>Dirección</label>
+            <input v-model="cliente.customerAddress" type="text" class="sp-drawer-input" placeholder="Dirección de entrega" />
+          </div>
+          <div class="caja-field caja-field--wide">
+            <label>Nota</label>
+            <input v-model="cliente.customerNotes" type="text" class="sp-drawer-input" placeholder="Referencia, indicaciones…" />
+          </div>
+        </div>
+
+        <!-- Cobro -->
+        <div class="caja-cobro">
+          <div class="caja-field">
+            <label>Descuento</label>
+            <input v-model.number="descuento" type="number" class="sp-drawer-input" min="0" step="0.10" />
+          </div>
+          <div class="caja-field">
+            <label>Cupón</label>
+            <input v-model="cupon" type="text" class="sp-drawer-input" placeholder="Código" />
+          </div>
+          <div class="caja-field">
+            <label>Forma de pago</label>
+            <select v-model="formaDePago" class="sp-drawer-input sp-drawer-select">
+              <option v-for="p in formasDePago" :key="p.value" :value="p.value">{{ p.label }}</option>
+            </select>
+          </div>
+          <div v-if="esPedido" class="caja-field">
+            <label>Estado del pago</label>
+            <select v-model="pagado" class="sp-drawer-input sp-drawer-select">
+              <option :value="true">Cobrado</option>
+              <option :value="false">Por cobrar</option>
+            </select>
+          </div>
+          <div v-if="formaDePago === 'efectivo'" class="caja-field">
+            <label>Efectivo recibido</label>
+            <input v-model.number="efectivo" type="number" class="sp-drawer-input" min="0" step="0.10" placeholder="0.00" />
+          </div>
+        </div>
+
+        <dl class="caja-totales">
+          <div>
+            <dt>Subtotal</dt>
+            <dd>{{ money(subtotal) }}</dd>
+          </div>
+          <div v-if="descuentoAplicado > 0" class="caja-totales__desc">
+            <dt>Descuento</dt>
+            <dd>-{{ money(descuentoAplicado) }}</dd>
+          </div>
+          <div class="caja-totales__total">
+            <dt>Total</dt>
+            <dd>{{ money(total) }}</dd>
+          </div>
+          <div v-if="vuelto != null" class="caja-totales__vuelto" :class="{ 'caja-totales__vuelto--bad': vuelto < 0 }">
+            <dt>{{ vuelto < 0 ? "Falta" : "Vuelto" }}</dt>
+            <dd>{{ money(Math.abs(vuelto)) }}</dd>
+          </div>
+        </dl>
+
+        <p v-if="error" class="caja-error">{{ error }}</p>
+
+        <div class="caja-acciones">
+          <button class="sp-page-btn caja-cobrar" :disabled="!puedeCobrar || guardando" @click="cobrar">
+            {{ guardando ? "Registrando…" : esPedido ? "Registrar pedido" : `Cobrar ${money(total)}` }}
+          </button>
+          <button v-if="lineas.length" class="sp-drawer-btn sp-drawer-btn--ghost" @click="limpiar">
+            Vaciar
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+/**
+ * Caja del local y registro de pedidos manuales.
+ *
+ * Dos modos en la misma pantalla porque son el mismo gesto —elegir
+ * productos y cobrar— con dos finales distintos: la caja entrega en el acto
+ * y el pedido hay que enviarlo. Separarlos en dos páginas duplicaría el
+ * buscador, las líneas y los totales.
+ */
+definePageMeta({ middleware: "auth", layout: "admin" });
+
+interface Producto {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  trackStock: boolean;
+  images?: Array<{ url: string }>;
+}
+interface Linea {
+  productId: number;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  stock: number;
+  trackStock: boolean;
+}
+
+const route = useRoute();
+const router = useRouter();
+const { nombre } = useLogo();
+// Los datos del negocio (RUC, dirección, WhatsApp) van impresos en el
+// comprobante: un papel sin ellos no sirve para que el cliente vuelva.
+const negocio = computed<any>(() => useBusinessConfig().value ?? {});
+const { user } = useUserSession();
+const formatPrice = useFormatPrice();
+const money = (n: number) => formatPrice.format(Number.isFinite(n) ? n : 0);
+
+const esPedido = computed(() => route.query.tipo === "pedido");
+useSeoMeta({ title: () => `${esPedido.value ? "Nuevo pedido" : "Caja"} · Admin` });
+const setModo = (pedido: boolean) => router.replace({ query: pedido ? { tipo: "pedido" } : {} });
+
+// ── Catálogo ────────────────────────────────────────────────
+// Se reutiliza /api/admin/products, que ya filtra y pagina: no hacía falta
+// un endpoint nuevo para el buscador de la caja.
+const q = ref("");
+const productos = ref<Producto[]>([]);
+const buscando = ref(false);
+const buscadorRef = ref<HTMLInputElement>();
+let temporizador: ReturnType<typeof setTimeout> | undefined;
+
+async function buscar() {
+  buscando.value = true;
+  try {
+    const res: any = await $fetch("/api/admin/products", {
+      query: { limit: 24, offset: 0, isActive: 1, q: q.value || undefined },
+    });
+    productos.value = res?.data ?? [];
+  } catch {
+    productos.value = [];
+  } finally {
+    buscando.value = false;
+  }
+}
+// Espera corta mientras se escribe: sin ella, cada letra es una petición.
+watch(q, () => {
+  clearTimeout(temporizador);
+  temporizador = setTimeout(buscar, 250);
+});
+
+const sinStock = (p: Producto) => p.trackStock && p.stock <= 0;
+
+// ── Venta en curso ──────────────────────────────────────────
+// Se guarda en el navegador: una venta a medias no puede perderse porque
+// alguien recargue la página o se le cierre la pestaña.
+const BORRADOR = "bytemarket-caja-venta";
+const lineas = ref<Linea[]>([]);
+
+onMounted(() => {
+  try {
+    const guardado = localStorage.getItem(BORRADOR);
+    if (guardado) lineas.value = JSON.parse(guardado);
+  } catch {
+    /* un borrador corrupto no debe impedir abrir la caja */
+  }
+  buscar();
+  // En computadora el cursor va al buscador, que es lo que necesita el
+  // lector de códigos. En celular no, porque abriría el teclado tapando
+  // media pantalla.
+  if (window.innerWidth > 1024) buscadorRef.value?.focus();
+});
+
+watch(lineas, (v) => {
+  try {
+    localStorage.setItem(BORRADOR, JSON.stringify(v));
+  } catch {
+    /* sin almacenamiento la caja sigue funcionando, solo sin borrador */
+  }
+}, { deep: true });
+
+function agregar(p: Producto) {
+  const existente = lineas.value.find((l) => l.productId === p.id);
+  if (existente) existente.quantity++;
+  else
+    lineas.value.push({
+      productId: p.id,
+      name: p.name,
+      quantity: 1,
+      unitPrice: p.price,
+      stock: p.stock,
+      trackStock: p.trackStock,
+    });
+}
+
+/**
+ * Enter en el buscador agrega directamente si no hay ambigüedad.
+ *
+ * Es lo que hace que un lector de código de barras funcione sin
+ * configurarlo: el lector teclea el código y pulsa Enter.
+ */
+async function agregarDesdeBuscador() {
+  clearTimeout(temporizador);
+  await buscar();
+  const disponibles = productos.value.filter((p) => !sinStock(p));
+  if (disponibles.length === 1) {
+    agregar(disponibles[0]!);
+    q.value = "";
+  }
+}
+
+const quitar = (i: number) => lineas.value.splice(i, 1);
+function paso(i: number, delta: number) {
+  const l = lineas.value[i]!;
+  l.quantity = Math.max(1, Math.min(999, (Number(l.quantity) || 1) + delta));
+}
+
+// ── Cobro ───────────────────────────────────────────────────
+const { data: opciones } = await useFetch<any>("/api/admin/orders/sale-options");
+const formasDePago = computed(() => opciones.value?.paymentTypes ?? [{ value: "efectivo", label: "Efectivo" }]);
+const canales = computed(() => opciones.value?.channels ?? [{ value: "whatsapp", label: "WhatsApp" }]);
+
+const canal = ref("whatsapp");
+const formaDePago = ref("efectivo");
+const descuento = ref(0);
+const cupon = ref("");
+const pagado = ref(true);
+const efectivo = ref<number | null>(null);
+
+const vacio = () => ({
+  customerName: "", customerPhone: "", customerEmail: "",
+  customerAddress: "", customerNotes: "",
+});
+const cliente = reactive(vacio());
+
+const unidades = computed(() => lineas.value.reduce((a, l) => a + (Number(l.quantity) || 0), 0));
+const subtotal = computed(() =>
+  Math.round(lineas.value.reduce((a, l) => a + (Number(l.unitPrice) || 0) * (Number(l.quantity) || 0), 0) * 100) / 100,
+);
+// El cupón lo calcula el servidor; aquí solo se refleja el descuento a mano
+// para que el total de pantalla no mienta antes de enviar.
+const descuentoAplicado = computed(() => Math.min(Number(descuento.value) || 0, subtotal.value));
+const total = computed(() => Math.round((subtotal.value - descuentoAplicado.value) * 100) / 100);
+const vuelto = computed(() =>
+  formaDePago.value === "efectivo" && efectivo.value != null && efectivo.value > 0
+    ? Math.round((efectivo.value - total.value) * 100) / 100
+    : null,
+);
+
+const guardando = ref(false);
+const error = ref("");
+const ticketRef = ref<HTMLElement>();
+
+const puedeCobrar = computed(() => {
+  if (!lineas.value.length) return false;
+  if (esPedido.value && cliente.customerName.trim().length < 2) return false;
+  if (vuelto.value != null && vuelto.value < 0) return false;
+  return true;
+});
+
+const hecho = ref<null | {
+  orderCode: string; total: number; subtotal: number; descuento: number; cupon: string | null;
+  formaDePago: string; recibido: number | null; vuelto: number | null; fecha: string;
+  lineas: Linea[]; whatsapp: string | null; cajero: string; cliente: string; unidades: number;
+}>(null);
+
+async function cobrar() {
+  error.value = "";
+  if (!puedeCobrar.value) return;
+  guardando.value = true;
+  try {
+    const res: any = await $fetch("/api/admin/orders", {
+      method: "POST",
+      body: {
+        channel: esPedido.value ? canal.value : "caja",
+        ...(esPedido.value ? cliente : {}),
+        items: lineas.value.map((l) => ({
+          productId: l.productId,
+          quantity: Number(l.quantity),
+          unitPrice: Number(l.unitPrice),
+        })),
+        discount: Number(descuento.value) || 0,
+        couponCode: cupon.value.trim() || null,
+        paymentType: formaDePago.value,
+        paymentStatus: esPedido.value && !pagado.value ? "pending" : "paid",
+        cashReceived: formaDePago.value === "efectivo" ? efectivo.value : null,
+      },
+    });
+
+    const tel = (cliente.customerPhone || "").replace(/\D/g, "");
+    const waTel = /^9\d{8}$/.test(tel) ? `51${tel}` : tel;
+    hecho.value = {
+      orderCode: res.orderCode,
+      total: res.total,
+      subtotal: res.subtotal,
+      descuento: res.discountApplied ?? 0,
+      cupon: res.couponCode ?? null,
+      formaDePago: res.paymentMethodLabel,
+      recibido: res.cashReceived ?? null,
+      vuelto: res.change ?? null,
+      fecha: new Intl.DateTimeFormat("es-PE", {
+        timeZone: "America/Lima", dateStyle: "short", timeStyle: "short",
+      }).format(new Date(res.createdAt)),
+      lineas: lineas.value.map((l) => ({ ...l })),
+      // Quién atendió queda impreso: con varias personas en el mostrador es
+      // lo único que permite rastrear una venta mal cobrada.
+      cajero: (user.value as any)?.name ?? "Panel",
+      cliente: res.customerName ?? "",
+      unidades: unidades.value,
+      whatsapp: waTel.length >= 9
+        ? `https://wa.me/${waTel}?text=${encodeURIComponent(
+          `Hola${cliente.customerName ? ` ${cliente.customerName.split(" ")[0]}` : ""}, registramos tu pedido ${res.orderCode} por ${money(res.total)}.`,
+        )}`
+        : null,
+    };
+
+    useAppToast().add({
+      title: esPedido.value ? "Pedido registrado" : "Venta cobrada",
+      description: `${res.orderCode} · ${money(res.total)}`,
+      color: "success",
+    });
+    // El stock cambió: se recarga para que la próxima venta lo vea.
+    buscar();
+  } catch (e: any) {
+    error.value = e?.data?.message ?? "No se pudo registrar la venta";
+  } finally {
+    guardando.value = false;
+  }
+}
+
+function limpiar() {
+  lineas.value = [];
+  descuento.value = 0;
+  cupon.value = "";
+  efectivo.value = null;
+  pagado.value = true;
+  Object.assign(cliente, vacio());
+  error.value = "";
+}
+
+function nuevaVenta() {
+  hecho.value = null;
+  limpiar();
+  nextTick(() => {
+    if (window.innerWidth > 1024) buscadorRef.value?.focus();
+  });
+}
+
+const imprimir = () => window.print();
+</script>
+
+<style scoped>
+.caja-page {
+  padding-bottom: 2rem;
+}
+
+/* ── Cambio de modo ── */
+.caja-modo {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 10px;
+  background: var(--sp-surface-2, #f1f5f9);
+}
+
+.caja-modo__btn {
+  padding: 0.45rem 1rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--sp-text-muted, #64748b);
+  cursor: pointer;
+}
+
+.caja-modo__btn--on {
+  background: #fff;
+  color: var(--sp-text, #0f172a);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+}
+
+/* ── Dos columnas: catálogo y venta ── */
+.caja-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .caja-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.caja-catalogo,
+.caja-venta {
+  background: var(--sp-surface, #fff);
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+/* Pegajosa, pero con alto máximo y scroll propio.
+   Sin el max-height, una venta con varias líneas hacía la tarjeta más alta
+   que la pantalla y el navegador recortaba la cabecera: el título "Venta en
+   curso" quedaba cortado y no había forma de volver a verlo. */
+.caja-venta {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+  .caja-venta {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+.caja-buscador {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.caja-buscador:focus {
+  outline: 2px solid var(--sp-primary, #b01883);
+  outline-offset: 1px;
+}
+
+.caja-hint {
+  margin: 0.9rem 0;
+  font-size: 0.85rem;
+  color: var(--sp-text-muted, #64748b);
+}
+
+/* ── Productos ── */
+.caja-productos {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.caja-producto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.caja-producto:hover:not(:disabled) {
+  border-color: var(--sp-primary, #b01883);
+  transform: translateY(-2px);
+}
+
+.caja-producto--off {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.caja-producto__img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #f1f5f9;
+}
+
+.caja-producto__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.caja-producto__price {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--sp-primary, #b01883);
+}
+
+.caja-producto__stock {
+  font-size: 0.7rem;
+  color: var(--sp-text-muted, #64748b);
+}
+
+.caja-producto__stock--low {
+  color: #b45309;
+  font-weight: 600;
+}
+
+/* ── Líneas de la venta ── */
+/* Queda fijo arriba mientras se recorre la venta por dentro. */
+.caja-venta__title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: -1rem -1rem 0.8rem;
+  padding: 1rem 1rem 0.7rem;
+  background: var(--sp-surface, #fff);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.caja-venta__badge {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: var(--sp-primary, #b01883);
+  color: #fff;
+}
+
+/* Sin scroll propio: lo lleva la tarjeta. Dos barras de desplazamiento
+   anidadas en la misma columna hacían imposible llegar al botón de cobrar. */
+.caja-lineas {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.caja-linea {
+  padding: 0.6rem;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.caja-linea__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.caja-linea__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.caja-linea__del {
+  border: 0;
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.caja-linea__del:hover {
+  color: #dc2626;
+}
+
+.caja-linea__ctrl {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.caja-linea__sub {
+  margin-left: auto;
+  font-size: 0.95rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.caja-linea__warn {
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
+  color: #b45309;
+}
+
+/* Las flechitas nativas de <input type="number"> se quitan en toda la caja.
+   En el contador de cantidad ocupaban el ancho entero del campo y TAPABAN el
+   número: no se veía cuántas unidades llevaba la línea. Y donde sí caben
+   sobran igual, porque al lado ya están los botones - y +. */
+.caja-page input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.caja-page input[type="number"]::-webkit-outer-spin-button,
+.caja-page input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.caja-step {
+  display: inline-flex;
+  align-items: stretch;
+  flex: 0 0 auto;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.caja-step button {
+  /* 44px en táctil: la caja se usa de pie en el mostrador, muchas veces en
+     tablet, y este es el control que más se pulsa de toda la pantalla. */
+  width: 30px;
+  border: 0;
+  background: #f1f5f9;
+  color: #334155;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 600;
+}
+
+@media (pointer: coarse) {
+
+  .caja-step button,
+  .caja-step input {
+    height: 44px;
+  }
+
+  .caja-step button {
+    width: 44px;
+  }
+
+  .caja-step input {
+    width: 56px;
+  }
+}
+
+.caja-step button:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.caja-step button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.caja-step input {
+  width: 46px;
+  height: 32px;
+  border: 0;
+  border-left: 1px solid var(--sp-border, #e2e8f0);
+  border-right: 1px solid var(--sp-border, #e2e8f0);
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  background: #fff;
+}
+
+.caja-precio {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.caja-precio span {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.caja-precio input {
+  width: 84px;
+  height: 32px;
+  padding: 0 0.5rem;
+  text-align: right;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ── Formularios ── */
+.caja-cliente,
+.caja-cobro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--sp-border, #e2e8f0);
+}
+
+.caja-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.caja-field--wide {
+  grid-column: 1 / -1;
+}
+
+.caja-field label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Los campos usan .sp-drawer-input / .sp-drawer-select del panel, que es lo
+   que ya usa el resto del admin.
+   Tenían estilo propio aquí y los <select> salían más bajos que los
+   <input>: el mismo padding no da la misma altura en un select, porque el
+   navegador le suma su propia caja. El panel ya lo resolvía con
+   appearance:none y un chevron dibujado. Solo se fuerza el ancho, que el
+   drawer da por hecho que es 100%. */
+.caja-field :deep(.sp-drawer-input) {
+  width: 100%;
+}
+
+/* ── Totales ── */
+.caja-totales {
+  margin: 1rem 0 0;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--sp-border, #e2e8f0);
+}
+
+.caja-totales>div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.18rem 0;
+  font-size: 0.85rem;
+}
+
+.caja-totales dt,
+.caja-totales dd {
+  margin: 0;
+}
+
+.caja-totales__desc {
+  color: #15803d;
+}
+
+.caja-totales__total {
+  margin-top: 0.3rem;
+  padding-top: 0.5rem !important;
+  border-top: 1px solid var(--sp-border, #e2e8f0);
+  font-size: 1.1rem !important;
+  font-weight: 800;
+}
+
+.caja-totales__vuelto {
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.caja-totales__vuelto--bad {
+  color: #dc2626;
+}
+
+.caja-error {
+  margin: 0.7rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.8rem;
+}
+
+.caja-acciones {
+  margin-top: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.caja-cobrar {
+  width: 100%;
+  justify-content: center;
+  font-size: 1rem;
+  padding: 0.75rem;
+}
+
+.caja-cobrar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Ticket ── */
+.caja-ticket-wrap {
+  max-width: 420px;
+  margin: 1rem auto;
+}
+
+.caja-ticket {
+  padding: 1.4rem 1.3rem;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 12px;
+  background: #fff;
+  /* Monoespaciada: es lo que alinea las columnas de importes sin tener que
+     fijar anchos, y lo que hace que se lea como un comprobante y no como
+     una página web. */
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color: #0f172a;
+}
+
+/* Separadores a #848f9e (3.28:1). Estaban a #cbd5e1, que da 1.48:1: en
+   pantalla apenas se veían y son los que estructuran el comprobante. El
+   umbral de los elementos no textuales es 3:1, no 4.5:1. */
+.caja-ticket__head {
+  text-align: center;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed #848f9e;
+}
+
+.caja-ticket__store {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.caja-ticket__meta {
+  margin: 0.12rem 0 0;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.caja-ticket__kind {
+  margin: 0.7rem 0;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+/* Datos de la venta, en dos columnas etiqueta/valor. */
+.caja-ticket__info {
+  margin: 0 0 0.8rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed #848f9e;
+  font-size: 0.74rem;
+}
+
+.caja-ticket__info>div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.1rem 0;
+}
+
+.caja-ticket__info dt,
+.caja-ticket__info dd {
+  margin: 0;
+}
+
+.caja-ticket__info dt {
+  color: #64748b;
+}
+
+.caja-ticket__strong {
+  font-weight: 800;
+}
+
+.caja-ticket__items {
+  width: 100%;
+  margin: 0 0 0.6rem;
+  border-collapse: collapse;
+  font-size: 0.73rem;
+}
+
+.caja-ticket__items th {
+  padding: 0 0.2rem 0.3rem;
+  border-bottom: 1px solid #848f9e;
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  text-align: left;
+}
+
+.caja-ticket__items td {
+  padding: 0.22rem 0.2rem;
+  vertical-align: top;
+}
+
+.caja-ticket__items tbody tr+tr td {
+  border-top: 1px dotted #e2e8f0;
+}
+
+.caja-ticket__c {
+  width: 2.2rem;
+  text-align: center !important;
+}
+
+.caja-ticket__num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.caja-ticket__totals {
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #848f9e;
+  font-size: 0.8rem;
+}
+
+.caja-ticket__totals>div,
+.caja-ticket__pago>div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.12rem 0;
+}
+
+.caja-ticket__totals dt,
+.caja-ticket__totals dd,
+.caja-ticket__pago dt,
+.caja-ticket__pago dd {
+  margin: 0;
+}
+
+.caja-ticket__desc {
+  color: #15803d;
+}
+
+.caja-ticket__total {
+  margin-top: 0.35rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid #0f172a;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.caja-ticket__pago {
+  margin: 0.7rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px dashed #848f9e;
+  font-size: 0.75rem;
+}
+
+.caja-ticket__vuelto {
+  font-weight: 800;
+}
+
+.caja-ticket__foot {
+  margin-top: 1rem;
+  padding-top: 0.7rem;
+  border-top: 1px dashed #848f9e;
+  text-align: center;
+}
+
+.caja-ticket__thanks {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.caja-ticket__legal {
+  margin: 0.35rem 0 0;
+  font-size: 0.62rem;
+  line-height: 1.35;
+  color: #64748b;
+}
+
+.caja-ticket__actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+</style>
+
+<!--
+  Estilos de impresión SIN `scoped` a propósito.
+
+  El bloque anterior sí lo era, y por eso imprimía la página entera: un
+  estilo con `scoped` solo alcanza a los elementos de ESTE componente, y la
+  barra lateral y la superior viven en el layout `admin`. Daba igual lo que
+  ocultara aquí dentro, el resto del panel seguía saliendo en el papel.
+
+  La técnica es ocultar TODO por visibilidad y volver a mostrar solo el
+  comprobante. Con `display: none` habría que ir enumerando cada contenedor
+  del layout, y cualquiera nuevo volvería a colarse en la impresión; con
+  `visibility` basta una regla y aguanta cambios de layout.
+-->
+<style>
+@media print {
+  /* Nada se ve... */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* ...salvo el comprobante y lo que lleva dentro. */
+  #caja-comprobante,
+  #caja-comprobante * {
+    visibility: visible !important;
+  }
+
+  /* Los padres conservan su hueco, así que el comprobante se saca al
+     origen de la hoja; si no, aparece desplazado donde estaba en pantalla. */
+  #caja-comprobante {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Tinta: en papel el gris claro no se lee. */
+  #caja-comprobante .caja-ticket__meta,
+  #caja-comprobante .caja-ticket__legal,
+  #caja-comprobante .caja-ticket__info dt,
+  #caja-comprobante .caja-ticket__items th {
+    color: #333 !important;
+  }
+
+  #caja-comprobante .caja-ticket__desc,
+  #caja-comprobante .caja-ticket__vuelto {
+    color: #000 !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  @page {
+    margin: 10mm;
+  }
+}
+</style>

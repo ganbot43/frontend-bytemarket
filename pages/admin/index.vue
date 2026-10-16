@@ -8,15 +8,23 @@
           Resumen general del negocio · {{ today }}
         </p>
       </div>
-      <div class="dash-live-dot" title="Datos en tiempo real">
-        <span class="dash-live-pulse" />
-        En vivo
+      <!-- Antes decía "En vivo" con un punto latiendo, y era mentira: no
+           hay ni sondeo ni websocket, los datos se cargan al entrar y al
+           pulsar actualizar. Ahora dice la hora real de la última carga,
+           que es el dato que el encargado necesita para saber si lo que ve
+           sigue valiendo. -->
+      <div class="dash-live-dot" :title="`Datos cargados a las ${horaDeCarga}`">
+        <span class="dash-live-mark" />
+        Actualizado {{ horaDeCarga }}
       </div>
     </div>
 
     <!-- ── Stat cards ── -->
     <div class="dash-stats">
-      <div v-for="(stat, i) in stats" :key="stat.label" class="dash-stat-card admin-lift"
+      <!-- Cada tarjeta es un enlace a la lista que resuelve ese número: el
+           panel se usa para hacer cosas, no para mirar estadísticas. -->
+      <NuxtLink v-for="(stat, i) in stats" :key="stat.label" :to="stat.to"
+        class="dash-stat-card dash-stat-card--link admin-lift"
         :style="{ animationDelay: `${i * 55}ms` }">
         <div class="dash-stat-top">
           <span class="dash-stat-label">{{ stat.label }}</span>
@@ -26,7 +34,7 @@
         </div>
         <p class="dash-stat-value">{{ stat.value }}</p>
         <p class="dash-stat-hint">{{ stat.hint }}</p>
-      </div>
+      </NuxtLink>
     </div>
 
     <!-- ── Automatización ── -->
@@ -230,12 +238,24 @@
 import PedidoModal from "./pedidos/pedidoModal.vue";
 
 definePageMeta({ middleware: "auth", layout: "admin" });
-useSeoMeta({ title: "Dashboard — Admin" });
+useSeoMeta({ title: "Dashboard · Admin" });
 
 const { data: ordersData, refresh: refreshOrders } =
   await useFetch("/api/admin/orders");
-const { data: productsData } = await useFetch("/api/admin/products");
 const { data: reportsData, refresh: refreshReports } = await useFetch("/api/admin/automation/reports");
+// Resumen de dinero y trabajo pendiente. Va aparte de /automation/reports
+// porque eso son las automatizaciones (avisos de stock, seguimientos) y esto
+// son los indicadores de la portada.
+const { data: dashData, refresh: refreshDash } = await useFetch<any>("/api/admin/reports/dashboard");
+
+/** Hora de la última carga de datos. Se sella al montar y en cada refresco. */
+const horaDeCarga = ref("--:--");
+const sellarHora = () => {
+  horaDeCarga.value = new Intl.DateTimeFormat("es-PE", {
+    timeZone: "America/Lima", hour: "2-digit", minute: "2-digit",
+  }).format(new Date());
+};
+onMounted(sellarHora);
 const { data: stockAlertsData, refresh: refreshStockAlerts } = await useFetch("/api/admin/automation/stock-alerts");
 const { data: followUpsData, refresh: refreshFollowUpsQuery } = await useFetch("/api/admin/automation/follow-ups");
 const formatPrice = useFormatPrice();
@@ -255,6 +275,7 @@ function openOrder(orderId: number) {
 function onOrderUpdated() {
   modalOpen.value = false;
   refreshOrders();
+  refreshDash();
 }
 
 const automationTotals = computed(() => {
@@ -289,6 +310,7 @@ async function refreshAutomation() {
     await Promise.all([
       refreshReports(),
       refreshStockAlerts(),
+      refreshDash(),
       refreshFollowUpsQuery(),
     ]);
   } finally {
@@ -302,7 +324,8 @@ async function sendStockAlerts() {
     await $fetch("/api/admin/automation/stock-alerts", {
       query: { threshold: stockThreshold.value, notify: 1 },
     });
-    await Promise.all([refreshReports(), refreshStockAlerts()]);
+    await Promise.all([refreshReports(), refreshStockAlerts(), refreshDash()]);
+    sellarHora();
   } catch (error) {
     console.error(error);
   } finally {
@@ -343,55 +366,59 @@ const svgCheck = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><c
 const svgCube = `<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5L17 6v8l-7 3.5L3 14V6l7-3.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 2.5v13M3 6l7 3.5L17 6" stroke="currentColor" stroke-width="1.5"/></svg>`;
 
 const stats = computed(() => {
-  /* Las cifras salen de los totales que calcula el backend, no de contar
-     la página recibida: con el limit por defecto, "Productos activos" se
-     quedaba clavado en 10 aunque hubiera más en el catálogo. Se deja el
-     conteo de la página como respaldo por si el endpoint no los trae. */
-  const orders = ordersData.value?.data ?? [];
-  const products = productsData.value?.data ?? [];
-
-  const total = ordersData.value?.totalAll ?? orders.length;
-  const pending = ordersData.value?.totalPending
-    ?? orders.filter((o: any) => o.status === "pending").length;
-  const delivered = ordersData.value?.totalDelivered
-    ?? orders.filter((o: any) => o.status === "delivered").length;
-
-  const active = productsData.value?.totalActive
-    ?? products.filter((p: any) => p.isActive).length;
-  const inactive = productsData.value?.totalInactive
-    ?? products.length - active;
+  /* Las tarjetas muestran DINERO y TRABAJO PENDIENTE, no conteos.
+     Antes decían "Pedidos totales / Pendientes / Entregados / Productos
+     activos": cifras que se leen y no llevan a ninguna parte. 147 pedidos
+     desde el inicio no dice si hoy hay algo que hacer.
+     Ahora cada una responde a una pregunta con acción detrás, y enlaza a la
+     lista que la resuelve. */
+  const d = dashData.value ?? {};
+  const porValidar = d.paymentsToValidate ?? 0;
+  const porAtender = d.ordersToAttend ?? 0;
+  const bajo = d.lowStockCount ?? 0;
 
   return [
     {
-      label: "Pedidos totales",
-      value: total,
-      hint: "Desde el inicio",
+      label: "Ventas del mes",
+      value: formatPrice.format(d.salesMonth ?? 0),
+      hint: `${d.paidOrdersMonth ?? 0} pedido${(d.paidOrdersMonth ?? 0) === 1 ? "" : "s"} cobrado${(d.paidOrdersMonth ?? 0) === 1 ? "" : "s"}`
+        + ((d.salesToday ?? 0) > 0 ? ` · hoy ${formatPrice.format(d.salesToday)}` : ""),
       color: "blue",
       icon: svgClipboard,
+      to: "/admin/reportes",
     },
     {
-      label: "Pendientes",
-      value: pending,
-      hint: pending === 1 ? "Requiere atención" : "Requieren atención",
+      label: "Pagos por validar",
+      value: porValidar,
+      // Es la tarea más urgente del panel: el cliente ya pagó y espera.
+      hint: porValidar ? "Comprobantes sin revisar" : "Todo al día",
       color: "amber",
       icon: svgClock,
+      to: "/admin/pedidos?status=voucher_sent",
     },
     {
-      label: "Entregados",
-      value: delivered,
-      hint: total ? `${Math.round((delivered / total) * 100)}% del total` : "—",
+      label: "Pedidos por atender",
+      value: porAtender,
+      hint: porAtender
+        ? `${d.receivableOrders ?? 0} sin cobrar · ${formatPrice.format(d.receivableAmount ?? 0)}`
+        : "Nada pendiente",
       color: "green",
       icon: svgCheck,
+      to: "/admin/pedidos?status=pending",
     },
     {
-      label: "Productos activos",
-      value: active,
-      hint: `${inactive} inactivo${inactive !== 1 ? "s" : ""}`,
+      label: "Stock bajo",
+      value: bajo,
+      hint: bajo
+        ? `Con ${d.lowStockThreshold ?? 10} unidades o menos`
+        : "Ningún producto por reponer",
       color: "primary",
       icon: svgCube,
+      to: "/admin/inventario?bajo=1",
     },
   ];
 });
+
 </script>
 
 <style scoped>
@@ -414,37 +441,15 @@ const stats = computed(() => {
   font-family: var(--sp-font);
 }
 
-.dash-live-pulse {
+/* Marca estática. Antes era un punto con un halo latiendo en bucle: el
+   latido es vocabulario de "algo está pasando ahora mismo", y aquí no pasa
+   nada, solo se indica cuándo se cargaron los datos. */
+.dash-live-mark {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--sp-success);
-  position: relative;
+  background: var(--sp-text-soft);
   flex-shrink: 0;
-}
-
-.dash-live-pulse::after {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  background: var(--sp-success);
-  opacity: 0.3;
-  animation: dash-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes dash-pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.3;
-  }
-
-  50% {
-    transform: scale(1.9);
-    opacity: 0;
-  }
 }
 
 /* ── Stats grid ── */
@@ -453,6 +458,19 @@ const stats = computed(() => {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+/* La tarjeta ahora es un <NuxtLink>: hereda color y pierde el subrayado,
+   y el cursor deja claro que lleva a algún sitio. */
+.dash-stat-card--link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+.dash-stat-card--link:focus-visible {
+  outline: 2px solid var(--sp-primary, #b01883);
+  outline-offset: 2px;
 }
 
 .dash-stat-card {
