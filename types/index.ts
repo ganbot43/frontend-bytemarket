@@ -2,6 +2,8 @@ export type OrderStatus =
   | 'pending' | 'voucher_sent' | 'payment_validated'
   | 'in_preparation' | 'delivered' | 'cancelled'
 
+export type PaymentStatus = 'paid' | 'pending'
+
 export type UserRole = 'superadmin' | 'admin'
 
 export type Plan = 'basic' | 'intermediate' | 'advanced'
@@ -65,6 +67,16 @@ export interface Order {
   paymentMethodQrUrl?:       string | null
   paymentMethodAccountNumber?: string | null
   paymentMethodAccountName?:  string | null
+  // Si el pedido está cobrado y por dónde entró la venta. No se deducen de
+  // `status`: uno puede estar entregado y sin cobrar, o cobrado y sin
+  // enviar. Los resuelve el backend (canal() y estadoDePago()), que trata el
+  // null de los pedidos anteriores a la caja como "web" y deduce el pago del
+  // estado; esa regla no se repite aquí.
+  estadoDePago?:             PaymentStatus
+  canal?:                    string
+  // Solo en ventas de mostrador cobradas en efectivo.
+  cashReceived?:             number | null
+  changeGiven?:              number | null
   items:                     OrderItem[]
   statusLogs?:               OrderStatusLog[]
   createdAt:                 string

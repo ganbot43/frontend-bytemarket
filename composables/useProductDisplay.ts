@@ -22,9 +22,16 @@ export type DisplayProduct = {
   category?: { name: string } | null
   subcategory?: { name: string } | null
   images?: Array<{ id?: number; url: string; isPrimary?: boolean }>
-} | null | undefined
+}
 
-export function useProductDisplay(product: MaybeRefOrGetter<DisplayProduct>) {
+/* El nulo va en el parámetro y no dentro de DisplayProduct: mientras
+   estuvo en el tipo, un DisplayProduct[] era una lista de posibles nulos y
+   cada v-for sobre el catálogo entregaba un elemento que podía no existir.
+   Quien no tiene producto todavía —la ficha mientras carga— lo dice en su
+   propia firma. */
+export function useProductDisplay(
+  product: MaybeRefOrGetter<DisplayProduct | null | undefined>,
+) {
   /* toValue y no unref: los componentes pasan un getter —() => props.x—
      para que el composable siga las actualizaciones del prop. unref
      devuelve la función tal cual y todo se leía como undefined. */
