@@ -13,7 +13,7 @@ import type { Ref } from 'vue'
 export function useTablaLocal<T extends Record<string, any>>(
   origen: Ref<T[]> | (() => T[]),
   campos: (keyof T | string)[],
-  limite = 15,
+  limite = 10,
 ) {
   const busqueda = ref('')
   const pagina = ref(0)

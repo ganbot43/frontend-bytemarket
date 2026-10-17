@@ -1,7 +1,7 @@
 <template>
-  <div class="rv-page">
+  <div class="sp-page rv-page">
     <!-- ══ TOOLBAR ══ -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.25rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Reseñas</h1>
         <p class="sp-page-toolbar__sub">
@@ -105,7 +105,7 @@
                 <div class="sp-table-actions">
                   <button
                     v-if="r.status !== 'approved'"
-                    class="sp-table-btn rv-btn--ok"
+                    class="sp-table-btn sp-table-btn--view"
                     title="Aprobar y publicar"
                     :disabled="moderandoId === r.id"
                     @click="moderar(r, 'approved')"
@@ -114,7 +114,7 @@
                   </button>
                   <button
                     v-if="r.status !== 'rejected'"
-                    class="sp-table-btn rv-btn--no"
+                    class="sp-table-btn sp-table-btn--warn"
                     title="Rechazar"
                     :disabled="moderandoId === r.id"
                     @click="moderar(r, 'rejected')"
@@ -208,7 +208,7 @@ import {
 definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Reseñas · Admin" });
 
-const LIMITE = 20;
+const LIMITE = 10;
 
 const pestanas = [
   { label: "Pendientes", value: "pending" },
@@ -435,18 +435,6 @@ function claseEstado(status: string) {
   opacity: 0.6;
 }
 
-/* ── Botones de moderación ── */
-.rv-btn--ok:hover:not(:disabled) {
-  background: var(--sp-success-soft);
-  color: var(--sp-success);
-  border-color: var(--sp-success);
-}
-
-.rv-btn--no:hover:not(:disabled) {
-  background: var(--sp-warning-soft);
-  color: var(--sp-warning);
-  border-color: var(--sp-warning);
-}
 
 .sp-table-btn:disabled {
   opacity: 0.45;

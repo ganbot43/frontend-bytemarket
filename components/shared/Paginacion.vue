@@ -57,7 +57,7 @@ const props = withDefaults(
     total: number;
     limite?: number;
   }>(),
-  { limite: 20 },
+  { limite: 10 },
 );
 
 const emit = defineEmits<{ (e: "update:pagina", v: number): void }>();

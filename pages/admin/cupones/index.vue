@@ -1,7 +1,7 @@
 <template>
-  <div class="cp-page">
+  <div class="sp-page cp-page">
     <!-- ══ TOOLBAR ══ -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.25rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Cupones</h1>
         <p class="sp-page-toolbar__sub">
@@ -364,7 +364,7 @@ import {
 definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Cupones · Admin" });
 
-const LIMITE = 20;
+const LIMITE = 10;
 const pagina = ref(0);
 const busqueda = ref("");
 

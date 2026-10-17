@@ -4,17 +4,28 @@
       <div>
         <h1 class="sp-page-toolbar__title">Inventario</h1>
         <p class="sp-page-toolbar__sub">
-          {{ resumen.trackedCount }} productos con control de stock ·
-          stock bajo con {{ resumen.threshold }} unidades o menos
+          {{ vista === "existencias"
+            ? `${resumen.trackedCount} productos con control de stock · stock bajo con ${resumen.threshold} unidades o menos`
+            : "Historial de entradas, salidas y ajustes" }}
         </p>
       </div>
-      <NuxtLink to="/admin/inventario/movimientos" class="sp-page-btn">
-        Ver movimientos
-      </NuxtLink>
     </div>
 
-    <AdminInventarioTabs />
+    <!-- Pestañas locales, no enlaces. Eran dos rutas y cada cambio
+         recargaba la página entera y perdía el filtro; "qué tengo" y "qué
+         pasó" son la misma pregunta vista de dos maneras. -->
+    <nav class="sp-tabs inv-tabs" aria-label="Inventario">
+      <button v-for="t in VISTAS" :key="t.id" type="button" class="sp-tab"
+              :class="{ 'sp-tab--active': vista === t.id }"
+              :aria-current="vista === t.id ? 'page' : undefined"
+              @click="cambiarVista(t.id)">
+        {{ t.label }}
+      </button>
+    </nav>
 
+    <AdminInventarioMovimientos v-if="vista === 'movimientos'" :producto="productoFiltrado" />
+
+    <template v-else>
     <!-- Resumen: los dos números que deciden si hay que comprar hoy -->
     <div class="inv-resumen">
       <button class="inv-chip" :class="{ 'inv-chip--on': !soloBajos }" @click="soloBajos = false">
@@ -26,10 +37,10 @@
       <span v-if="resumen.outCount" class="inv-chip inv-chip--out">
         Agotados <strong>{{ resumen.outCount }}</strong>
       </span>
-      <label class="inv-umbral">
-        Umbral
-        <input v-model.number="umbral" type="number" min="0" max="999" class="sp-drawer-input" />
-      </label>
+      <!-- El umbral era un campo que cada quien podía mover, y la tarjeta
+           "Stock bajo" del dashboard contaba con otro distinto. Ahora es
+           una sola regla, de catalog-service, y aquí solo se enseña. -->
+      <span class="inv-umbral">Alerta con {{ resumen.threshold }} unidades o menos</span>
     </div>
 
     <SharedBarraTabla v-model="busqueda" placeholder="Buscar producto…" />
@@ -43,7 +54,7 @@
               <th class="sp-th">Categoría</th>
               <th class="sp-th sp-th--center">Stock</th>
               <th class="sp-th">Estado</th>
-              <th class="sp-th sp-th--center" style="width: 120px">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -56,26 +67,42 @@
                 <span class="inv-cat">{{ p.category || "–" }}</span>
               </td>
               <td class="sp-td sp-td--center">
-                <span class="inv-stock" :class="`inv-stock--${p.estado}`">{{ p.stock }}</span>
+                <span class="sp-table-num" :class="{ 'sp-table-num--low': p.estado !== 'ok' }">{{ p.stock }}</span>
               </td>
               <td class="sp-td">
-                <span class="inv-badge" :class="`inv-badge--${p.estado}`">
+                <!-- Las mismas etiquetas que Productos: punto + texto, y los
+                     colores del sistema. Tenía las suyas, con otros verdes
+                     y otro radio, al lado de una tabla que ya las traía. -->
+                <span class="sp-badge" :class="BADGE[p.estado] ?? 'sp-badge--neutral'">
+                  <span class="sp-badge__dot" />
                   {{ etiquetas[p.estado] }}
                 </span>
               </td>
               <td class="sp-td sp-td--center">
-                <!-- Un solo botón. Antes había aquí un campo de cantidad y
-                     dos botones ("+ Entrada" y "Fijar") apretados en la
-                     celda: el número salía cortado y los botones no decían
-                     qué hacía cada uno. La decisión se toma en el diálogo,
-                     con sitio para explicarla. -->
-                <button class="inv-btn" @click="abrirReponer(p)">Reponer</button>
+                <!-- Ajustar y ver qué pasó, en la misma fila. Antes el
+                     historial solo existía en la pantalla de Movimientos,
+                     que lista el kardex entero: para saber por qué a un
+                     producto le faltaban tres unidades había que salir,
+                     buscarlo en un desplegable y volver. -->
+                <div class="sp-table-actions">
+                  <button class="sp-table-btn sp-table-btn--edit" title="Ajustar stock"
+                          aria-label="Ajustar stock" @click="abrirReponer(p)">
+                    <PackagePlus class="w-3.5 h-3.5" stroke-width="1.5" />
+                  </button>
+                  <button class="sp-table-btn sp-table-btn--view" title="Ver historial"
+                          aria-label="Ver historial" @click="abrirHistorial(p)">
+                    <History class="w-3.5 h-3.5" stroke-width="1.5" />
+                  </button>
+                </div>
               </td>
             </tr>
 
             <tr v-if="!productos.length">
               <td colspan="5" class="sp-table-empty">
                 <div class="sp-table-empty__inner">
+                  <div class="sp-table-empty__icon">
+                    <Boxes class="w-8 h-8 text-current" stroke-width="1.5" />
+                  </div>
                   <p class="sp-table-empty__msg">
                     {{ soloBajos
                       ? "Ningún producto está por debajo del umbral"
@@ -91,6 +118,58 @@
       </div>
       <SharedPaginacion v-model:pagina="pagina" :total="total" :limite="limite" />
     </div>
+    </template>
+
+    <!-- ── Historial del producto ────────────────────────────── -->
+    <Teleport to="body">
+      <Transition name="sp-drawer-overlay">
+        <div v-if="historial" class="sp-drawer-overlay" @click.self="historial = null" />
+      </Transition>
+      <Transition name="sp-drawer-panel">
+        <div v-if="historial" class="inv-modal inv-modal--ancho" role="dialog" aria-modal="true">
+          <h3 class="inv-modal__title">{{ historial.name }}</h3>
+          <p class="inv-modal__stock">
+            Ahora hay <strong>{{ historial.stock }}</strong> unidades
+          </p>
+
+          <p v-if="cargandoHistorial" class="inv-hist__estado">Cargando movimientos…</p>
+          <p v-else-if="!movimientos.length" class="inv-hist__estado">
+            Este producto todavía no tiene movimientos registrados.
+          </p>
+          <ul v-else class="inv-hist">
+            <li v-for="m in movimientos" :key="m.id" class="inv-hist__item">
+              <span class="inv-hist__tipo" :class="`inv-hist__tipo--${m.movementType}`">
+                {{ TIPOS[m.movementType] ?? m.movementType }}
+              </span>
+              <div class="inv-hist__texto">
+                <!-- El motivo primero: es lo que explica el movimiento. Un
+                     "-3" sin motivo obliga a abrir el pedido para entenderlo. -->
+                <strong>{{ m.reason || (m.relatedOrderId ? `Venta del pedido #${m.relatedOrderId}` : "Sin motivo") }}</strong>
+                <span>{{ formatDateTimeCompact(m.createdAt) }}</span>
+              </div>
+              <span class="inv-hist__delta" :class="{
+                'inv-hist__delta--sube': (m.delta ?? 0) > 0,
+                'inv-hist__delta--baja': (m.delta ?? 0) < 0,
+              }">{{ conSigno(m.delta) }}</span>
+            </li>
+          </ul>
+
+          <!-- Diez movimientos sin decir que hay más se leen como "esto es
+               todo lo que pasó", y con eso se dan por buenos faltantes que
+               están explicados tres líneas más abajo. -->
+          <p v-if="totalMovimientos > movimientos.length" class="inv-hist__mas">
+            Los {{ movimientos.length }} más recientes de {{ totalMovimientos }}
+          </p>
+
+          <div class="inv-modal__actions">
+            <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="verKardex(historial.id)">
+              Ver kardex completo
+            </button>
+            <button class="sp-drawer-btn" @click="historial = null">Cerrar</button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <!-- ── Reponer ───────────────────────────────────────────── -->
     <Teleport to="body">
@@ -168,22 +247,63 @@ useSeoMeta({ title: "Inventario · Admin" });
 const route = useRoute();
 const toast = useAppToast();
 
+import { Boxes, History, PackagePlus } from "lucide-vue-next";
+
+const BADGE: Record<string, string> = {
+  agotado: "sp-badge--danger",
+  bajo: "sp-badge--warning",
+  ok: "sp-badge--success",
+};
+
 const etiquetas: Record<string, string> = {
   agotado: "Agotado",
   bajo: "Stock bajo",
   ok: "Disponible",
 };
 
+/* Las dos caras del inventario en una sola página. Van en la URL para que
+   un enlace o un recargado caigan donde toca —el dashboard y la pantalla
+   de movimientos antigua apuntan aquí—, pero cambiar de pestaña no navega:
+   `replace` no añade entradas al historial, así que el botón Atrás del
+   navegador sigue saliendo del inventario y no paseando entre pestañas. */
+const VISTAS = [
+  { id: "existencias", label: "Existencias" },
+  { id: "movimientos", label: "Movimientos" },
+] as const;
+type Vista = (typeof VISTAS)[number]["id"];
+
+const router = useRouter();
+const vista = ref<Vista>(route.query.vista === "movimientos" ? "movimientos" : "existencias");
+const productoFiltrado = ref<number | null>(Number(route.query.producto) || null);
+
+function cambiarVista(id: Vista) {
+  vista.value = id;
+  if (id === "existencias") productoFiltrado.value = null;
+  router.replace({
+    query: {
+      ...route.query,
+      vista: id === "existencias" ? undefined : id,
+      producto: id === "movimientos" && productoFiltrado.value ? productoFiltrado.value : undefined,
+    },
+  });
+}
+
+/** Del historial de un producto al kardex filtrado por ese producto. */
+function verKardex(id: number) {
+  productoFiltrado.value = id;
+  historial.value = null;
+  cambiarVista("movimientos");
+}
+
 // La tarjeta "Stock bajo" del dashboard enlaza con ?bajo=1
 const soloBajos = ref(route.query.bajo === "1");
-const umbral = ref(10);
 const busqueda = ref("");
 const pagina = ref(0);
-const limite = 15;
+const limite = 10;
 
 const productos = ref<any[]>([]);
 const total = ref(0);
-const resumen = reactive({ trackedCount: 0, lowCount: 0, outCount: 0, threshold: 10 });
+const resumen = reactive({ trackedCount: 0, lowCount: 0, outCount: 0, threshold: 5 });
 
 async function cargar() {
   try {
@@ -192,7 +312,7 @@ async function cargar() {
         limit: limite,
         offset: pagina.value * limite,
         q: busqueda.value.trim() || undefined,
-        threshold: umbral.value ?? 10,
+        // Sin threshold: lo fija catalog y lo devuelve en la respuesta.
         low: soloBajos.value ? 1 : 0,
       },
     });
@@ -202,19 +322,65 @@ async function cargar() {
       trackedCount: res?.trackedCount ?? 0,
       lowCount: res?.lowCount ?? 0,
       outCount: res?.outCount ?? 0,
-      threshold: res?.threshold ?? 10,
+      threshold: res?.threshold ?? 5,
     });
   } catch {
     toast.add({ title: "No se pudo cargar el stock", color: "error" });
   }
 }
 
-watch([soloBajos, busqueda, umbral], () => {
+watch([soloBajos, busqueda], () => {
   pagina.value = 0;
   cargar();
 });
 watch(pagina, cargar);
 onMounted(cargar);
+
+// ── Historial del producto ──────────────────────────────────
+/**
+ * El kardex de un solo producto, sin salir de la lista.
+ *
+ * El endpoint ya aceptaba productId; lo que faltaba era pedírselo desde
+ * aquí. Se traen los últimos 20 movimientos, que es lo que cabe sin
+ * paginar: para auditar más está el kardex completo, enlazado al pie.
+ */
+const TIPOS: Record<string, string> = {
+  entry: "Entrada",
+  exit: "Salida",
+  adjustment: "Ajuste",
+};
+
+/* Diez, como todos los listados del panel. Cuando hay más, el pie lo dice
+   y el botón de al lado lleva al kardex, que sí pagina. */
+const LIMITE_HISTORIAL = 10;
+
+const historial = ref<any>(null);
+const movimientos = ref<any[]>([]);
+const totalMovimientos = ref(0);
+const cargandoHistorial = ref(false);
+const { formatDateTimeCompact } = useFormatDateTime();
+
+const conSigno = (n: number | null | undefined) =>
+  n === null || n === undefined ? "" : n > 0 ? `+${n}` : String(n);
+
+async function abrirHistorial(p: any) {
+  historial.value = p;
+  movimientos.value = [];
+  totalMovimientos.value = 0;
+  cargandoHistorial.value = true;
+  try {
+    const res: any = await $fetch("/api/admin/inventory/movements", {
+      query: { productId: p.id, limit: LIMITE_HISTORIAL, offset: 0 },
+    });
+    movimientos.value = res?.data ?? [];
+    totalMovimientos.value = res?.total ?? movimientos.value.length;
+  } catch {
+    toast.add({ title: "No se pudo cargar el historial", color: "error" });
+    historial.value = null;
+  } finally {
+    cargandoHistorial.value = false;
+  }
+}
 
 // ── Reponer ─────────────────────────────────────────────────
 const reponiendo = ref<any>(null);
@@ -256,6 +422,10 @@ async function confirmarReponer() {
   const p = reponiendo.value;
   const n = Number(cantidad.value);
 
+  // El stock que va a quedar, leído antes de cerrar el diálogo: `resultado`
+  // se calcula a partir de `reponiendo`, y al cerrarlo vale null.
+  const nuevoStock = resultado.value;
+
   guardando.value = p.id;
   try {
     await $fetch("/api/admin/inventory/movements", {
@@ -268,11 +438,17 @@ async function confirmarReponer() {
       },
     });
     toast.add({
-      title: `${p.name}: ${p.stock} → ${resultado.value}`,
+      title: `${p.name}: ${p.stock} → ${nuevoStock}`,
       color: "success",
     });
     reponiendo.value = null;
     await cargar();
+    // Si el historial de ese producto estaba abierto detrás, se recarga:
+    // el movimiento que se acaba de registrar tiene que salir en él.
+    if (historial.value?.id === p.id) {
+      const fresco = productos.value.find((x: any) => x.id === p.id);
+      await abrirHistorial(fresco ?? { ...p, stock: nuevoStock });
+    }
   } catch (e: any) {
     toast.add({ title: e?.data?.message ?? "No se pudo registrar", color: "error" });
   } finally {
@@ -283,56 +459,122 @@ async function confirmarReponer() {
 </script>
 
 <style scoped>
-.inv-page { padding: 1.5rem; }
+
 
 /* ── Resumen ── */
-.inv-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.9rem; }
+.inv-resumen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
 .inv-chip {
   display: inline-flex; align-items: center; gap: 0.4rem;
   padding: 0.4rem 0.85rem; border: 1px solid var(--sp-border, #e2e8f0); border-radius: 999px;
   background: #fff; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer;
 }
 .inv-chip strong { font-weight: 800; }
-.inv-chip--on { background: var(--sp-primary, #b01883); border-color: var(--sp-primary, #b01883); color: #fff; }
+.inv-chip--on { background: var(--sp-primary, #071e52); border-color: var(--sp-primary, #071e52); color: #fff; }
 .inv-chip--low:not(.inv-chip--on) strong { color: #b45309; }
 .inv-chip--out { cursor: default; background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 
-.inv-umbral { margin-left: auto; display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; color: #64748b; }
-.inv-umbral input { width: 72px; text-align: center; }
+.inv-umbral { margin-left: auto; font-size: 0.78rem; color: #64748b; }
 
 /* ── Tabla ── */
 .inv-cat { font-size: 0.78rem; }
 .inv-inactivo { display: block; margin-top: 0.15rem; font-size: 0.68rem; color: #b45309; }
 
-.inv-stock { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-.inv-stock--agotado { color: #b91c1c; }
-.inv-stock--bajo { color: #b45309; }
-.inv-stock--ok { color: #0f172a; }
+/* Las etiquetas de estado, el número de stock y los botones de la fila
+   usaban clases propias —otros verdes, otro radio, otro tamaño— al lado de
+   una tabla que ya traía sp-badge, sp-table-num y sp-table-btn. Se fueron:
+   ahora Inventario se pinta con lo mismo que Productos.
 
-.inv-badge {
-  display: inline-block; padding: 0.12rem 0.55rem; border-radius: 999px;
-  font-size: 0.7rem; font-weight: 700;
-}
-.inv-badge--agotado { background: #fef2f2; color: #b91c1c; }
-.inv-badge--bajo { background: #fffbeb; color: #b45309; }
-.inv-badge--ok { background: #f0fdf4; color: #15803d; }
+   De paso desaparece un `var(--sp-primary, #071e52)` cuyo respaldo era
+   magenta, de otra paleta. */
 
 /* ── Reponer ── */
-.inv-btn {
-  padding: 0.35rem 0.9rem;
-  border: 1px solid var(--sp-border, #e2e8f0);
-  border-radius: 8px;
-  background: #fff;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-  transition: border-color 0.12s, background 0.12s;
+
+/* El historial necesita más ancho que el diálogo de ajuste: cada línea
+   lleva tipo, motivo, fecha y cantidad. */
+.inv-modal--ancho {
+  width: min(560px, calc(100vw - 2rem));
 }
 
-.inv-btn:hover {
-  border-color: var(--sp-primary, #b01883);
-  color: var(--sp-primary, #b01883);
+.inv-hist {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.inv-hist__item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--sp-border, #e2e8f0);
+}
+
+.inv-hist__item:last-child {
+  border-bottom: none;
+}
+
+.inv-hist__tipo {
+  flex-shrink: 0;
+  min-width: 4.6rem;
+  text-align: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.inv-hist__tipo--entry { background: #dcfce7; color: #166534; }
+.inv-hist__tipo--exit { background: #fee2e2; color: #b91c1c; }
+.inv-hist__tipo--adjustment { background: #fef3c7; color: #92400e; }
+
+.inv-hist__texto {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.inv-hist__texto strong {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inv-hist__texto span {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.inv-hist__delta {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+}
+
+.inv-hist__delta--sube { color: #15803d; }
+.inv-hist__delta--baja { color: #b91c1c; }
+
+.inv-hist__mas {
+  margin: -0.4rem 0 0.9rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.inv-hist__estado {
+  margin: 0 0 1rem;
+  padding: 1.5rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
 .inv-modal {
@@ -406,7 +648,7 @@ async function confirmarReponer() {
 }
 
 .inv-opcion--on {
-  border-color: var(--sp-primary, #b01883);
+  border-color: var(--sp-primary, #071e52);
   background: #fdf4fa;
 }
 
