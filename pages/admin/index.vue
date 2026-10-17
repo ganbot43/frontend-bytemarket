@@ -1,7 +1,7 @@
 <template>
-  <div class="dash-page">
+  <div class="sp-page dash-page">
     <!-- Toolbar -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.75rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Dashboard</h1>
         <p class="sp-page-toolbar__sub">
@@ -36,6 +36,41 @@
         <p class="dash-stat-hint">{{ stat.hint }}</p>
       </NuxtLink>
     </div>
+
+    <!-- ── Ventas por día ── -->
+    <!-- Acompaña a la tarjeta de "Ventas del mes": el número dice cuánto se
+         cobró, la línea dice si está subiendo o cayendo, que es lo que
+         decide si hay que hacer algo. Detrás va la misma consulta que la
+         tarjeta, así que las dos cifras cuadran. -->
+    <section class="sp-table-wrap dash-chart admin-fade-in" style="animation-delay: 150ms">
+      <div class="dash-table-header">
+        <div>
+          <h2 class="dash-table-title">Ventas cobradas por día</h2>
+          <p class="dash-table-sub">
+            Últimos {{ diasGrafico }} días · solo pedidos cobrados
+          </p>
+        </div>
+        <div class="dash-chart__actions">
+          <div class="sp-segmented" role="group" aria-label="Período del gráfico">
+            <button v-for="opcion in OPCIONES_DIAS" :key="opcion" type="button" class="sp-segmented__btn"
+              :class="{ 'is-active': diasGrafico === opcion }" :aria-pressed="diasGrafico === opcion"
+              @click="diasGrafico = opcion">
+              {{ opcion }} días
+            </button>
+          </div>
+          <NuxtLink to="/admin/reportes" class="dash-view-all">
+            Ver reportes
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </NuxtLink>
+        </div>
+      </div>
+      <div class="dash-chart__body">
+        <AdminChartsVentasChart :days="diasGrafico" />
+      </div>
+    </section>
 
     <!-- ── Automatización ── -->
     <div class="dash-automation admin-fade-in" style="animation-delay: 180ms">
@@ -87,7 +122,7 @@
         <div class="dash-automation-panel">
           <div class="dash-automation-panel__head">
             <h3>Productos con stock bajo</h3>
-            <span class="dash-automation-pill">Umbral {{ stockThreshold }}</span>
+            <span v-if="umbralStock !== null" class="dash-automation-pill">Umbral {{ umbralStock }}</span>
           </div>
           <div v-if="!lowStockItems.length" class="dash-automation-empty">
             No hay productos en alerta.
@@ -265,7 +300,20 @@ const recentOrders = computed(() => (ordersData.value?.data ?? []).slice(0, 5));
 const selectedOrderId = ref<number | null>(null);
 const modalOpen = ref(false);
 const automationLoading = ref(false);
-const stockThreshold = ref(10);
+/* El umbral de stock bajo ya no se guarda aquí: lo fija catalog-service,
+   que es quien tiene los productos, y lo devuelve en cada respuesta. Antes
+   el panel tenía su propio 10 y la pantalla de Inventario otro, así que los
+   dos sitios podían contar "stock bajo" de forma distinta. */
+const umbralStock = computed<number | null>(() => {
+  const n = stockAlertsData.value?.threshold ?? dashData.value?.lowStockThreshold;
+  return typeof n === "number" ? n : null;
+});
+
+/* Siete días para ver la semana en curso, treinta para ver la tendencia.
+   Más opciones no caben en la cabecera y el reporte de ventas ya permite
+   elegir fechas exactas. */
+const OPCIONES_DIAS = [7, 30] as const;
+const diasGrafico = ref<number>(30);
 
 function openOrder(orderId: number) {
   selectedOrderId.value = orderId;
@@ -322,7 +370,7 @@ async function sendStockAlerts() {
   automationLoading.value = true;
   try {
     await $fetch("/api/admin/automation/stock-alerts", {
-      query: { threshold: stockThreshold.value, notify: 1 },
+      query: { notify: 1 },
     });
     await Promise.all([refreshReports(), refreshStockAlerts(), refreshDash()]);
     sellarHora();
@@ -410,7 +458,9 @@ const stats = computed(() => {
       label: "Stock bajo",
       value: bajo,
       hint: bajo
-        ? `Con ${d.lowStockThreshold ?? 10} unidades o menos`
+        ? (typeof d.lowStockThreshold === "number"
+          ? `Con ${d.lowStockThreshold} unidades o menos`
+          : "Productos por reponer")
         : "Ningún producto por reponer",
       color: "primary",
       icon: svgCube,
@@ -422,9 +472,10 @@ const stats = computed(() => {
 </script>
 
 <style scoped>
-.dash-page {
-  padding: 1.5rem;
-}
+/* El padding lo pone .admin-shell__main y aquí se sumaba: el dashboard
+   empezaba al doble de distancia del borde que Productos. La separación
+   entre bloques la da ahora el gap de .sp-page, así que los
+   margin-bottom de las secciones también sobran. */
 
 /* ── Live indicator ── */
 .dash-live-dot {
@@ -457,7 +508,6 @@ const stats = computed(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.25rem;
 }
 
 /* La tarjeta ahora es un <NuxtLink>: hereda color y pierde el subrayado,
@@ -469,7 +519,7 @@ const stats = computed(() => {
   cursor: pointer;
 }
 .dash-stat-card--link:focus-visible {
-  outline: 2px solid var(--sp-primary, #b01883);
+  outline: 2px solid var(--sp-primary, #071e52);
   outline-offset: 2px;
 }
 
@@ -568,7 +618,6 @@ const stats = computed(() => {
   border-radius: var(--sp-radius-xl);
   box-shadow: var(--sp-shadow-sm);
   padding: 1.2rem;
-  margin-bottom: 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -742,6 +791,30 @@ const stats = computed(() => {
 }
 
 /* ── Table section header ── */
+.dash-chart__body {
+  padding: 1.1rem 1.4rem 1.4rem;
+}
+
+.dash-chart__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* El selector de período usa .sp-segmented, el mismo que Reportes. */
+
+@media (max-width: 640px) {
+  .dash-chart .dash-table-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dash-chart__body {
+    padding: 0.9rem 0.9rem 1.1rem;
+  }
+}
+
 .dash-table-header {
   display: flex;
   align-items: center;
