@@ -19,7 +19,7 @@ las clases, y que si alguien "simplifica" sin saber, rompe algo.
 | Clases Java | 134 |
 | Endpoints REST | 93 |
 | Componentes y páginas Vue | 77 (34 páginas, 39 componentes, 4 layouts) |
-| Tests automatizados | 149 (52 order, 51 catalog, 34 support, 12 user) |
+| Tests automatizados | 156 (58 catalog, 52 order, 34 support, 12 user) |
 | Esquemas MySQL | 4, uno por servicio de negocio |
 | Tablas | 18 |
 
