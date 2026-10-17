@@ -58,7 +58,8 @@
                 <span v-if="u.dni" class="usu-dato usu-dato--soft">DNI {{ u.dni }}</span>
               </td>
               <td class="sp-td">
-                <span class="usu-estado" :class="u.isActive ? 'usu-estado--on' : 'usu-estado--off'">
+                <span class="sp-badge" :class="u.isActive ? 'sp-badge--success' : 'sp-badge--danger'">
+                  <span class="sp-badge__dot" />
                   {{ u.isActive ? "Activo" : "Inhabilitado" }}
                 </span>
               </td>
@@ -67,25 +68,23 @@
               </td>
               <td class="sp-td">
                 <div class="sp-table-actions">
-                  <button class="sp-table-btn sp-table-btn--edit" title="Editar" @click="abrir(u)">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5Z"
-                            stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
-                    </svg>
+                  <button class="sp-table-btn sp-table-btn--edit" title="Editar"
+                          aria-label="Editar" @click="abrir(u)">
+                    <Pencil class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
-                  <button class="sp-table-btn" :title="u.isActive ? 'Inhabilitar' : 'Reactivar'"
+                  <!-- El icono del medio era una raya dibujada a mano
+                       ('M5 8h6'): un guion suelto que no dice que
+                       inhabilita a alguien. UserMinus y UserPlus sí. -->
+                  <button class="sp-table-btn" :class="u.isActive ? '' : 'sp-table-btn--view'"
+                          :title="u.isActive ? 'Inhabilitar' : 'Reactivar'"
+                          :aria-label="u.isActive ? 'Inhabilitar' : 'Reactivar'"
                           :disabled="esYoMismo(u)" @click="alternarEstado(u)">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path :d="u.isActive ? 'M5 8h6' : 'M8 5v6M5 8h6'"
-                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                    </svg>
+                    <component :is="u.isActive ? UserMinus : UserPlus" class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
                   <button class="sp-table-btn sp-table-btn--del" title="Eliminar"
+                          aria-label="Eliminar"
                           :disabled="esYoMismo(u)" @click="pedirBorrado(u)">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path d="M3 5h10M6 5V3h4v2M6 8v4M10 8v4M4 5l1 8h6l1-8"
-                            stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
+                    <Trash2 class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
                 </div>
               </td>
@@ -228,6 +227,8 @@
 </template>
 
 <script setup lang="ts">
+import { Pencil, Trash2, UserMinus, UserPlus } from "lucide-vue-next";
+
 /**
  * Usuarios del panel y clientes.
  *
@@ -415,8 +416,7 @@ async function borrar() {
 </script>
 
 <style scoped>
-.usu-page { padding: 1.5rem; }
-.usu-tabs { margin-bottom: 0.9rem; display: flex; gap: 0.3rem; }
+.usu-tabs { display: flex; gap: 0.3rem; }
 
 .usu-cell { display: flex; align-items: center; gap: 0.6rem; }
 .usu-avatar {
@@ -433,9 +433,9 @@ async function borrar() {
 .usu-rol--admin { background: #eff6ff; color: #1d4ed8; }
 .usu-rol--superadmin { background: #f5f3ff; color: #6d28d9; }
 
-.usu-estado { font-size: 0.75rem; font-weight: 700; }
-.usu-estado--on { color: #15803d; }
-.usu-estado--off { color: #b91c1c; }
+/* El estado era texto de color, sin pastilla: la misma columna que en
+   Productos y Métodos de pago lleva sp-badge, y además el color dejaba de
+   ser la única señal cuando se le puso el punto. */
 
 .usu-dato { display: block; font-size: 0.78rem; }
 .usu-dato--soft { font-size: 0.68rem; color: #64748b; }

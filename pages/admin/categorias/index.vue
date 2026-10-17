@@ -1,5 +1,5 @@
 <template>
-  <div class="cat-page">
+  <div class="sp-page cat-page">
     <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Categorías</h1>
@@ -51,29 +51,14 @@
                     @click="openDrawer(cat)"
                     title="Editar"
                   >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5Z"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                    <Pencil class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
                   <button
                     class="sp-table-btn sp-table-btn--del"
                     @click="deleteCategory(cat.id)"
                     title="Eliminar"
                   >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 5h10M6 5V3h4v2M6 8v4M10 8v4M4 5l1 8h6l1-8"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                    <Trash2 class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
                 </div>
               </td>
@@ -299,6 +284,8 @@
 definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Categorías · Admin" });
 
+import { Pencil, Trash2 } from "lucide-vue-next";
+
 const { data, refresh } = await useFetch<{ data: any[] }>(
   "/api/admin/categories",
 );
@@ -422,11 +409,6 @@ async function deleteCategory(id: number) {
 </script>
 
 <style scoped>
-.cat-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
 
 .categoria-preview {
   margin-bottom: 1rem;

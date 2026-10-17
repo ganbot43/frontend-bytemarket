@@ -1,5 +1,5 @@
 <template>
-  <div class="banners-page">
+  <div class="sp-page banners-page">
     <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Banners</h1>
@@ -9,12 +9,7 @@
       </div>
       <button class="sp-page-btn" @click="openDrawer()">
         <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M8 3v10M3 8h10"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-          />
+          <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </svg>
         Nuevo banner
       </button>
@@ -39,30 +34,13 @@
             <tr v-for="banner in banners" :key="banner.id" class="sp-tr">
               <td class="sp-td">
                 <div class="banner-thumb">
-                  <img
-                    v-if="banner.imageUrl"
-                    :src="banner.imageUrl"
-                    :alt="`Banner ${banner.sortOrder}`"
-                  />
+                  <img v-if="banner.imageUrl" :src="banner.imageUrl" :alt="`Banner ${banner.sortOrder}`" />
                   <div v-else class="banner-thumb__empty">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <rect
-                        x="3"
-                        y="3"
-                        width="18"
-                        height="18"
-                        rx="3"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                      />
+                      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" />
                       <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-                      <path
-                        d="M3 15l5-5 4 4 3-3 6 6"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                      <path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
                     </svg>
                   </div>
                 </div>
@@ -79,11 +57,7 @@
               </td>
 
               <td class="sp-td">
-                <p
-                  v-if="banner.linkUrl"
-                  class="banner-url banner-url--link"
-                  :title="banner.linkUrl"
-                >
+                <p v-if="banner.linkUrl" class="banner-url banner-url--link" :title="banner.linkUrl">
                   {{ banner.linkUrl }}
                 </p>
                 <span v-else class="sp-table-num">–</span>
@@ -94,46 +68,19 @@
               </td>
 
               <td class="sp-td">
-                <span
-                  class="sp-badge"
-                  :class="
-                    banner.isActive ? 'sp-badge--success' : 'sp-badge--danger'
-                  "
-                >
+                <span class="sp-badge" :class="banner.isActive ? 'sp-badge--success' : 'sp-badge--danger'
+                  ">
                   <span class="sp-badge__dot"></span>
                   {{ banner.isActive ? "Activo" : "Inactivo" }}
                 </span>
               </td>
               <td class="sp-td">
                 <div class="sp-table-actions">
-                  <button
-                    class="sp-table-btn sp-table-btn--edit"
-                    @click="openDrawer(banner)"
-                    title="Editar"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M11.5 2.5a1.414 1.414 0 0 1 2 2L5 13H3v-2L11.5 2.5Z"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                  <button class="sp-table-btn sp-table-btn--edit" @click="openDrawer(banner)" title="Editar">
+                    <Pencil class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
-                  <button
-                    class="sp-table-btn sp-table-btn--del"
-                    @click="deleteBanner(banner.id)"
-                    title="Eliminar"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                      <path
-                        d="M3 5h10M6 5V3h4v2M6 8v4M10 8v4M4 5l1 8h6l1-8"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                  <button class="sp-table-btn sp-table-btn--del" @click="deleteBanner(banner.id)" title="Eliminar">
+                    <Trash2 class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
                 </div>
               </td>
@@ -144,23 +91,10 @@
                 <div class="sp-table-empty__inner">
                   <div class="sp-table-empty__icon">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                      <rect
-                        x="3"
-                        y="3"
-                        width="18"
-                        height="18"
-                        rx="3"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                      />
+                      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.5" />
                       <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-                      <path
-                        d="M3 15l5-5 4 4 3-3 6 6"
-                        stroke="currentColor"
-                        stroke-width="1.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
+                      <path d="M3 15l5-5 4 4 3-3 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
                     </svg>
                   </div>
                   <p class="sp-table-empty__msg">No hay banners aún</p>
@@ -179,19 +113,10 @@
 
     <Teleport to="body">
       <Transition name="sp-drawer-overlay">
-        <div
-          v-if="drawerOpen"
-          class="sp-drawer-overlay"
-          @click.self="closeDrawer"
-        />
+        <div v-if="drawerOpen" class="sp-drawer-overlay" @click.self="closeDrawer" />
       </Transition>
       <Transition name="sp-drawer-panel">
-        <aside
-          v-if="drawerOpen"
-          class="sp-drawer-panel"
-          role="dialog"
-          aria-modal="true"
-        >
+        <aside v-if="drawerOpen" class="sp-drawer-panel" role="dialog" aria-modal="true">
           <div class="sp-drawer-header">
             <div>
               <p class="sp-drawer-header__eyebrow">
@@ -201,18 +126,9 @@
                 {{ isEditing ? "Editar banner" : "Crear banner" }}
               </h2>
             </div>
-            <button
-              class="sp-drawer-close"
-              @click="closeDrawer"
-              aria-label="Cerrar"
-            >
+            <button class="sp-drawer-close" @click="closeDrawer" aria-label="Cerrar">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 3l10 10M13 3L3 13"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                />
+                <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
               </svg>
             </button>
           </div>
@@ -247,34 +163,21 @@
 
               <div class="bnr-upload">
                 <label class="bnr-upload__btn" :class="{ 'is-busy': uploading }">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    hidden
-                    :disabled="uploading"
-                    @change="onPickFile"
-                  />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" hidden :disabled="uploading"
+                    @change="onPickFile" />
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                    <path d="M8 11V3M5 6l3-3 3 3M3 11v2h10v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M8 11V3M5 6l3-3 3 3M3 11v2h10v-2" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                   {{ uploading ? "Subiendo…" : "Subir imagen" }}
                 </label>
 
-                <button
-                  v-if="form.imageUrl"
-                  type="button"
-                  class="bnr-upload__clear"
-                  @click="form.imageUrl = ''"
-                >
+                <button v-if="form.imageUrl" type="button" class="bnr-upload__clear" @click="form.imageUrl = ''">
                   Quitar
                 </button>
               </div>
 
-              <input
-                v-model="form.imageUrl"
-                class="sp-drawer-input"
-                placeholder="…o pega una URL: https://…"
-              />
+              <input v-model="form.imageUrl" class="sp-drawer-input" placeholder="…o pega una URL: https://…" />
               <span class="sp-drawer-hint">
                 Proporción recomendada 21:9 (ej. 1680×720px). JPG, PNG o WebP.
               </span>
@@ -290,12 +193,8 @@
               <label class="sp-drawer-label">
                 Etiqueta <span class="banner-optional">opcional</span>
               </label>
-              <input
-                v-model="form.eyebrow"
-                class="sp-drawer-input"
-                maxlength="80"
-                placeholder="Ej. Oferta de temporada"
-              />
+              <input v-model="form.eyebrow" class="sp-drawer-input" maxlength="80"
+                placeholder="Ej. Oferta de temporada" />
               <span class="sp-drawer-hint">Línea pequeña en mayúsculas sobre el titular</span>
             </div>
 
@@ -303,25 +202,16 @@
               <label class="sp-drawer-label">
                 Titular <span class="banner-optional">opcional</span>
               </label>
-              <input
-                v-model="form.title"
-                class="sp-drawer-input"
-                maxlength="160"
-                placeholder="Ej. Pantallas con 20% de descuento"
-              />
+              <input v-model="form.title" class="sp-drawer-input" maxlength="160"
+                placeholder="Ej. Pantallas con 20% de descuento" />
             </div>
 
             <div class="sp-drawer-field">
               <label class="sp-drawer-label">
                 Bajada <span class="banner-optional">opcional</span>
               </label>
-              <textarea
-                v-model="form.subtitle"
-                class="sp-drawer-input bnr-textarea"
-                maxlength="300"
-                rows="2"
-                placeholder="Una o dos líneas explicando la promoción"
-              />
+              <textarea v-model="form.subtitle" class="sp-drawer-input bnr-textarea" maxlength="300" rows="2"
+                placeholder="Una o dos líneas explicando la promoción" />
             </div>
 
             <div class="sp-drawer-row">
@@ -329,12 +219,7 @@
                 <label class="sp-drawer-label">
                   Texto del botón <span class="banner-optional">opcional</span>
                 </label>
-                <input
-                  v-model="form.ctaLabel"
-                  class="sp-drawer-input"
-                  maxlength="60"
-                  placeholder="Ej. Ver ofertas"
-                />
+                <input v-model="form.ctaLabel" class="sp-drawer-input" maxlength="60" placeholder="Ej. Ver ofertas" />
               </div>
 
               <div class="sp-drawer-field">
@@ -354,11 +239,8 @@
               <label class="sp-drawer-label">
                 Enlace <span class="banner-optional">opcional</span>
               </label>
-              <input
-                v-model="form.linkUrl"
-                class="sp-drawer-input"
-                placeholder="/productos?categoria=pantallas  o  https://…"
-              />
+              <input v-model="form.linkUrl" class="sp-drawer-input"
+                placeholder="/productos?categoria=pantallas  o  https://…" />
               <span class="sp-drawer-hint">
                 Ruta interna (empieza con /) o URL completa. Vacío = el banner no es clicable.
               </span>
@@ -366,26 +248,15 @@
 
             <div class="sp-drawer-field">
               <label class="sp-drawer-label">Orden</label>
-              <input
-                v-model.number="form.sortOrder"
-                type="number"
-                min="0"
-                class="sp-drawer-input banner-input-order"
-                placeholder="0"
-              />
+              <input v-model.number="form.sortOrder" type="number" min="0" class="sp-drawer-input banner-input-order"
+                placeholder="0" />
               <span class="sp-drawer-hint">Menor número = aparece primero</span>
             </div>
 
             <div class="sp-drawer-switches">
               <label class="sp-drawer-switch">
-                <input
-                  type="checkbox"
-                  v-model="form.isActive"
-                  class="sp-drawer-switch__input"
-                />
-                <span class="sp-drawer-switch__track"
-                  ><span class="sp-drawer-switch__thumb"></span
-                ></span>
+                <input type="checkbox" v-model="form.isActive" class="sp-drawer-switch__input" />
+                <span class="sp-drawer-switch__track"><span class="sp-drawer-switch__thumb"></span></span>
                 <span class="sp-drawer-switch__label">Banner activo</span>
               </label>
             </div>
@@ -394,49 +265,17 @@
           </div>
 
           <div class="sp-drawer-footer">
-            <button
-              class="sp-drawer-btn sp-drawer-btn--ghost"
-              @click="closeDrawer"
-            >
+            <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="closeDrawer">
               Cancelar
             </button>
-            <button
-              class="sp-drawer-btn sp-drawer-btn--primary"
-              :disabled="saving"
-              @click="save"
-            >
-              <svg
-                v-if="saving"
-                class="sp-drawer-spin"
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <circle
-                  cx="8"
-                  cy="8"
-                  r="6"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-dasharray="25 13"
-                  stroke-linecap="round"
-                />
+            <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="saving" @click="save">
+              <svg v-if="saving" class="sp-drawer-spin" width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="25 13"
+                  stroke-linecap="round" />
               </svg>
-              <svg
-                v-else
-                width="14"
-                height="14"
-                viewBox="0 0 16 16"
-                fill="none"
-              >
-                <path
-                  d="M3 8l4 4 6-6"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+              <svg v-else width="14" height="14" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l4 4 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                  stroke-linejoin="round" />
               </svg>
               {{ isEditing ? "Guardar cambios" : "Crear banner" }}
             </button>
@@ -450,6 +289,8 @@
 <script setup lang="ts">
 definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Banners · Admin" });
+
+import { Pencil, Trash2 } from "lucide-vue-next";
 
 const { data, refresh } = await useFetch<{ data: any[] }>("/api/admin/banners");
 const _todos = computed(() => data.value?.data ?? []);
@@ -597,12 +438,6 @@ async function deleteBanner(id: number) {
 </script>
 
 <style scoped>
-.banners-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
 /* ── Thumbnail en tabla ── */
 .banner-thumb {
   width: 7rem;
@@ -615,12 +450,14 @@ async function deleteBanner(id: number) {
   align-items: center;
   justify-content: center;
 }
+
 .banner-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
+
 .banner-thumb__empty {
   color: var(--sp-text-soft);
   display: flex;
@@ -640,6 +477,7 @@ async function deleteBanner(id: number) {
   white-space: nowrap;
   margin: 0;
 }
+
 .banner-url--link {
   color: var(--sp-primary);
 }
@@ -659,6 +497,7 @@ async function deleteBanner(id: number) {
   gap: 2px;
   max-width: 22rem;
 }
+
 .banner-content__title {
   margin: 0;
   font-size: var(--sp-text-sm);
@@ -668,11 +507,13 @@ async function deleteBanner(id: number) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .banner-content__title--none {
   font-weight: 500;
   font-style: italic;
   color: var(--sp-text-soft);
 }
+
 .banner-content__sub {
   margin: 0;
   font-size: var(--sp-text-xs);
@@ -719,14 +560,17 @@ async function deleteBanner(id: number) {
   position: absolute;
   inset: 0;
 }
+
 .bnr-preview__scrim.is-left {
-  background: linear-gradient(90deg, rgba(7,30,82,.88) 0%, rgba(7,30,82,.66) 38%, rgba(7,30,82,.12) 72%, transparent 100%);
+  background: linear-gradient(90deg, rgba(7, 30, 82, .88) 0%, rgba(7, 30, 82, .66) 38%, rgba(7, 30, 82, .12) 72%, transparent 100%);
 }
+
 .bnr-preview__scrim.is-right {
-  background: linear-gradient(270deg, rgba(7,30,82,.88) 0%, rgba(7,30,82,.66) 38%, rgba(7,30,82,.12) 72%, transparent 100%);
+  background: linear-gradient(270deg, rgba(7, 30, 82, .88) 0%, rgba(7, 30, 82, .66) 38%, rgba(7, 30, 82, .12) 72%, transparent 100%);
 }
+
 .bnr-preview__scrim.is-center {
-  background: linear-gradient(180deg, rgba(7,30,82,.5) 0%, rgba(7,30,82,.72) 100%);
+  background: linear-gradient(180deg, rgba(7, 30, 82, .5) 0%, rgba(7, 30, 82, .72) 100%);
 }
 
 .bnr-preview__body {
@@ -738,16 +582,19 @@ async function deleteBanner(id: number) {
   gap: 0.3rem;
   padding: 1.1rem 1.3rem;
 }
+
 .bnr-preview__body.is-left {
   align-items: flex-start;
   text-align: left;
   padding-right: 38%;
 }
+
 .bnr-preview__body.is-right {
   align-items: flex-end;
   text-align: right;
   padding-left: 38%;
 }
+
 .bnr-preview__body.is-center {
   align-items: center;
   text-align: center;
@@ -760,6 +607,7 @@ async function deleteBanner(id: number) {
   text-transform: uppercase;
   color: #50d0ff;
 }
+
 .bnr-preview__title {
   font-size: 1rem;
   font-weight: 800;
@@ -767,11 +615,13 @@ async function deleteBanner(id: number) {
   letter-spacing: -0.02em;
   color: #fff;
 }
+
 .bnr-preview__sub {
   font-size: 0.68rem;
   line-height: 1.4;
   color: rgba(232, 246, 255, 0.85);
 }
+
 .bnr-preview__cta {
   margin-top: 0.3rem;
   padding: 0.3rem 0.8rem;
@@ -811,9 +661,11 @@ async function deleteBanner(id: number) {
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
+
 .bnr-upload__btn:hover {
   background: var(--sp-surface-muted);
 }
+
 .bnr-upload__btn.is-busy {
   opacity: 0.6;
   cursor: wait;
@@ -828,6 +680,7 @@ async function deleteBanner(id: number) {
   color: var(--sp-text-muted);
   cursor: pointer;
 }
+
 .bnr-upload__clear:hover {
   color: var(--sp-danger, #dc2626);
 }
@@ -841,6 +694,7 @@ async function deleteBanner(id: number) {
   margin-top: 0.3rem;
   border-top: 1px solid var(--sp-border);
 }
+
 .bnr-divider span {
   font-size: 0.6rem;
   font-weight: 800;
@@ -848,6 +702,7 @@ async function deleteBanner(id: number) {
   text-transform: uppercase;
   color: var(--sp-text-muted);
 }
+
 .bnr-divider small {
   font-size: var(--sp-text-xs);
   color: var(--sp-text-soft);

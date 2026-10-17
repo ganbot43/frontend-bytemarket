@@ -1,7 +1,7 @@
 <template>
-  <div class="cfg-page">
+  <div class="sp-page cfg-page">
     <!-- Page toolbar -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.25rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Configuración del negocio</h1>
         <p class="sp-page-toolbar__sub">Ajusta los datos y módulos de tu tienda</p>
@@ -439,8 +439,9 @@ async function uploadLogo(event: Event) {
 </script>
 
 <style scoped>
+/* El ancho máximo se queda —es un formulario, y una línea de 1400px no se
+   lee—, el padding no: lo pone .admin-shell__main y aquí se sumaba. */
 .cfg-page {
-  padding: 1.5rem;
   max-width: 680px;
 }
 

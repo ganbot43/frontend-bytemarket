@@ -12,15 +12,21 @@
 
     <!-- Período -->
     <div class="rep-periodo">
-      <button v-for="p in presets" :key="p.label" class="rep-periodo__btn"
-              :class="{ 'rep-periodo__btn--on': presetActivo === p.label }"
-              @click="aplicarPreset(p)">
-        {{ p.label }}
-      </button>
+      <!-- El mismo segmentado que el gráfico del dashboard. Eran píldoras
+           sueltas: cuatro botones separados no dicen que solo uno puede
+           estar activo. -->
+      <div class="sp-segmented" role="group" aria-label="Período del reporte">
+        <button v-for="p in presets" :key="p.label" type="button" class="sp-segmented__btn"
+                :class="{ 'is-active': presetActivo === p.label }"
+                :aria-pressed="presetActivo === p.label"
+                @click="aplicarPreset(p)">
+          {{ p.label }}
+        </button>
+      </div>
       <div class="rep-periodo__fechas">
-        <input v-model="desde" type="date" :max="hasta" />
-        <span>→</span>
-        <input v-model="hasta" type="date" :min="desde" :max="hoy" />
+        <input v-model="desde" type="date" :max="hasta" class="sp-drawer-input" aria-label="Desde" />
+        <span aria-hidden="true">→</span>
+        <input v-model="hasta" type="date" :min="desde" :max="hoy" class="sp-drawer-input" aria-label="Hasta" />
       </div>
     </div>
 
@@ -30,7 +36,7 @@
     <template v-else-if="rep">
       <!-- Indicadores con variación -->
       <div class="rep-kpis">
-        <div v-for="k in kpis" :key="k.label" class="rep-kpi">
+        <div v-for="k in kpis" :key="k.label" class="sp-card rep-kpi">
           <span class="rep-kpi__label">{{ k.label }}</span>
           <p class="rep-kpi__value">{{ k.value }}</p>
           <p class="rep-kpi__delta" :class="claseDelta(k.delta)">
@@ -53,10 +59,10 @@
       </NuxtLink>
 
       <!-- Serie diaria -->
-      <section class="rep-card">
-        <div class="rep-card__head">
+      <section class="sp-card">
+        <div class="sp-card__head">
           <h2>Ventas por día</h2>
-          <span class="rep-card__note">máximo {{ money(maxSerie) }}</span>
+          <span class="sp-card__note">máximo {{ money(maxSerie) }}</span>
         </div>
         <div v-if="maxSerie > 0" class="rep-barras">
           <div v-for="d in rep.series" :key="d.day" class="rep-barra"
@@ -73,29 +79,29 @@
 
       <!-- Desgloses -->
       <div class="rep-grid">
-        <section class="rep-card">
-          <div class="rep-card__head"><h2>Por canal</h2></div>
+        <section class="sp-card">
+          <div class="sp-card__head"><h2>Por canal</h2></div>
           <AdminRepLista :filas="rep.byChannel" :total="rep.current.revenue" :money="money" sufijo="pedidos" />
         </section>
 
-        <section class="rep-card">
-          <div class="rep-card__head"><h2>Por forma de pago</h2></div>
+        <section class="sp-card">
+          <div class="sp-card__head"><h2>Por forma de pago</h2></div>
           <AdminRepLista :filas="rep.byPayment" :total="rep.current.revenue" :money="money" sufijo="pedidos" />
         </section>
 
-        <section class="rep-card">
-          <div class="rep-card__head"><h2>Más vendidos</h2></div>
+        <section class="sp-card">
+          <div class="sp-card__head"><h2>Más vendidos</h2></div>
           <AdminRepLista :filas="rep.topProducts" :total="rep.current.revenue" :money="money" sufijo="unidades" campo="units" />
         </section>
 
-        <section class="rep-card">
-          <div class="rep-card__head"><h2>Cupones usados</h2></div>
+        <section class="sp-card">
+          <div class="sp-card__head"><h2>Cupones usados</h2></div>
           <AdminRepLista :filas="rep.coupons" :total="descuentoTotal" :money="money" sufijo="usos" />
         </section>
       </div>
 
-      <section class="rep-card">
-        <div class="rep-card__head"><h2>Exportar</h2></div>
+      <section class="sp-card">
+        <div class="sp-card__head"><h2>Exportar</h2></div>
         <AdminReportsExportPanel />
       </section>
     </template>
@@ -209,62 +215,65 @@ const descuentoTotal = computed(() =>
 </script>
 
 <style scoped>
-.rep-page { padding: 1.5rem; }
 
 /* ── Período ── */
-.rep-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; margin-bottom: 1.2rem; }
-.rep-periodo__btn {
-  padding: 0.4rem 0.85rem; border: 1px solid var(--sp-border, #e2e8f0); border-radius: 999px;
-  background: #fff; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer;
+.rep-periodo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
+/* Los botones del período y los inputs de fecha ya no tienen estilos
+   propios: usan .sp-segmented y .sp-drawer-input. Aquí solo queda la
+   colocación. */
+.rep-periodo__fechas {
+  display: inline-flex; align-items: center; gap: 0.35rem; margin-left: auto;
+  font-size: var(--sp-text-xs); color: var(--sp-text-soft);
 }
-.rep-periodo__btn--on { background: var(--sp-primary, #b01883); border-color: var(--sp-primary, #b01883); color: #fff; }
-.rep-periodo__fechas { display: inline-flex; align-items: center; gap: 0.35rem; margin-left: auto; font-size: 0.8rem; color: #64748b; }
-.rep-periodo__fechas input {
-  padding: 0.35rem 0.5rem; border: 1px solid var(--sp-border, #e2e8f0); border-radius: 8px; font-size: 0.8rem;
+.rep-periodo__fechas input { width: auto; }
+
+.rep-hint { font-size: var(--sp-text-sm); color: var(--sp-text-muted); margin: 0.8rem 0; }
+.rep-error {
+  padding: 0.6rem 0.8rem; border-radius: var(--sp-radius-sm);
+  background: var(--sp-danger-soft); color: #b91c1c; font-size: var(--sp-text-sm);
 }
 
-.rep-hint { font-size: 0.85rem; color: #64748b; margin: 0.8rem 0; }
-.rep-error { padding: 0.6rem 0.8rem; border-radius: 8px; background: #fef2f2; color: #b91c1c; font-size: 0.85rem; }
-
-/* ── Indicadores ── */
-.rep-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.9rem; margin-bottom: 1rem; }
-.rep-kpi { padding: 1rem; border: 1px solid var(--sp-border, #e2e8f0); border-radius: 12px; background: #fff; }
-.rep-kpi__label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; }
-.rep-kpi__value { margin: 0.35rem 0 0.2rem; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
-.rep-kpi__delta { margin: 0; font-size: 0.75rem; font-weight: 600; }
+/* ── Indicadores ──
+   La caja la pone .sp-card; aquí solo la tipografía del indicador. */
+.rep-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.9rem; }
+.rep-kpi__label {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--sp-text-soft); font-weight: 700;
+}
+.rep-kpi__value {
+  margin: 0.35rem 0 0.2rem; font-size: 1.5rem; font-weight: 800;
+  letter-spacing: -0.02em; color: var(--sp-text-strong);
+}
+.rep-kpi__delta { margin: 0; font-size: var(--sp-text-xs); font-weight: 600; }
 .rep-kpi__delta--up { color: #15803d; }
 .rep-kpi__delta--down { color: #b91c1c; }
-.rep-kpi__delta--flat { color: #64748b; }
-.rep-kpi__prev { color: #64748b; font-weight: 500; }
+.rep-kpi__delta--flat { color: var(--sp-text-muted); }
+.rep-kpi__prev { color: var(--sp-text-soft); font-weight: 500; }
 
 /* ── Por cobrar ── */
 .rep-cobrar {
-  display: flex; align-items: center; gap: 0.4rem; margin-bottom: 1rem;
-  padding: 0.7rem 0.95rem; border: 1px solid #fcd34d; border-radius: 10px;
-  background: #fffbeb; color: #92400e; font-size: 0.85rem; text-decoration: none;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.7rem 0.95rem; border: 1px solid #f59e0b55;
+  border-radius: var(--sp-radius-lg);
+  background: var(--sp-warning-soft); color: #92400e;
+  font-size: var(--sp-text-sm); text-decoration: none;
 }
 .rep-cobrar__go { margin-left: auto; font-weight: 700; }
 
 /* ── Tarjetas ── */
-.rep-card {
-  padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--sp-border, #e2e8f0);
-  border-radius: 12px; background: #fff;
-}
-.rep-card__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.8rem; }
-.rep-card__head h2 { margin: 0; font-size: 0.95rem; font-weight: 700; }
-.rep-card__note { font-size: 0.72rem; color: #64748b; }
+/* La tarjeta la pone .sp-card. El margin-bottom que tenía cada una se
+   sumaba al gap de .sp-page y dejaba 2,25rem entre bloques. */
 .rep-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 1rem; }
-.rep-grid .rep-card { margin-bottom: 0; }
 
 /* ── Barras ── */
 .rep-barras { display: flex; align-items: flex-end; gap: 2px; height: 150px; }
 .rep-barra { flex: 1; min-width: 3px; height: 100%; display: flex; align-items: flex-end; }
 .rep-barra__fill {
   width: 100%; min-height: 2px; border-radius: 2px 2px 0 0;
-  background: var(--sp-primary, #b01883); opacity: 0.85; transition: opacity 0.12s;
+  background: var(--sp-primary); opacity: 0.85; transition: opacity var(--sp-t-fast) var(--sp-ease);
 }
 .rep-barra:hover .rep-barra__fill { opacity: 1; }
-.rep-barras__eje { display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.68rem; color: #64748b; }
+.rep-barras__eje { display: flex; justify-content: space-between; margin-top: 0.4rem; font-size: 0.68rem; color: var(--sp-text-soft); }
 
 /* ── Móvil ──
    Los KPI y los desgloses ya reflúen solos con auto-fit. Lo que no reflúe
@@ -286,7 +295,14 @@ const descuentoTotal = computed(() =>
     min-width: 0;
   }
 
-  .rep-periodo__btn {
+  /* En un teléfono el segmentado ocupa la línea entera y reparte el
+     ancho: si no, los cuatro presets se amontonan a la izquierda. */
+  .rep-periodo .sp-segmented {
+    display: flex;
+    width: 100%;
+  }
+
+  .rep-periodo .sp-segmented__btn {
     flex: 1 1 auto;
     text-align: center;
   }

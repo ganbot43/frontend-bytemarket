@@ -1,7 +1,7 @@
 <template>
-  <div class="reclamaciones-page">
+  <div class="sp-page reclamaciones-page">
     <!-- ══ TOOLBAR ══ -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.25rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Libro de Reclamaciones</h1>
         <p class="sp-page-toolbar__sub">

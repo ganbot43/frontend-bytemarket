@@ -1,5 +1,5 @@
 <template>
-  <div class="prod-page">
+  <div class="sp-page prod-page">
     <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Productos</h1>
@@ -842,11 +842,6 @@ async function deleteProduct(id: number) {
 }
 
 /* (sin cambios — igual al original) */
-.prod-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
 
 .prod-img-section {
   display: flex;

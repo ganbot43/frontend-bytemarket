@@ -58,6 +58,6 @@ const porcentaje = (n: number) =>
 .rl-fila__label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rl-fila__amount { font-weight: 700; white-space: nowrap; }
 .rl-fila__bar { margin: 0.25rem 0 0.15rem; height: 5px; border-radius: 3px; background: #f1f5f9; overflow: hidden; }
-.rl-fila__fill { height: 100%; border-radius: 3px; background: var(--sp-primary, #b01883); opacity: 0.8; }
+.rl-fila__fill { height: 100%; border-radius: 3px; background: var(--sp-primary, #071e52); opacity: 0.8; }
 .rl-fila__meta { font-size: 0.7rem; color: #64748b; }
 </style>

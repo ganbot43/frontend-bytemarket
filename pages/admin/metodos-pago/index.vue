@@ -1,7 +1,7 @@
 <template>
-  <div class="pm-page">
+  <div class="sp-page pm-page">
     <!-- Toolbar -->
-    <div class="sp-page-toolbar" style="margin-bottom: 1.5rem">
+    <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Métodos de pago</h1>
         <p class="sp-page-toolbar__sub">
@@ -63,25 +63,14 @@
               <!-- Label -->
               <td class="sp-td">
                 <div class="pm-label-cell">
-                  <span
-                    class="pm-type-dot"
-                    :style="{ background: typeColor(pm.type) }"
-                  />
-                  <span class="sp-table-title" style="margin: 0">{{
-                    pm.label
-                  }}</span>
+                  <span class="pm-type-dot" :class="`pm-type--${pm.type}`" />
+                  <span class="sp-table-title pm-label">{{ pm.label }}</span>
                 </div>
               </td>
 
               <!-- Type -->
               <td class="sp-td">
-                <span
-                  class="pm-type-chip"
-                  :style="{
-                    background: typeColor(pm.type) + '18',
-                    color: typeColor(pm.type),
-                  }"
-                >
+                <span class="sp-badge pm-type-chip" :class="`pm-type--${pm.type}`">
                   <span class="pm-type-icon"><component :is="typeIcon(pm.type)" class="w-3.5 h-3.5" /></span>
                   {{ typeLabel(pm.type) }}
                 </span>
@@ -181,16 +170,10 @@
                   v-for="opt in typeOptions"
                   :key="opt.value"
                   class="pm-type-opt"
-                  :class="{ 'pm-type-opt--selected': form.type === opt.value }"
-                  :style="
-                    form.type === opt.value
-                      ? {
-                          borderColor: typeColor(opt.value),
-                          background: typeColor(opt.value) + '14',
-                          color: typeColor(opt.value),
-                        }
-                      : {}
-                  "
+                  :class="[
+                    { 'pm-type-opt--selected': form.type === opt.value },
+                    form.type === opt.value ? `pm-type--${opt.value}` : '',
+                  ]"
                   @click="form.type = opt.value"
                 >
                   <span class="pm-type-icon"><component :is="typeIcon(opt.value)" class="w-4 h-4" /></span>
@@ -202,10 +185,7 @@
               <div
                 v-else
                 class="pm-type-readonly"
-                :style="{
-                  background: typeColor(form.type) + '14',
-                  color: typeColor(form.type),
-                }"
+                :class="form.type ? `pm-type--${form.type}` : ''"
               >
                 <span class="pm-type-icon"><component :is="typeIcon(form.type)" class="w-4 h-4" /></span>
                 {{ typeLabel(form.type) }}
@@ -377,17 +357,6 @@ const typeOptions = [
   // { label: "Mercado Pago", value: "mercado_pago" },
 ];
 
-function typeColor(type: string) {
-  const map: Record<string, string> = {
-    yape: "#6d28d9",
-    plin: "#0891b2",
-    bank_transfer: "#0f766e",
-    culqi: "#d97706",
-    mercado_pago: "#0284c7",
-  };
-  return map[type] ?? "#6366f1";
-}
-
 function typeLabel(type: string) {
   return typeOptions.find((o) => o.value === type)?.label ?? type;
 }
@@ -482,9 +451,6 @@ async function doDelete() {
 
 <style scoped>
 /* ── Page wrapper ── */
-.pm-page {
-  padding: 1.5rem;
-}
 
 /* ── Filas inactivas ── */
 .pm-row--inactive {
@@ -505,19 +471,48 @@ async function doDelete() {
   flex-shrink: 0;
 }
 
-/* ── Chip de tipo en tabla ── */
+/* ── Chip de tipo en tabla ──────────────────────────────────
+   La forma la pone sp-badge, igual que las pastillas del resto del panel;
+   aquí solo va el color.
+
+   El color de marca se queda —el morado de Yape se reconoce antes de leer
+   la palabra— pero deja de salir de un typeColor() aplicado con :style,
+   que además concatenaba el alfa en hexadecimal ('#6d28d9' + '18'). Son
+   clases, como todo lo demás.
+
+   Los tonos subieron un escalón: el cian de Plin (#0891b2), el ámbar de
+   Culqi (#d97706) y el azul de Mercado Pago (#0284c7) no llegaban a 4.5:1
+   sobre su propio fondo, que es el mínimo AA para texto pequeño. */
 .pm-type-chip {
-  display: inline-flex;
-  align-items: center;
   gap: 5px;
-  font-size: var(--sp-text-xs);
-  font-weight: 700;
-  padding: 0.28rem 0.65rem;
-  border-radius: var(--sp-radius-pill);
-  white-space: nowrap;
-  font-family: var(--sp-font);
   letter-spacing: 0.01em;
 }
+
+.pm-type--yape { background: #6d28d914; color: #6d28d9; }
+.pm-type--plin { background: #0e749014; color: #0e7490; }
+.pm-type--bank_transfer { background: #0f766e14; color: #0f766e; }
+.pm-type--culqi { background: #b4530914; color: #b45309; }
+.pm-type--mercado_pago { background: #0369a114; color: #0369a1; }
+/* Un tipo que no esté en la lista: indigo, el neutro de la serie. */
+.pm-type-chip:not([class*="pm-type--"]) { background: #4f46e514; color: #4f46e5; }
+
+.pm-label { margin: 0; }
+
+/* La opción elegida del selector y la etiqueta de solo lectura comparten
+   los mismos tonos: toman el fondo y el texto de .pm-type--*, y la
+   seleccionada además tiñe su borde. */
+.pm-type-opt--selected.pm-type--yape { border-color: #6d28d9; }
+.pm-type-opt--selected.pm-type--plin { border-color: #0e7490; }
+.pm-type-opt--selected.pm-type--bank_transfer { border-color: #0f766e; }
+.pm-type-opt--selected.pm-type--culqi { border-color: #b45309; }
+.pm-type-opt--selected.pm-type--mercado_pago { border-color: #0369a1; }
+
+/* El punto del nombre usa el mismo color del tipo, solo que sólido. */
+.pm-type-dot.pm-type--yape { background: #6d28d9; }
+.pm-type-dot.pm-type--plin { background: #0e7490; }
+.pm-type-dot.pm-type--bank_transfer { background: #0f766e; }
+.pm-type-dot.pm-type--culqi { background: #b45309; }
+.pm-type-dot.pm-type--mercado_pago { background: #0369a1; }
 
 /* ── Icono SVG del tipo ── */
 .pm-type-icon {

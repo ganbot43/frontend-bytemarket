@@ -1,5 +1,5 @@
 <template>
-  <div class="subcat-page">
+  <div class="sp-page subcat-page">
     <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Subcategorías</h1>
@@ -214,5 +214,4 @@ async function deleteItem(id: number) {
 </script>
 
 <style scoped>
-.subcat-page { display: flex; flex-direction: column; gap: 1.25rem; }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="orders-page">
+  <div class="sp-page orders-page">
     <div class="sp-page-toolbar">
       <div>
         <h1 class="sp-page-toolbar__title">Pedidos</h1>
@@ -222,11 +222,6 @@ function onKeydown(e: KeyboardEvent) {
 .orders-pago--due { color: #b45309; }
 .orders-forma { display: block; font-size: 0.68rem; color: #64748b; }
 
-.orders-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
 
 .orders-filters {
   display: flex;

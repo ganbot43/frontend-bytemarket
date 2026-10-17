@@ -303,16 +303,31 @@
 }
 
 /* Sidebar */
+/* Anclado a la ventana, no al alto del documento.
+   Era un ítem flex normal, así que `stretch` lo estiraba hasta donde
+   llegara el contenido de la página y se iba con el scroll: en Reportes,
+   que es largo, el menú quedaba arriba fuera de vista y lo que acompañaba
+   al contenido era una columna azul vacía. Navegar obligaba a subir del
+   todo primero.
+
+   `align-self: flex-start` corta el estirón, `height: 100dvh` lo deja del
+   alto exacto de la ventana y `sticky` lo clava ahí. El scroll sigue
+   siendo el del documento —el topbar ya era sticky y se mantiene—, así
+   que no cambia nada más. El overflow-y es para pantallas bajas, donde el
+   propio menú no cabe en 100dvh. */
 .smart-panel-admin .admin-shell__sidebar {
   flex: 0 0 15.5rem;
   width: 15.5rem;
   min-width: 15.5rem;
-  min-height: 0;
-  overflow: hidden;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--sp-sidebar-bg);
   border-right: 1px solid var(--sp-sidebar-border);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
-  position: relative;
   z-index: 10;
 }
 
@@ -1484,6 +1499,179 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
 
 
 /* ============================================================
+   9c. TARJETA  (.sp-card)
+   ============================================================ */
+
+/* La receta que ya repetían .sp-table-wrap, .dash-stat-card y
+   .dash-automation, y que Reportes tenía por su cuenta con otro radio
+   (12px a mano), otro fondo (#fff literal) y sin sombra: al lado de las
+   del dashboard parecían de otra aplicación. */
+.smart-panel-admin .sp-card {
+  background: var(--sp-surface-solid);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-xl);
+  box-shadow: var(--sp-shadow-sm);
+  padding: 1.2rem;
+}
+
+.smart-panel-admin .sp-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.smart-panel-admin .sp-card__head h2,
+.smart-panel-admin .sp-card__title {
+  margin: 0;
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-md);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--sp-text-strong);
+}
+
+.smart-panel-admin .sp-card__note {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+}
+
+
+/* ============================================================
+   9d. SEGMENTADO  (.sp-segmented)
+   ============================================================ */
+
+/* Elegir entre pocas opciones excluyentes —7 o 30 días, un preset de
+   fechas—. Existía dos veces con dos aspectos distintos: píldoras sueltas
+   en Reportes y un segmentado en el Dashboard, para la misma pregunta.
+   Se queda el segmentado, que agrupa las opciones y deja claro que solo
+   una puede estar activa. */
+.smart-panel-admin .sp-segmented {
+  display: inline-flex;
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-pill);
+  padding: 2px;
+}
+
+.smart-panel-admin .sp-segmented__btn {
+  background: none;
+  border: 0;
+  border-radius: var(--sp-radius-pill);
+  color: var(--sp-text-muted);
+  cursor: pointer;
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  padding: 0.3rem 0.7rem;
+  white-space: nowrap;
+  transition: background var(--sp-t-fast) var(--sp-ease),
+    color var(--sp-t-fast) var(--sp-ease);
+}
+
+.smart-panel-admin .sp-segmented__btn:hover {
+  color: var(--sp-text-strong);
+}
+
+.smart-panel-admin .sp-segmented__btn:focus-visible {
+  outline: 2px solid var(--sp-primary);
+  outline-offset: 1px;
+}
+
+/* La opción activa se despega del fondo con su propia superficie y una
+   sombra, no solo con el color. */
+.smart-panel-admin .sp-segmented__btn.is-active {
+  background: var(--sp-surface-solid);
+  box-shadow: var(--sp-shadow-xs);
+  color: var(--sp-primary-ink);
+}
+
+
+/* ============================================================
+   9a. CUERPO DE PÁGINA  (.sp-page)
+   ============================================================ */
+
+/* El esqueleto que ya usaba Productos: una columna con una separación
+   única entre bloques. Lo copiaban cinco pantallas, otras cinco ponían
+   `padding: 1.5rem` —que se sumaba al que ya trae .admin-shell__main, así
+   que su contenido quedaba al doble de distancia del borde— y tres no
+   ponían nada y le colgaban un margin-bottom suelto a la cabecera, con
+   tres valores distintos entre ellas.
+
+   La clase existía y se usaba en tres páginas, pero no tenía ni una regla:
+   no hacía nada. */
+.smart-panel-admin .sp-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+
+/* ============================================================
+   9b. PESTAÑAS  (.sp-tabs / .sp-tab)
+   ============================================================ */
+
+/* Las clases se usaban desde hacía tiempo —en Usuarios, y ahora en
+   Inventario— pero no existía ninguna regla para ellas: salían como
+   botones del navegador, sin subrayado ni estado activo. La pestaña activa
+   se marca con el color y con una línea de 3px, no solo con el color, para
+   que se distinga sin depender de verlo. */
+.smart-panel-admin .sp-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--sp-border-strong);
+  flex-shrink: 0;
+}
+
+.smart-panel-admin .sp-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.smart-panel-admin .sp-tab {
+  flex-shrink: 0;
+  white-space: nowrap;
+  /* 44px es el mínimo para tocar con el pulgar sin fallar. */
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  /* Monta la línea sobre el borde del contenedor en vez de sumarse a él. */
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--sp-text-muted);
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--sp-t-fast) var(--sp-ease),
+    border-color var(--sp-t-fast) var(--sp-ease);
+}
+
+.smart-panel-admin .sp-tab:hover {
+  color: var(--sp-text);
+  border-bottom-color: var(--sp-border-strong);
+}
+
+.smart-panel-admin .sp-tab:focus-visible {
+  outline: 2px solid var(--sp-primary);
+  outline-offset: -2px;
+  border-radius: var(--sp-radius-xs) var(--sp-radius-xs) 0 0;
+}
+
+.smart-panel-admin .sp-tab--active,
+.smart-panel-admin .sp-tab--active:hover {
+  color: var(--sp-primary-ink);
+  font-weight: 700;
+  border-bottom-color: var(--sp-primary);
+}
+
+
+/* ============================================================
    10. TABLE GLOBAL  (.sp-table-*)
    ============================================================ */
 
@@ -1712,6 +1900,16 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
   background: var(--sp-success-soft);
   color: var(--sp-success);
   border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Rechazar o pausar algo no es borrarlo: en rojo se leía como destructivo
+   y en Reseñas convivía con la papelera, que sí lo es. Vivía suelta en esa
+   página; ahora el vocabulario de la fila está completo aquí: editar,
+   ver, avisar y borrar. */
+.sp-table-btn--warn:hover {
+  background: var(--sp-warning-soft);
+  color: var(--sp-warning);
+  border-color: rgba(245, 158, 11, 0.25);
 }
 
 /* ── Badges / pills ── */

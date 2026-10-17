@@ -632,7 +632,7 @@ const imprimir = () => window.print();
 }
 
 .caja-buscador:focus {
-  outline: 2px solid var(--sp-primary, #b01883);
+  outline: 2px solid var(--sp-primary, #071e52);
   outline-offset: 1px;
 }
 
@@ -664,7 +664,7 @@ const imprimir = () => window.print();
 }
 
 .caja-producto:hover:not(:disabled) {
-  border-color: var(--sp-primary, #b01883);
+  border-color: var(--sp-primary, #071e52);
   transform: translateY(-2px);
 }
 
@@ -690,7 +690,7 @@ const imprimir = () => window.print();
 .caja-producto__price {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--sp-primary, #b01883);
+  color: var(--sp-primary, #071e52);
 }
 
 .caja-producto__stock {
@@ -723,7 +723,7 @@ const imprimir = () => window.print();
   padding: 0.1rem 0.5rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  background: var(--sp-primary, #b01883);
+  background: var(--sp-primary, #071e52);
   color: #fff;
 }
 
