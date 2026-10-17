@@ -119,6 +119,16 @@ docker compose down                    # parar todo (los datos se conservan)
 docker compose up -d --build frontend  # reconstruir solo uno
 ```
 
+**`--build <servicio>` no reconstruye solo ese servicio: reinicia también
+todo lo que tenga por debajo.** El frontend depende del gateway, el gateway
+de los cuatro servicios de negocio y esos de Eureka, así que reconstruir el
+frontend se lleva por delante la cadena entera y deja medio minuto de 503
+mientras se registran otra vez en Eureka. Cuando solo cambió ese servicio:
+
+```bash
+docker compose up -d --build --no-deps frontend
+```
+
 ### Los datos
 
 Viven en el volumen `mysql-data` y sobreviven a `docker compose down`. No hay
@@ -135,17 +145,41 @@ Para volver a sembrar desde cero: `down -v` y luego `up -d`.
 
 ### Mensajería (RabbitMQ y Kafka)
 
-Están declaradas pero **fuera del arranque normal**, porque ningún servicio
-las usa todavía: no hay `spring-boot-starter-amqp` ni `spring-kafka` en
-ningún `pom.xml`. Añadirlas al arranque costaba varios GB y un par de minutos
-a cambio de nada. Si las necesitas:
+Las dos arrancan con el resto y las dos están **en uso**, haciendo cosas
+distintas. Es la confusión más fácil de este proyecto, así que conviene tener
+claro el reparto:
 
-```bash
-docker compose --profile mensajeria up -d
+| | RabbitMQ | Kafka |
+|---|---|---|
+| Qué lleva | una **orden**: "descuenta 2 unidades del producto 14" | un **hecho**: "el pedido BM-… pasó a entregado" |
+| Quién publica | order-service | order-service |
+| Quién consume | catalog-service (un solo consumidor) | support-service, y cualquiera que se añada |
+| Si se pierde | el inventario queda mal | el pedido sigue bien, solo nadie se enteró |
+| Tras consumirlo | desaparece de la cola | se retiene y se puede releer |
+
+Por eso no sobra ninguna de las dos. El descuento de stock necesita una cola
+de trabajo: un destinatario, ejecútalo una vez, y si falla apártalo a la cola
+de fallidos. El aviso al cliente necesita lo contrario: que varios
+consumidores puedan leer el mismo evento sin quitárselo a los demás, y que
+un consumidor nuevo pueda rebobinar. El razonamiento largo está en
+`KafkaConfig` (order-service) y en `PedidoEventPublisher`.
+
+El flujo del aviso, de punta a punta:
+
+```
+order-service                        Kafka                     support-service
+cambia el estado  ──publica──▶  bytemarket.pedidos  ──consume──▶  manda el correo
+                                 (clave = orderCode)              (idempotente)
 ```
 
-RabbitMQ en http://localhost:15672 (guest/guest) y Kafka UI en
-http://localhost:8086.
+Paneles: RabbitMQ en http://localhost:15672 (guest/guest) y Kafka UI en
+http://localhost:8086, donde se ve el topic `bytemarket.pedidos` y lo que
+lleva consumido el grupo `bytemarket-support-notificaciones`.
+
+Para que los correos salgan de verdad hace falta `SMTP_USER` y
+`SMTP_PASSWORD` en el `.env`. Sin ellos el evento se consume igual y queda
+registrado en `order_notifications` con `enviado = false`: así se distingue
+"no llegó el aviso" de "no llegó el evento".
 
 ## Sin Docker
 
@@ -189,12 +223,12 @@ levantado.
 
 | Repositorio | Puerto | Función |
 |---|---|---|
-| [`bytemarket-eureka-server`](bytemarket-eureka-server) | 8761 | Registro de servicios |
-| [`bytemarket-api-gateway`](bytemarket-api-gateway) | 8085 | Enruta por path hacia los demás |
-| [`bytemarket-user-service`](bytemarket-user-service) | 8081 | Cuentas, autenticación, perfiles |
-| [`bytemarket-catalog-service`](bytemarket-catalog-service) | 8082 | Productos, categorías, banners, inventario |
-| [`bytemarket-order-service`](bytemarket-order-service) | 8083 | Pedidos, pagos, cupones, reportes |
-| [`bytemarket-support-service`](bytemarket-support-service) | 8084 | Libro de reclamaciones |
-| [`frontend-bytemarket`](frontend-bytemarket) | 3000 | Tienda y panel (Nuxt 3) |
+| [`bytemarket-eureka-server`](https://github.com/ganbot43/bytemarket-eureka-server) | 8761 | Registro de servicios |
+| [`bytemarket-api-gateway`](https://github.com/ganbot43/bytemarket-api-gateway) | 8085 | Enruta por path hacia los demás |
+| [`bytemarket-user-service`](https://github.com/ganbot43/bytemarket-user-service) | 8081 | Cuentas, autenticación, perfiles |
+| [`bytemarket-catalog-service`](https://github.com/ganbot43/bytemarket-catalog-service) | 8082 | Productos, categorías, banners, inventario |
+| [`bytemarket-order-service`](https://github.com/ganbot43/bytemarket-order-service) | 8083 | Pedidos, pagos, cupones, reportes |
+| [`bytemarket-support-service`](https://github.com/ganbot43/bytemarket-support-service) | 8084 | Libro de reclamaciones |
+| [`frontend-bytemarket`](https://github.com/ganbot43/frontend-bytemarket) | 3000 | Tienda y panel (Nuxt 3) |
 
 Cada uno tiene su propio README con su API detallada.

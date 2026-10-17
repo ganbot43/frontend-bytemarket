@@ -9,8 +9,9 @@ celulares construida con microservicios Spring Boot y este frontend.
 
 - **Tienda**: portada, catálogo con filtros, ficha de producto, carrito,
   checkout, seguimiento de pedidos y libro de reclamaciones.
-- **Panel** (`/admin`): productos, categorías, banners, inventario, pedidos,
-  métodos de pago, reclamaciones, usuarios y reportes.
+- **Panel** (`/admin`): dashboard, caja, pedidos, productos, categorías,
+  subcategorías, inventario, banners, cupones, reseñas, reclamaciones,
+  usuarios, métodos de pago, reportes y configuración.
 
 ## No habla con ninguna base de datos
 
@@ -59,8 +60,10 @@ lleva `.output`, sin `node_modules` ni código fuente.
 
 ### A mano
 
-Requisitos: **Node 20+** y el stack de microservicios arrancado (como mínimo
-el gateway en el 8085).
+Requisitos: **Node 26 y npm 11**, los mismos con los que se generó el
+`package-lock.json`, y el stack de microservicios arrancado (como mínimo el
+gateway en el 8085). Con npm 10 el `npm ci` falla al leer las copias
+anidadas de `unplugin`; `npm install` sí funciona, pero reescribe el lock.
 
 ```bash
 cp .env.example .env     # y rellena los valores
@@ -69,6 +72,21 @@ npm run dev
 ```
 
 Queda en http://localhost:3000 (o el siguiente puerto libre).
+
+### Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Servidor de desarrollo con recarga en caliente |
+| `npm run build` | Construye para producción en `.output` |
+| `npm run preview` | Sirve lo construido, para comprobarlo antes de desplegar |
+| `npm run typecheck` | Revisa los tipos de **todo** el proyecto |
+
+Sobre `typecheck`: el servidor de tipos del editor solo analiza los archivos
+abiertos, así que un error puede llevar semanas en una página que nadie ha
+tocado. Este comando los saca todos de una vez y es lo que conviene correr
+antes de commitear. TypeScript está fijado en la 5.x a propósito: la 7
+—el port nativo— ya no expone `./lib/tsc` y `vue-tsc` no arranca con ella.
 
 Credenciales de prueba, si corriste el sembrado de los servicios:
 
@@ -117,7 +135,14 @@ El token vive en una cookie sellada y cifrada (`nuxt-auth-utils`), no en
 | `/libro-de-reclamaciones` | Reclamos (obligatorio en Perú) |
 | `/terminos` · `/privacidad` · `/sobre-nosotros` | Páginas informativas |
 | `/login` | Inicio de sesión |
-| `/admin` | Panel: productos, categorías, banners, inventario, pedidos, métodos de pago, cupones, reclamaciones y reportes |
+| `/admin` | Panel. Resumen del día, y desde ahí cada sección |
+| `/admin/caja` | Venta de mostrador: cobra, calcula el vuelto e imprime |
+| `/admin/pedidos` | Pedidos de la tienda y de los otros canales |
+| `/admin/productos` · `/admin/categorias` · `/admin/subcategories` | Catálogo |
+| `/admin/inventario` | Existencias y kardex, en dos pestañas |
+| `/admin/reportes` | Ventas de un período, comparadas con el anterior |
+| `/admin/usuarios` · `/admin/banners` · `/admin/cupones` · `/admin/resenas` · `/admin/reclamaciones` | Gestión |
+| `/admin/metodos-pago` · `/admin/configuracion` | Solo superadmin |
 
 `/admin` exige rol `admin` o `superadmin`; a un cliente lo manda a
 `/mi-cuenta`.
@@ -137,6 +162,50 @@ Los paréntesis en `(landing)` y `(ecommerce)` son **grupos de rutas** de
 Nuxt: agrupan archivos sin aparecer en la URL. Por eso
 `pages/(landing)/index.vue` responde en `/`, y no debe existir además un
 `pages/index.vue` o competirían por la misma ruta.
+
+## El panel usa un juego de clases, no estilos sueltos
+
+Todo `/admin` se pinta con las clases `sp-*` de `assets/css/admin-panel.css`.
+Si vas a añadir una pantalla, cópiala de **`pages/admin/productos/index.vue`**,
+que es la que mejor sigue el patrón.
+
+| Clase | Para qué |
+|---|---|
+| `sp-page` | Cuerpo de la página: columna con la separación entre bloques ya puesta. **No añadas `padding`**: ya lo pone `.admin-shell__main` y se suma |
+| `sp-page-toolbar` | Cabecera: título, subtítulo y el botón de acción |
+| `sp-card` · `sp-card__head` | Tarjeta de contenido |
+| `sp-table-wrap` › `sp-table-scroll` › `sp-table` | Tabla, con `sp-th` / `sp-tr` / `sp-td` |
+| `sp-badge` + `--success` `--danger` `--warning` `--neutral` | Pastilla de estado. Lleva un `<span class="sp-badge__dot">` dentro |
+| `sp-table-actions` › `sp-table-btn` + `--edit` `--view` `--warn` `--del` | Botones de la fila, con icono de `lucide-vue-next` |
+| `sp-tabs` · `sp-tab` | Pestañas dentro de una pantalla |
+| `sp-segmented` · `sp-segmented__btn` | Elegir entre pocas opciones excluyentes |
+
+Y dos componentes compartidos que evitan reescribir lo mismo:
+`<SharedBarraTabla>` para el buscador con filtros y `<SharedPaginacion>`
+para la paginación, que va **de diez en diez** en todos los listados.
+
+La regla práctica: antes de escribir un `style=""` o una clase propia de
+colores, busca si ya existe la clase `sp-*`. Casi siempre existe, y cuando
+cada pantalla inventa la suya acaban conviviendo cuatro verdes distintos
+para decir "activo".
+
+## Documentación del sistema
+
+Además de este README, el repositorio guarda los documentos que valen para
+todo ByteMarket, no solo para el frontend:
+
+| Documento | Para qué |
+|---|---|
+| [`README-GENERAL.md`](README-GENERAL.md) | Levantar el sistema entero y el día a día con Docker |
+| [`BYTEMARKET-DECISIONES.md`](BYTEMARKET-DECISIONES.md) | Por qué el código hace lo que hace: lógica de negocio, matices y trampas conocidas |
+| [`BYTEMARKET-DEPLOY.md`](BYTEMARKET-DEPLOY.md) | Desplegar en otra PC o servidor, solo con Docker |
+| [`BYTEMARKET-WORKFLOW.md`](BYTEMARKET-WORKFLOW.md) | Onboarding, desarrollo local y CI/CD |
+
+**Están duplicados a propósito, y hay que mantenerlos a la par.** La copia
+de trabajo vive en la carpeta padre, junto al `docker-compose.yml`, que es
+desde donde se usan; pero esa carpeta no es un repositorio, así que la copia
+versionada —y la única con respaldo e historial— es esta. Si cambias uno
+arriba, cópialo aquí y commitea.
 
 ## El sistema completo
 

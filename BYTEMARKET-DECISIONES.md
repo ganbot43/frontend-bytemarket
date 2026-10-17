@@ -16,19 +16,19 @@ las clases, y que si alguien "simplifica" sin saber, rompe algo.
 | | |
 |---|---|
 | Repositorios | 7 (6 servicios Spring Boot + 1 frontend Nuxt) |
-| Clases Java | 109 |
-| Endpoints REST | 90 |
-| Componentes y páginas Vue | 68 |
-| Tests automatizados | 47 (27 en order-service, 20 en catalog-service) |
+| Clases Java | 134 |
+| Endpoints REST | 93 |
+| Componentes y páginas Vue | 77 (34 páginas, 39 componentes, 4 layouts) |
+| Tests automatizados | 149 (52 order, 51 catalog, 34 support, 12 user) |
 | Esquemas MySQL | 4, uno por servicio de negocio |
-| Tablas | 17 |
+| Tablas | 18 |
 
 | Esquema | Tablas |
 |---|---|
 | `bytemarket_user` | `users`, `customers`, `business_config` |
 | `bytemarket_catalog` | `products`, `product_images`, `categories`, `subcategories`, `banners`, `reviews`, `favorites`, `inventory_movements` |
 | `bytemarket_order` | `orders`, `order_items`, `order_status_logs`, `payment_methods`, `coupons` |
-| `bytemarket_support` | `complaints` |
+| `bytemarket_support` | `complaints`, `order_notifications` |
 
 ---
 
@@ -235,6 +235,135 @@ reescribiría el histórico de ventas y los reportes dejarían de cuadrar.
 
 ---
 
+## 15. RabbitMQ lleva órdenes; Kafka, hechos
+
+Conviven las dos mensajerías y no se solapan. El reparto:
+
+| | RabbitMQ (`inventario.stock`) | Kafka (`bytemarket.pedidos`) |
+|---|---|---|
+| Qué viaja | una **orden**: "descuenta 2 del producto 14" | un **hecho**: "el pedido BM-… pasó a entregado" |
+| Consumidores | uno (catalog-service) | cualquiera; hoy support-service |
+| Al consumirse | desaparece de la cola | se retiene y se puede releer |
+| Si se pierde | el inventario queda mal | el pedido sigue bien, solo nadie avisó |
+
+**Por qué no sobra ninguna.** Son necesidades opuestas. El descuento de stock
+quiere una cola de trabajo: un destinatario, ejecútalo exactamente una vez, y
+si no se puede apártalo a la cola de fallidos (decisiones 5, 6 y 7). El aviso
+al cliente quiere lo contrario: que varios consumidores lean el MISMO evento
+sin quitárselo a los demás, y que uno nuevo pueda rebobinar y reconstruir su
+estado. Meter el aviso en la cola de stock obligaría a que un solo consumidor
+hiciera las dos cosas; meter el descuento en Kafka sería renunciar a la cola
+de fallidos.
+
+**La clave del mensaje es el `orderCode`**, no el id. Kafka manda todas las
+claves iguales a la misma partición, y eso garantiza que los eventos de un
+pedido se lean en el orden en que ocurrieron. Sin clave reparte en
+round-robin y "entregado" podría leerse antes que "pago validado".
+
+**Quién avisa no es quien cobra.** El correo lo manda support-service, no
+order-service, aunque el cambio de estado ocurra allí. Si lo enviara
+order-service, añadir mañana un SMS tocaría el servicio que procesa pagos, y
+un SMTP colgado podría frenar un checkout. Publicando el hecho,
+order-service se desentiende de quién escucha.
+
+---
+
+## 16. El aviso al cliente también es idempotente
+
+`order_notifications` guarda una fila por `(order_code, estado)`, y se
+consulta antes de enviar.
+
+**Por qué.** Kafka entrega *al menos una vez*: si support-service procesa un
+evento y muere antes de confirmar el offset, al arrancar lo vuelve a leer.
+Sin esa marca el cliente recibiría el mismo correo dos veces, o diez si el
+reinicio se repite. Es el mismo recurso que `related_order_id` en el kardex
+(decisión 6): **un consumidor de cola solo es correcto si es idempotente**.
+
+La marca de la creación es `__creado` y no `pending`. Si usara `pending`, un
+pedido devuelto a ese estado a mano desde el panel no volvería a avisar
+nunca, porque la marca ya estaría puesta por el alta.
+
+La fila se guarda también cuando el SMTP rechaza el correo, con
+`enviado = false`. Así en base se distingue "el evento llegó y el correo no
+salió" de "el evento nunca llegó", que se arreglan de formas distintas.
+
+---
+
+## 17. Las rutas internas del catálogo piden credencial
+
+`/api/internal/**` en catalog-service exige rol `SERVICE`.
+
+**Por qué.** Estaba en `permitAll()`. El gateway no enruta esas rutas, lo que
+daba una falsa sensación de privacidad: `docker-compose` publica el 8082, así
+que un `curl` desde el host llegaba igual a
+`/api/internal/products/stock-decrement` y podía mover inventario sin ser
+nadie.
+
+**Cómo, sin inventar un mecanismo nuevo.** order-service firma un JWT con el
+mismo secreto que ya comparten los cuatro servicios, con `role: SERVICE`, y
+un `RequestInterceptor` de Feign lo adjunta a las tres llamadas al catálogo.
+El `JwtAuthenticationFilter` que catalog ya tenía lo valida sin un solo
+cambio. Dura cinco minutos: solo tiene que sobrevivir a la llamada que lo usa.
+
+## 18. El día del negocio es el de Lima, no el del contenedor
+
+Los contenedores corren en UTC, así que `created_at` guarda hora UTC. Todas
+las cifras por día —el resumen de la portada, el reporte de ventas, la
+gráfica— cortan el día en Lima.
+
+**Por qué.** Sin eso, lo vendido a partir de las 19:00 caía en el día
+siguiente: a las ocho de la tarde el panel decía "hoy: S/ 0" con la caja
+llena, y el cierre del día mostraba las ventas de la noche anterior.
+
+**Por qué no se cambia la zona del contenedor**, que sería más corto. Los
+pedidos que ya están guardados se escribieron en UTC; reinterpretarlos como
+hora de Lima movería cinco horas todo el histórico. Lo que se corrige es el
+corte, no el dato.
+
+**Hay que hacerlo en dos sitios, y uno solo no basta.** `HoraDeLima` traduce
+los bordes del rango —qué día es en Lima, y sus 00:00 expresadas en UTC—,
+pero el `GROUP BY` agrupa dentro de SQL y no se entera: ahí va
+`DATE(CONVERT_TZ(created_at, '+00:00', '-05:00'))`. Con el desfase numérico
+y no con `'America/Lima'`: el nombre exige las tablas de zonas horarias de
+MySQL, y la imagen de Docker las trae vacías.
+
+El mismo corte aplica al código del pedido (`BM-aaaammdd-nnnn`), que se
+imprime en el comprobante del cliente.
+
+## 19. El umbral de stock bajo lo decide catalog
+
+Es una constante en `Product.UMBRAL_STOCK_BAJO`, y los endpoints que lo
+aceptan por parámetro lo devuelven en la respuesta.
+
+**Por qué.** Lo tenían por triplicado con valor 10: la lista de existencias,
+la tarjeta "Stock bajo" del dashboard y las alertas, cada una con su
+`defaultValue`. Con tres copias, cambiarlo en una dejaba al panel diciendo
+dos cosas distintas del mismo producto.
+
+**Por qué order-service no manda ninguno.** Los productos son de catalog, así
+que el número también. Su parámetro es un `Integer` opcional: cuando llega
+null, decide catalog. Y como order-service no puede leer una constante de
+otro servicio, catalog le devuelve el umbral que aplicó, para que el panel
+pueda escribir "con 5 unidades o menos" sin tener su propia copia.
+
+## 20. Todo lo que cuenta dinero cuenta solo lo cobrado
+
+El resumen de la portada, el reporte de ventas y la gráfica filtran por
+estado de pago, no solo por "no cancelado".
+
+**Por qué.** Un pedido pendiente de pago no es una venta todavía. Mezclarlos
+hace que dos pantallas den cifras distintas de lo mismo, y entonces no se
+puede decidir con ninguna de las dos.
+
+**Ha fallado dos veces, igual.** Primero el desglose por canal, que sumaba
+2549.15 bajo un titular que decía 747.59. Después la gráfica de la portada,
+que decía 3964.04 el día que la tarjeta de al lado decía 2022.48. Las dos
+veces fue una consulta que se quedó con la regla vieja mientras el resto
+avanzaba. Por eso ahora la regla vive en una sola consulta, reusada, y no
+copiada en cada sitio que la necesita.
+
+---
+
 ## Trampas conocidas
 
 Cosas que ya han fallado una vez y conviene no repetir.
@@ -257,8 +386,55 @@ aparecen registrados en el actuator pero no interceptan nada.
 parseada así se lee como medianoche UTC y, al pintarla en la zona de Lima,
 retrocede un día.
 
-**Solo se expone `/actuator/health`.** El resto —`env`, `beans`,
-`mappings`— revela configuración interna.
+**Un `DATE(created_at)` a secas agrupa por día UTC.** Es la misma trampa de
+arriba vista desde SQL, y no la arregla ajustar el rango desde Java: el
+`GROUP BY` ya pasó. Va `CONVERT_TZ(created_at, '+00:00', '-05:00')` dentro
+de la función, y en el `SELECT`, el `GROUP BY` y el `ORDER BY` a la vez.
+
+**En el frontend, `config.public.*` se tipa como `unknown`.** No es culpa
+del código: hay dos copias de `@nuxt/schema` en `node_modules` —la 3.21.11
+que trae nuxt y la 4.5.2 que arrastra `@nuxt/ui`— y la augmentación de tipos
+que genera Nuxt aterriza en la que `useRuntimeConfig()` no usa. `skipLibCheck`
+esconde el motivo. Hay que afirmar el tipo al leerlo; en `useLogo` está hecho
+y comentado.
+
+**Un componente Vue con estilos propios para algo que ya existe.** Las clases
+`sp-*` del panel cubren tarjetas, pastillas, botones de fila, pestañas y
+tablas. Cada pantalla que inventó las suyas acabó con otro verde, otro radio
+y otro grosor de icono; ver el README del frontend antes de escribir CSS
+nuevo.
+
+**Las instancias de resilience4j NO se llaman como el método.** Spring Cloud
+registra el circuito quitando `#`, `(`, `)` y las comas de la firma:
+
+```
+CatalogPricingClient#resolve(List)   →   CatalogPricingClientresolveList
+CatalogReportingClient#lowStock(int) →   CatalogReportingClientlowStockint
+```
+
+Escritas con la firma completa, **resilience4j ignora la instancia en
+silencio** y aplica `configs.default`. En los circuitos no se notaba, porque
+el default es lo que querían de todas formas; en el `timelimiter` sí: el
+recorte a 3s de las lecturas del panel no se aplicaba nunca y esperaban los
+8s del checkout. Los nombres reales se consultan en
+`/actuator/circuitbreakers`.
+
+**Un circuito abierto no debe tumbar el healthcheck.** `registerHealthIndicator`
+añade los circuitos a `/actuator/health`, pero resilience4j deja
+`allowHealthIndicatorToFail` en `false` y eso es lo correcto: si catalog cae,
+order-service tiene que seguir atendiendo. Que un circuito abierto lo marcara
+`DOWN` sacaría de servicio justo al que está aguantando la caída. Mismo
+criterio que con el `MailHealthIndicator` en support-service.
+
+**`show-details: never` oculta los componentes a todo el mundo.** Se puede
+registrar un health indicator y no poder consultarlo nunca: el
+`/actuator/health` devolvía `{"status":"UP"}` con un circuito abierto. Hoy es
+`when-authorized`, así que el anónimo —el healthcheck de Docker— ve solo el
+status y el staff ve el detalle.
+
+**Del actuator se exponen `health`, `circuitbreakers`, `circuitbreakerevents`
+y `metrics`,** y todo salvo `health` exige rol de staff. Siguen fuera `env`,
+`beans`, `mappings` y `configprops`: revelan configuración interna.
 
 **El frontend se construye con Node 26.** Es la versión que generó el
 `package-lock.json`; con Node 22, `npm ci` falla al leer las copias anidadas
@@ -402,4 +578,3 @@ Dicho sin maquillaje:
   el endpoint público oculta el autor a propósito.
 - **Validación del JWT en el gateway**, hoy cada servicio verifica por su
   cuenta.
-- **Kafka** sigue configurado y sin usar; RabbitMQ cubre lo que se necesita.
