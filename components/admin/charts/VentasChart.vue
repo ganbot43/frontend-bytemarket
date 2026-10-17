@@ -62,11 +62,21 @@ const { data, pending, error, refresh } = await useFetch<Punto[]>(
    diez días del mismo ancho que el de dos, y la pendiente deja de
    significar nada. Aquí se rellena día a día con cero.
 
-   Las claves son las fechas "aaaa-mm-dd" que arma el DATE() de MySQL sobre
-   timestamps UTC, y se comparan y se formatean en UTC a propósito: leerlas
-   en America/Lima las correría un día hacia atrás. Es el mismo motivo por
-   el que useFormatDateTime deja intactas las fechas de solo día. */
+   Las claves son fechas "aaaa-mm-dd" ya agrupadas por día de Lima, así que
+   el calendario que se construye aquí para rellenar los huecos tiene que
+   ser el de Lima también. Una fecha de solo día se parsea como UTC —el
+   estándar manda eso, y useFormatDateTime lo respeta—, de modo que el
+   calendario se arma sobre Date.UTC y solo el punto de partida, qué día es
+   hoy, se pregunta en Lima. */
 const DIA_MS = 86_400_000;
+const ZONA = "America/Lima";
+
+/** El día de hoy en la tienda, como "aaaa-mm-dd". */
+function hoyEnLima(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: ZONA, year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+}
 
 const serie = computed(() => {
   const porFecha = new Map<string, { monto: number; pedidos: number }>();
@@ -77,10 +87,10 @@ const serie = computed(() => {
     });
   }
 
-  /* El último punto es hoy en UTC, que es el día con el que agrupa el
+  /* El último punto es hoy en Lima, que es el día con el que agrupa el
      backend; el primero, `days - 1` días antes. */
-  const hoy = new Date();
-  const finUtc = Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate());
+  const [anio, mes, dia] = hoyEnLima().split("-").map(Number);
+  const finUtc = Date.UTC(anio!, mes! - 1, dia!);
   const total = Math.max(1, Math.min(365, Math.trunc(props.days) || 30));
 
   const puntos = [];
@@ -100,6 +110,10 @@ const serie = computed(() => {
 
 const hayVentas = computed(() => serie.value.some((p) => p.monto > 0));
 
+/* Las etiquetas se formatean en UTC y no en Lima, aunque los días SEAN de
+   Lima: las fechas de la serie se construyen con Date.UTC a partir del
+   calendario ya resuelto, así que pedirlas en Lima las retrasaría un día.
+   El huso se aplica una sola vez, al decidir qué día es hoy. */
 const etiquetaCorta = new Intl.DateTimeFormat('es-PE', {
   timeZone: 'UTC', day: '2-digit', month: 'short',
 });
