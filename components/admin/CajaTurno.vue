@@ -15,11 +15,15 @@
           <label class="pmo-label" for="fondo">Fondo inicial</label>
           <div class="turno-money">
             <span>S/</span>
-            <input id="fondo" v-model.number="fondo" type="number" min="0" step="0.10"
+            <input id="fondo" ref="fondoRef" v-model.number="fondo" type="number" min="0" step="0.10"
                    class="sp-drawer-input" placeholder="0.00" @keydown.enter="abrir" />
           </div>
         </div>
-        <button class="sp-page-btn" :disabled="cargando || fondo === null || fondo < 0" @click="abrir">
+        <!-- Sin deshabilitar cuando falta el fondo: un botón que no
+             responde al clic se lee como roto, y el usuario no tiene forma
+             de saber que le falta rellenar algo. Pulsar siempre hace algo;
+             si falta el dato, lo dice y lleva el foco al campo. -->
+        <button class="sp-page-btn" :disabled="cargando" @click="abrir">
           {{ cargando ? "Abriendo…" : "Abrir caja" }}
         </button>
       </div>
@@ -247,6 +251,7 @@ const cargando = ref(false);
 const error = ref("");
 
 const fondo = ref<number | null>(null);
+const fondoRef = ref<HTMLInputElement>();
 const modalMov = ref(false);
 const mov = reactive({ type: "out", amount: null as number | null, reason: "" });
 
@@ -272,6 +277,21 @@ function mensaje(e: any, porDefecto: string) {
 
 async function abrir() {
   error.value = "";
+
+  /* Vacío no es cero. Una caja puede abrirse sin fondo —se escribe 0— pero
+     dejarlo en blanco suele ser un despiste, y abrir con 0 por accidente
+     hace que el arqueo del final salga mal sin que nadie sepa por qué. */
+  if (fondo.value === null || fondo.value === undefined || (fondo.value as any) === "") {
+    error.value = "Escribe el fondo inicial. Si empiezas sin sencillo, pon 0.";
+    fondoRef.value?.focus();
+    return;
+  }
+  if (fondo.value < 0) {
+    error.value = "El fondo no puede ser negativo.";
+    fondoRef.value?.focus();
+    return;
+  }
+
   cargando.value = true;
   try {
     resumen.value = await $fetch("/api/admin/caja/abrir", {

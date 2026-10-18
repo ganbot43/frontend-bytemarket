@@ -2084,6 +2084,22 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
   box-shadow: 0 4px 12px rgba(15, 45, 107, 0.22);
 }
 
+/* Faltaba, y se notaba: un sp-page-btn deshabilitado se veía igual que
+   uno pulsable. El usuario hacía clic, no pasaba nada, y concluía que el
+   botón estaba roto —que es exactamente lo que pasó con "Abrir caja"—. */
+.sp-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.sp-page-btn:disabled:hover {
+  background: var(--sp-action);
+  box-shadow: none;
+  transform: none;
+}
+
 .sp-page-btn:active {
   transform: translateY(0);
 }
