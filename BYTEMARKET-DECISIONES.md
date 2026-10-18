@@ -362,25 +362,36 @@ veces fue una consulta que se quedó con la regla vieja mientras el resto
 avanzaba. Por eso ahora la regla vive en una sola consulta, reusada, y no
 copiada en cada sitio que la necesita.
 
-## 21. Un pedido entregado no se cancela
+## 21. De entregado y de cancelado ya no se sale
 
-`changeStatus` rechaza el paso de `delivered` a `cancelled`.
+`changeStatus` rechaza cualquier cambio desde `delivered` o `cancelled`.
 
-**Por qué.** Cancelar publica una ENTRADA de stock, y entregado significa
-que las unidades ya salieron por la puerta. Cancelarlo las devolvería al
-inventario sin que nadie las haya traído, y desde ahí la existencia del
-sistema deja de ser la del almacén.
+**Por qué, y por qué los dos.** Las dos cosas ya movieron el stock, y
+deshacerlas lo movería otra vez en el sentido que no toca:
 
-Aunque no tocara el stock seguiría estando mal: el histórico diría que un
-pedido que el cliente tiene en casa nunca ocurrió. Lo que se hace con una
-entrega que vuelve es registrar la devolución —una entrada con su motivo,
-desde Inventario—, no borrar la venta.
+- **Entregado** significa que las unidades salieron por la puerta.
+  Cancelarlo publica una ENTRADA y las devuelve al inventario sin que nadie
+  las haya traído.
+- **Cancelado** ya devolvió el stock. Sacarlo de ahí —a entregado, por
+  ejemplo— **no lo vuelve a descontar**, porque la salida se publica al
+  crear el pedido y eso no se repite. El inventario se queda inflado, por
+  el mismo sitio y al revés.
+
+Aunque el stock no entrara en juego seguiría estando mal: devolver un
+entregado a "pendiente" dice que un pedido que el cliente tiene en casa
+está por preparar. El histórico de estados es una auditoría, no un
+borrador.
+
+Lo que se hace con una entrega que vuelve es registrar la devolución —una
+entrada con su motivo, desde Inventario—, que deja rastro de las dos
+cosas: que se vendió y que volvió. Con un pedido cancelado que el cliente
+reactiva, se registra un pedido nuevo.
 
 **Dónde se comprueba.** En el servicio, no en el panel. El panel es una de
 las formas de llegar, y `/api/admin/**` está abierta a cualquiera con un
-token de administrador. El panel además deja de ofrecer la opción y dice
-por qué, para no mandar a nadie contra un error evitable.
-
+token de administrador. El panel, además, sustituye el formulario de
+cambio de estado por la explicación: un desplegable sin opciones parece una
+pantalla rota.
 ---
 
 ## Trampas conocidas

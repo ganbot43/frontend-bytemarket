@@ -263,8 +263,16 @@
               </div>
             </div>
 
+            <!-- Un pedido final no tiene a dónde ir, así que no se
+                 enseña un formulario vacío: se explica por qué se acabó. -->
+            <p v-if="esFinal" class="pmo-aviso pmo-aviso--solo">
+              {{ order.status === "delivered"
+                ? "Un pedido entregado ya no cambia de estado. Si la mercadería volvió, regístralo como entrada en Inventario para dejar rastro de la devolución."
+                : "Un pedido cancelado ya no cambia de estado. Su stock se devolvió al cancelarlo; para venderlo otra vez, registra un pedido nuevo." }}
+            </p>
+
             <!-- Select + nota -->
-            <div class="pmo-status-form">
+            <div v-else class="pmo-status-form">
               <div class="pmo-form-group">
                 <label class="pmo-label">Cambiar a</label>
                 <select
@@ -279,13 +287,6 @@
                     {{ opt.label }}
                   </option>
                 </select>
-                <!-- Explicar la ausencia, no solo esconder la opción: sin
-                     esto, quien busca "Cancelado" y no lo encuentra cree
-                     que la pantalla está rota. -->
-                <p v-if="order.status === 'delivered'" class="pmo-aviso">
-                  Un pedido entregado no se cancela. Si la mercadería volvió,
-                  regístralo como entrada en Inventario.
-                </p>
               </div>
 
               <div class="pmo-form-group">
@@ -373,14 +374,20 @@ const progressSteps = [
 ];
 
 /*
- * Un pedido entregado no se puede cancelar: cancelar devuelve el stock, y
- * entregado significa que las unidades ya salieron. La regla la impone
- * order-service; aquí solo se deja de ofrecer, para que nadie elija algo
- * que va a terminar en un mensaje de error.
+ * De entregado y de cancelado ya no se sale: los dos movieron el stock, y
+ * deshacerlos lo movería otra vez en el sentido que no toca. La regla la
+ * impone order-service; aquí solo se deja de ofrecer, para que nadie elija
+ * algo que va a terminar en un mensaje de error.
  */
-function puedePasarA(value: string) {
+const TERMINALES = ["delivered", "cancelled"];
+
+const esFinal = computed(() =>
+  Boolean(order.value && TERMINALES.includes(order.value.status)),
+);
+
+function puedePasarA(_value: string) {
   if (!order.value) return true;
-  return !(value === "cancelled" && order.value.status === "delivered");
+  return !TERMINALES.includes(order.value.status);
 }
 
 const opcionesDisponibles = computed(() =>
@@ -907,6 +914,14 @@ const timelineLogs = computed(() =>
 }
 
 /* Cancelado */
+.pmo-aviso--solo {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-sm);
+}
+
 .pmo-aviso {
   margin: 0.45rem 0 0;
   font-size: var(--sp-text-xs);
