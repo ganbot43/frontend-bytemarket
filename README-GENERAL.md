@@ -129,6 +129,14 @@ mientras se registran otra vez en Eureka. Cuando solo cambió ese servicio:
 docker compose up -d --build --no-deps frontend
 ```
 
+**kafka-ui ya no arranca sola.** Son 320 MB para mirar una cola que casi
+nunca hace falta mirar. Cuando se necesite: `docker compose --profile debug
+up -d`.
+
+**El stack pide unos 4,7 GB.** Cada servicio lleva su tope declarado; sin
+ellos cada JVM se cree con derecho al 25% de la RAM del equipo y en una
+máquina justa acaba todo en swap. `prod/LEEME.md` lo detalla.
+
 ### Los datos
 
 Viven en el volumen `mysql-data` y sobreviven a `docker compose down`. No hay
