@@ -1,5 +1,5 @@
 <template>
-  <div class="caja-page">
+  <div class="sp-page caja-page">
     <!-- Cabecera y cambio de modo -->
     <div class="sp-page-toolbar">
       <div>

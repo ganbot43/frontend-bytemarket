@@ -11,11 +11,13 @@
         </p>
       </div>
       <div class="turno-abrir__form">
-        <label class="pmo-label" for="fondo">Fondo inicial</label>
-        <div class="turno-money">
-          <span>S/</span>
-          <input id="fondo" v-model.number="fondo" type="number" min="0" step="0.10"
-                 class="sp-drawer-input" placeholder="0.00" @keydown.enter="abrir" />
+        <div class="turno-campo">
+          <label class="pmo-label" for="fondo">Fondo inicial</label>
+          <div class="turno-money">
+            <span>S/</span>
+            <input id="fondo" v-model.number="fondo" type="number" min="0" step="0.10"
+                   class="sp-drawer-input" placeholder="0.00" @keydown.enter="abrir" />
+          </div>
         </div>
         <button class="sp-page-btn" :disabled="cargando || fondo === null || fondo < 0" @click="abrir">
           {{ cargando ? "Abriendo…" : "Abrir caja" }}
@@ -48,51 +50,68 @@
       </div>
 
       <!-- No se enseña el esperado: ver el porqué en el arqueo. -->
+      <!-- sp-drawer-btn y no dash-action-btn: esa última vive en el
+           <style scoped> del dashboard, así que fuera de esa página
+           existe en el HTML pero no la pinta nadie, y los botones salían
+           como texto plano. -->
       <div class="turno-acciones">
-        <button class="dash-action-btn" @click="abrirMovimiento">Movimiento</button>
-        <button class="dash-action-btn dash-action-btn--accent" @click="abrirCierre">Cerrar caja</button>
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="abrirMovimiento">
+          Movimiento
+        </button>
+        <button class="sp-drawer-btn sp-drawer-btn--primary" @click="abrirCierre">
+          Cerrar caja
+        </button>
       </div>
     </section>
 
     <!-- ── Movimiento de efectivo ─────────────────────────────── -->
+    <!-- sp-modal-* y no inv-modal-*: esas viven en el <style scoped> de
+         la pantalla de Inventario, así que aquí el diálogo salía sin caja,
+         sin centrar y pegado al borde. Las globales son estas. -->
     <Teleport to="body">
-      <Transition name="sp-drawer-overlay">
-        <div v-if="modalMov" class="sp-drawer-overlay" @click.self="modalMov = false" />
-      </Transition>
-      <Transition name="sp-drawer-panel">
-        <div v-if="modalMov" class="inv-modal" role="dialog" aria-modal="true">
-          <h3 class="inv-modal__title">Movimiento de efectivo</h3>
-          <p class="turno-nota">
-            Dinero que entra o sale del cajón sin ser una venta.
-          </p>
+      <Transition name="sp-modal">
+        <div v-if="modalMov" class="sp-modal-backdrop" @click.self="modalMov = false">
+          <div class="sp-modal-box turno-modal" role="dialog" aria-modal="true">
+            <div class="sp-modal-header">
+              <div class="sp-modal-header__content">
+                <h3 class="sp-modal-header__title">Movimiento de efectivo</h3>
+                <p class="sp-modal-header__meta">
+                  Dinero que entra o sale del cajón sin ser una venta.
+                </p>
+              </div>
+              <button class="sp-modal-close" aria-label="Cerrar" @click="modalMov = false">✕</button>
+            </div>
 
-          <div class="inv-opciones">
-            <button v-for="t in TIPOS" :key="t.value" class="inv-opcion"
-                    :class="{ 'inv-opcion--on': mov.type === t.value }" @click="mov.type = t.value">
-              <strong>{{ t.label }}</strong>
-              <span>{{ t.hint }}</span>
-            </button>
-          </div>
+            <div class="sp-modal-body">
+              <div class="turno-tipos">
+                <button v-for="t in TIPOS" :key="t.value" type="button" class="turno-tipo"
+                        :class="{ 'turno-tipo--on': mov.type === t.value }" @click="mov.type = t.value">
+                  <strong>{{ t.label }}</strong>
+                  <span>{{ t.hint }}</span>
+                </button>
+              </div>
 
-          <label class="inv-modal__field">
-            <span>Importe</span>
-            <input v-model.number="mov.amount" type="number" min="0.1" step="0.10"
-                   class="sp-drawer-input inv-modal__input" placeholder="0.00" />
-          </label>
-          <label class="inv-modal__field">
-            <span>Motivo</span>
-            <input v-model="mov.reason" type="text" class="sp-drawer-input"
-                   placeholder="Ej: retiro a caja fuerte" @keydown.enter.prevent="guardarMovimiento" />
-          </label>
+              <div class="turno-campo turno-campo--ancho">
+                <label class="pmo-label" for="mov-importe">Importe</label>
+                <input id="mov-importe" v-model.number="mov.amount" type="number" min="0.1" step="0.10"
+                       class="sp-drawer-input" placeholder="0.00" />
+              </div>
+              <div class="turno-campo turno-campo--ancho">
+                <label class="pmo-label" for="mov-motivo">Motivo</label>
+                <input id="mov-motivo" v-model="mov.reason" type="text" class="sp-drawer-input"
+                       placeholder="Ej: retiro a caja fuerte" @keydown.enter.prevent="guardarMovimiento" />
+              </div>
 
-          <p v-if="error" class="turno-error">{{ error }}</p>
+              <p v-if="error" class="turno-error">{{ error }}</p>
+            </div>
 
-          <div class="inv-modal__actions">
-            <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="modalMov = false">Cancelar</button>
-            <button class="sp-drawer-btn" :disabled="cargando || !mov.amount || !mov.reason.trim()"
-                    @click="guardarMovimiento">
-              {{ cargando ? "Guardando…" : "Registrar" }}
-            </button>
+            <div class="sp-modal-footer">
+              <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="modalMov = false">Cancelar</button>
+              <button class="sp-drawer-btn sp-drawer-btn--primary"
+                      :disabled="cargando || !mov.amount || !mov.reason.trim()" @click="guardarMovimiento">
+                {{ cargando ? "Guardando…" : "Registrar" }}
+              </button>
+            </div>
           </div>
         </div>
       </Transition>
@@ -100,83 +119,101 @@
 
     <!-- ── Arqueo y cierre ────────────────────────────────────── -->
     <Teleport to="body">
-      <Transition name="sp-drawer-overlay">
-        <div v-if="modalCierre" class="sp-drawer-overlay" @click.self="cerrarDialogoCierre" />
-      </Transition>
-      <Transition name="sp-drawer-panel">
-        <div v-if="modalCierre" class="inv-modal inv-modal--ancho" role="dialog" aria-modal="true">
-          <!-- Paso 1: contar -->
-          <template v-if="!cuadre">
-            <h3 class="inv-modal__title">Arqueo de caja</h3>
-            <p class="turno-nota">
-              Cuenta el efectivo que hay ahora en el cajón y escribe el total.
-              <strong>No te enseñamos cuánto debería haber hasta que lo hagas</strong>:
-              si lo vieras antes, el arqueo no detectaría nada.
-            </p>
+      <Transition name="sp-modal">
+        <div v-if="modalCierre" class="sp-modal-backdrop" @click.self="cerrarDialogoCierre">
+          <div class="sp-modal-box turno-modal" role="dialog" aria-modal="true">
+            <!-- Paso 1: contar -->
+            <template v-if="!cuadre">
+              <div class="sp-modal-header">
+                <div class="sp-modal-header__content">
+                  <h3 class="sp-modal-header__title">Arqueo de caja</h3>
+                  <p class="sp-modal-header__meta">
+                    Cuenta el efectivo del cajón y escribe el total.
+                  </p>
+                </div>
+                <button class="sp-modal-close" aria-label="Cerrar" @click="cerrarDialogoCierre">✕</button>
+              </div>
 
-            <label class="inv-modal__field">
-              <span>Efectivo contado</span>
-              <input ref="contadoRef" v-model.number="contado" type="number" min="0" step="0.10"
-                     class="sp-drawer-input inv-modal__input" placeholder="0.00"
-                     @keydown.enter.prevent="cerrar" />
-            </label>
-            <label class="inv-modal__field">
-              <span>Notas <span class="pmo-label--opt">(opcional)</span></span>
-              <input v-model="notas" type="text" class="sp-drawer-input"
-                     placeholder="Ej: faltó un billete de 10" />
-            </label>
+              <div class="sp-modal-body">
+                <p class="turno-nota turno-nota--destacada">
+                  <strong>No te enseñamos cuánto debería haber hasta que cuentes.</strong>
+                  Si lo vieras antes, el arqueo no detectaría nada.
+                </p>
 
-            <p v-if="error" class="turno-error">{{ error }}</p>
+                <div class="turno-campo turno-campo--ancho">
+                  <label class="pmo-label" for="contado">Efectivo contado</label>
+                  <input id="contado" ref="contadoRef" v-model.number="contado" type="number"
+                         min="0" step="0.10" class="sp-drawer-input" placeholder="0.00"
+                         @keydown.enter.prevent="cerrar" />
+                </div>
+                <div class="turno-campo turno-campo--ancho">
+                  <label class="pmo-label" for="notas">Notas <span class="pmo-label--opt">(opcional)</span></label>
+                  <input id="notas" v-model="notas" type="text" class="sp-drawer-input"
+                         placeholder="Ej: faltó un billete de 10" />
+                </div>
 
-            <div class="inv-modal__actions">
-              <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarDialogoCierre">Cancelar</button>
-              <button class="sp-drawer-btn" :disabled="cargando || contado === null || contado < 0"
-                      @click="cerrar">
-                {{ cargando ? "Cerrando…" : "Cerrar caja" }}
-              </button>
-            </div>
-          </template>
+                <p v-if="error" class="turno-error">{{ error }}</p>
+              </div>
 
-          <!-- Paso 2: el cuadre -->
-          <template v-else>
-            <h3 class="inv-modal__title">Caja cerrada</h3>
+              <div class="sp-modal-footer">
+                <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarDialogoCierre">Cancelar</button>
+                <button class="sp-drawer-btn sp-drawer-btn--primary"
+                        :disabled="cargando || contado === null || contado < 0" @click="cerrar">
+                  {{ cargando ? "Cerrando…" : "Cerrar caja" }}
+                </button>
+              </div>
+            </template>
 
-            <ul class="turno-cuadre">
-              <li><span>Fondo inicial</span><strong>{{ money(cuadre.openingFloat) }}</strong></li>
-              <li><span>Cobrado en efectivo</span><strong>{{ money(cuadre.cashSales) }}</strong></li>
-              <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadre.movementsTotal) }}</strong></li>
-              <li class="turno-cuadre__total">
-                <span>Debería haber</span><strong>{{ money(cuadre.expectedCash) }}</strong>
-              </li>
-              <li><span>Contaste</span><strong>{{ money(cuadre.countedCash) }}</strong></li>
-            </ul>
+            <!-- Paso 2: el cuadre -->
+            <template v-else>
+              <div class="sp-modal-header">
+                <div class="sp-modal-header__content">
+                  <h3 class="sp-modal-header__title">Caja cerrada</h3>
+                  <p class="sp-modal-header__meta">{{ formatDateTimeCompact(cuadre.closedAt) }}</p>
+                </div>
+              </div>
 
-            <p class="turno-dif" :class="claseDif(cuadre.difference)">
-              {{ textoDif(cuadre.difference) }}
-            </p>
+              <div class="sp-modal-body">
+                <ul class="turno-cuadre">
+                  <li><span>Fondo inicial</span><strong>{{ money(cuadre.openingFloat) }}</strong></li>
+                  <li><span>Cobrado en efectivo</span><strong>{{ money(cuadre.cashSales) }}</strong></li>
+                  <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadre.movementsTotal) }}</strong></li>
+                  <li class="turno-cuadre__total">
+                    <span>Debería haber</span><strong>{{ money(cuadre.expectedCash) }}</strong>
+                  </li>
+                  <li><span>Contaste</span><strong>{{ money(cuadre.countedCash) }}</strong></li>
+                </ul>
 
-            <!-- Las formas que no pasaron por el cajón, como referencia. -->
-            <div v-if="(cuadre.byPaymentType || []).length" class="turno-formas">
-              <p class="turno-formas__label">Total del turno por forma de pago</p>
-              <ul>
-                <li v-for="f in cuadre.byPaymentType" :key="f.type">
-                  <span>{{ f.label }}</span>
-                  <strong>{{ money(f.amount) }}</strong>
-                  <em>{{ f.sales }} venta(s)</em>
-                </li>
-              </ul>
-              <p class="turno-nota">
-                Solo el efectivo entra en el cuadre: lo demás no pasó por el cajón.
-              </p>
-            </div>
+                <p class="turno-dif" :class="claseDif(cuadre.difference)">
+                  {{ textoDif(cuadre.difference) }}
+                </p>
 
-            <div class="inv-modal__actions">
-              <button class="sp-drawer-btn" @click="cerrarDialogoCierre">Entendido</button>
-            </div>
-          </template>
+                <div v-if="(cuadre.byPaymentType || []).length" class="turno-formas">
+                  <p class="turno-formas__label">Total del turno por forma de pago</p>
+                  <ul>
+                    <li v-for="f in cuadre.byPaymentType" :key="f.type">
+                      <span>{{ f.label }}</span>
+                      <strong>{{ money(f.amount) }}</strong>
+                      <em>{{ f.sales }} venta(s)</em>
+                    </li>
+                  </ul>
+                  <p class="turno-nota">
+                    Solo el efectivo entra en el cuadre: lo demás no pasó por el cajón.
+                  </p>
+                </div>
+              </div>
+
+              <div class="sp-modal-footer">
+                <button class="sp-drawer-btn sp-drawer-btn--primary" @click="cerrarDialogoCierre">
+                  Entendido
+                </button>
+              </div>
+            </template>
+          </div>
         </div>
       </Transition>
     </Teleport>
+
   </div>
 </template>
 
@@ -335,8 +372,13 @@ onMounted(cargar);
   justify-content: space-between;
   gap: 1.25rem;
 }
-.turno-abrir__texto { flex: 1 1 18rem; }
-.turno-abrir__form { display: flex; align-items: flex-end; gap: 0.6rem; }
+/* El texto no se estira hasta el borde: una línea de 90 caracteres no se
+   lee, y al lado del formulario parecía que los dos competían. */
+.turno-abrir__texto { flex: 1 1 22rem; max-width: 46ch; }
+.turno-abrir__form { display: flex; align-items: flex-end; gap: 0.75rem; }
+/* La etiqueta encima del campo, no al lado: en fila se leía como si
+   "Fondo inicial" y "S/" fueran dos cosas distintas. */
+.turno-campo { display: flex; flex-direction: column; gap: 0.3rem; }
 .turno-money { display: flex; align-items: center; gap: 0.35rem; }
 .turno-money span { font-weight: 700; color: var(--sp-text-soft); }
 .turno-money input { width: 9rem; }
@@ -384,6 +426,48 @@ onMounted(cargar);
 .turno-acciones { margin-left: auto; display: flex; gap: 0.5rem; }
 
 /* ── Cuadre ── */
+.turno-modal { max-width: 520px; }
+
+.turno-campo--ancho { margin-bottom: 0.9rem; }
+.turno-campo--ancho input { width: 100%; }
+
+.turno-nota--destacada {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-surface-subtle);
+  border: 1px solid var(--sp-border);
+}
+
+/* Las tres opciones de movimiento: una rejilla, no una lista. */
+.turno-tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.turno-tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-surface-solid);
+  cursor: pointer;
+  font-family: var(--sp-font);
+  transition: border-color var(--sp-t-fast) var(--sp-ease),
+    background var(--sp-t-fast) var(--sp-ease);
+}
+.turno-tipo strong { font-size: var(--sp-text-sm); color: var(--sp-text-strong); }
+.turno-tipo span { font-size: var(--sp-text-xs); color: var(--sp-text-soft); line-height: 1.3; }
+.turno-tipo:hover { border-color: var(--sp-border-strong); }
+.turno-tipo--on {
+  border-color: var(--sp-primary);
+  background: var(--sp-primary-soft);
+}
+
 .turno-cuadre { list-style: none; margin: 0 0 1rem; padding: 0; }
 .turno-cuadre li {
   display: flex;
