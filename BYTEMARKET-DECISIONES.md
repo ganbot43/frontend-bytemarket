@@ -21,12 +21,12 @@ las clases, y que si alguien "simplifica" sin saber, rompe algo.
 | Componentes y páginas Vue | 77 (34 páginas, 39 componentes, 4 layouts) |
 | Tests automatizados | 156 (58 catalog, 52 order, 34 support, 12 user) |
 | Esquemas MySQL | 4, uno por servicio de negocio |
-| Tablas | 18 |
+| Tablas | 19 |
 
 | Esquema | Tablas |
 |---|---|
 | `bytemarket_user` | `users`, `customers`, `business_config` |
-| `bytemarket_catalog` | `products`, `product_images`, `categories`, `subcategories`, `banners`, `reviews`, `favorites`, `inventory_movements` |
+| `bytemarket_catalog` | `products`, `product_images`, `categories`, `subcategories`, `banners`, `reviews`, `favorites`, `inventory_movements`, `stock_reservations` |
 | `bytemarket_order` | `orders`, `order_items`, `order_status_logs`, `payment_methods`, `coupons` |
 | `bytemarket_support` | `complaints`, `order_notifications` |
 
@@ -438,6 +438,41 @@ esto es que esa carrera deje de corromper el dato: se descuenta hasta cero
 y queda anotada. La solución completa es reservar en el checkout y
 confirmar al pagar, que es como lo resuelven las tiendas grandes y que aquí
 no está hecho.
+
+## 24. El stock se aparta antes de vender, y lo apartado caduca
+
+El checkout reserva las unidades en catalog **antes** de guardar el pedido.
+Lo disponible pasa a ser `stock - reserved`, no `stock`.
+
+**Por qué.** Validar y descontar no ocurrían en el mismo instante: el
+checkout preguntaba "¿hay tres?", le decían que sí, y el descuento llegaba
+después por la cola. Entre una cosa y otra cabía otra compra que preguntaba
+lo mismo y recibía la misma respuesta, mirando una cifra que ya estaba
+comprometida. Dos clientes, una unidad.
+
+Reservar cierra el hueco porque la pregunta y la respuesta son la misma
+operación: no se consulta el stock, se intenta coger, dentro de un UPDATE
+atómico. Si vuelve vacío, no había.
+
+**Antes de guardar, no después.** Al revés sería tarde: un pedido guardado
+con unidades que no hay es una promesa que alguien tendrá que deshacer a
+mano. Si el guardado falla después de reservar, se libera en el acto.
+
+**El plazo es lo que hace que no necesite vigilancia.** Entre apartar y
+descontar puede caerse cualquier cosa, y sin plazo esas unidades quedarían
+retenidas para siempre para un pedido que no existe: el catálogo diría
+"agotado" con el almacén lleno. Quince minutos —margen para que un servicio
+caído vuelva y la cola entregue lo pendiente— y un barrido cada minuto las
+devuelve solas.
+
+**Todo o nada.** Si una línea del carrito no alcanza, se devuelven las que
+ya se habían apartado. Media reserva es peor que ninguna: el cliente ve un
+error y aun así tendría unidades bloqueadas a su nombre durante el plazo.
+
+**La caja no reserva.** En el mostrador la mercancía se entrega en el acto:
+no hay ventana entre prometer y entregar, que es lo único que la reserva
+protege. `descontar` consume la reserva si existe y descuenta directo si
+no, que es también lo que pasa con los pedidos anteriores a esto.
 
 ---
 
