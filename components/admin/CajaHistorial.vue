@@ -16,8 +16,11 @@
         <tbody>
           <tr v-for="t in turnos" :key="t.id" class="sp-tr">
             <td class="sp-td">
-              <p class="sp-table-title">{{ t.openedByName || "—" }}</p>
-              <p class="sp-table-sub">{{ formatDateTimeCompact(t.openedAt) }}</p>
+              <p class="sp-table-title">{{ t.cashierName || t.openedByName || "—" }}</p>
+              <p class="sp-table-sub">
+                {{ formatDateTimeCompact(t.openedAt) }}
+                <template v-if="t.openedByName"> · la aperturó {{ t.openedByName }}</template>
+              </p>
             </td>
             <td class="sp-td sp-td--muted">
               <span class="sp-table-date">{{ formatDateTimeCompact(t.closedAt) }}</span>
@@ -31,6 +34,12 @@
                 <span class="sp-badge__dot" />
                 {{ etiqueta(t.difference) }}
               </span>
+              <!-- El badge es del efectivo. Un turno con el cajón perfecto y
+                   50 soles de Yape sin abonar saldría en verde, así que las
+                   demás formas que no cuadraron se dicen aparte. -->
+              <p v-for="c in descuadres(t)" :key="c.type" class="sp-table-sub">
+                {{ c.label }}: {{ etiqueta(c.difference) }}
+              </p>
               <p v-if="t.closingNotes" class="sp-table-sub">{{ t.closingNotes }}</p>
             </td>
           </tr>
@@ -91,6 +100,15 @@ function badge(d: any) {
   const v = Math.abs(Number(d ?? 0));
   if (v < 0.005) return "sp-badge--success";
   return v < 1 ? "sp-badge--warning" : "sp-badge--danger";
+}
+
+/* Las formas de pago distintas del efectivo que no cuadraron. El efectivo
+   ya tiene su propia columna y su badge: repetirlo aquí sería decirlo dos
+   veces. */
+function descuadres(t: any) {
+  return (t.counts || []).filter(
+    (c: any) => c.type !== "efectivo" && Math.abs(Number(c.difference ?? 0)) >= 0.005
+  );
 }
 
 function etiqueta(d: any) {

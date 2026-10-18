@@ -153,9 +153,9 @@
             <div class="sp-drawer-field">
               <label class="sp-drawer-label">Rol <span class="sp-drawer-req">*</span></label>
               <select v-model="form.role" class="sp-drawer-input sp-drawer-select">
-                <option value="customer">Cliente</option>
-                <option value="admin">Administrador</option>
-                <option value="superadmin">Superadministrador</option>
+                <option v-for="r in rolesAsignables" :key="r.value" :value="r.value">
+                  {{ r.label }}
+                </option>
               </select>
               <p class="sp-drawer-hint">{{ ayudaRol }}</p>
             </div>
@@ -267,9 +267,12 @@ async function cargar() {
       query: {
         page: pagina.value,
         size: limite,
-        // El backend acepta varios roles por coma; el equipo son los dos
-        // roles de staff vistos como una sola lista.
-        role: esPersonal.value ? "admin,superadmin" : "customer",
+        /* El backend acepta varios roles por coma. El equipo son los
+           cuatro roles de panel: pedía "admin,superadmin" y entonces los
+           cajeros y los jefes de ventas no salían en ninguna lista —ni en
+           Equipo ni en Clientes—, así que no había forma de desactivar a
+           un cajero que se va. */
+        role: esPersonal.value ? "cajero,jefe_ventas,admin,superadmin" : "customer",
         q: busqueda.value.trim() || undefined,
       },
     });
@@ -289,8 +292,10 @@ onMounted(cargar);
 
 const ROLES: Record<string, string> = {
   customer: "Cliente",
-  admin: "Administrador",
-  superadmin: "Superadmin",
+  cajero: "Cajero",
+  jefe_ventas: "Jefe de ventas",
+  admin: "Encargado",
+  superadmin: "Gerente",
 };
 const rolLabel = (r: string) => ROLES[r] ?? r;
 const iniciales = (n: string) =>
@@ -306,16 +311,64 @@ const editando = computed(() => editandoId.value !== null);
 const guardando = ref(false);
 const errorForm = ref("");
 
+/*
+ * Qué roles puede repartir quien está mirando.
+ *
+ * El jefe de ventas da de alta cajeros y nada más: el servicio se lo
+ * impide igual —devuelve "Como jefe de ventas solo puedes gestionar
+ * cajeros"— pero enseñarle las opciones que le van a rebotar es ofrecerle
+ * algo que no existe.
+ *
+ * Y "Gerente" solo lo reparte el gerente: un encargado que pudiera
+ * nombrar gerentes se asciende a sí mismo en dos pasos.
+ */
+const DEL_PANEL = [
+  { value: "cajero", label: "Cajero" },
+  { value: "jefe_ventas", label: "Jefe de ventas" },
+  { value: "admin", label: "Encargado de tienda" },
+  { value: "superadmin", label: "Gerente" },
+];
+
+const miRol = computed(() => (yo.value as any)?.role as string | undefined);
+
+const rolesAsignables = computed(() => {
+  const base = !esPersonal.value
+    ? [{ value: "customer", label: "Cliente" }]
+    : miRol.value === "jefe_ventas"
+      ? DEL_PANEL.filter((r) => r.value === "cajero")
+      : miRol.value === "superadmin"
+        ? DEL_PANEL
+        : DEL_PANEL.filter((r) => r.value !== "superadmin");
+
+  /* Al editar, el rol que la persona ya tiene va en la lista aunque quien
+     mira no pueda asignarlo. Si falta, el <select> se queda sin opción
+     marcada y parece que el usuario no tiene rol —y al guardar se mandaría
+     un cambio que nadie pidió—. */
+  if (editando.value && form.role && !base.some((r) => r.value === form.role)) {
+    return [{ value: form.role, label: ROLES[form.role] ?? form.role }, ...base];
+  }
+  return base;
+});
+
+/** El primero de los que puede repartir: nunca uno que le vaya a rebotar. */
+const rolPorDefecto = () =>
+  esPersonal.value ? (rolesAsignables.value[0]?.value ?? "cajero") : "customer";
+
 const vacio = () => ({
-  name: "", email: "", password: "", role: "admin",
+  name: "", email: "", password: "", role: "cajero",
   phone: "", dni: "", address: "", isActive: 1,
 });
 const form = reactive(vacio());
 
 const ayudaRol = computed(() => {
   if (form.role === "customer") return "Compra en la tienda. No entra al panel.";
-  if (form.role === "admin") return "Entra al panel: pedidos, productos, caja e inventario.";
-  return "Todo lo del administrador, más la configuración del negocio.";
+  if (form.role === "cajero")
+    return "Solo la pantalla de caja: cobra y atiende. No apertura su caja ni la cuadra.";
+  if (form.role === "jefe_ventas")
+    return "Apertura cajas, entrega fondos, arquea y da de alta cajeros. No cambia precios.";
+  if (form.role === "admin")
+    return "Toda la operación de la tienda: productos, pedidos, inventario, cupones y caja.";
+  return "Todo lo del encargado, más los métodos de pago y la configuración del negocio.";
 });
 
 function abrir(u?: any) {
@@ -330,7 +383,7 @@ function abrir(u?: any) {
     });
   } else {
     editandoId.value = null;
-    form.role = esPersonal.value ? "admin" : "customer";
+    form.role = rolPorDefecto();
   }
   drawerOpen.value = true;
 }
@@ -430,6 +483,8 @@ async function borrar() {
   display: inline-block; padding: 0.12rem 0.55rem; border-radius: 999px;
   font-size: 0.7rem; font-weight: 700; background: #f1f5f9; color: #475569;
 }
+.usu-rol--cajero { background: #f0fdf4; color: #15803d; }
+.usu-rol--jefe_ventas { background: #fff7ed; color: #c2410c; }
 .usu-rol--admin { background: #eff6ff; color: #1d4ed8; }
 .usu-rol--superadmin { background: #f5f3ff; color: #6d28d9; }
 

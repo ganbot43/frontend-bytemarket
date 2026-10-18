@@ -33,10 +33,10 @@
         </NuxtLink>
       </div>
 
-      <div v-if="user?.role === 'superadmin'" class="sp-nav-group">
+      <div v-if="itemsSistema.length" class="sp-nav-group">
         <span class="sp-nav-group__label">Sistema</span>
         <NuxtLink
-          v-for="item in superadminItems"
+          v-for="item in itemsSistema"
           :key="item.to"
           :to="item.to"
           class="sp-nav-item"
@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { 
-  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart, Calculator, Users
+  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart, Calculator, Wallet, Users
 } from "lucide-vue-next";
 
 const props = defineProps<{ user: any }>();
@@ -108,6 +108,16 @@ const baseItems = [
     to: "/admin/caja",
     label: "Caja",
     icon: Calculator,
+  },
+  /* Aperturas, fondos y arqueo. Separada de "Caja" porque es de otra
+     persona: el cajero cobra, el jefe le entrega el fondo y le cuadra el
+     cajón. Juntarlas en una pantalla con pestañas haría parecer que son
+     dos vistas del mismo trabajo. */
+  {
+    to: "/admin/cajas",
+    label: "Cajas",
+    icon: Wallet,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/reportes",
@@ -174,28 +184,45 @@ const baseItems = [
   },
 ];
 
-const itemsVisibles = computed(() => {
+function visiblesPara(items: any[]) {
   const rol = props.user?.role as string | undefined;
-  return baseItems.filter((i: any) => !i.roles || (rol && i.roles.includes(rol)));
-});
+  return items.filter((i: any) => !i.roles || (rol && i.roles.includes(rol)));
+}
 
-const superadminItems = [
+const itemsVisibles = computed(() => visiblesPara(baseItems));
+
+/*
+ * El grupo "Sistema" era superadmin entero, y eso dejaba al jefe de ventas
+ * sin la pantalla de Usuarios: podía dar de alta cajeros por API —el
+ * servicio se lo permite— pero no tenía por dónde llegar. "Habilita
+ * usuarios para que vendan" es parte de su trabajo, así que necesita la
+ * puerta.
+ *
+ * Los otros dos siguen siendo del gerente: tocar los métodos de pago o la
+ * configuración de la tienda no es operar una caja.
+ */
+const itemsDeSistema = [
   {
     to: "/admin/metodos-pago",
     label: "Métodos de Pago",
     icon: CreditCard,
+    roles: ["superadmin"],
   },
   {
     to: "/admin/usuarios",
     label: "Usuarios",
     icon: Users,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/configuracion",
     label: "Configuración",
     icon: Settings,
+    roles: ["superadmin"],
   },
 ];
+
+const itemsSistema = computed(() => visiblesPara(itemsDeSistema));
 
 function isActive(path: string) {
   if (path === "/admin") return route.path === "/admin";

@@ -533,21 +533,117 @@ por el cajón: se cobran después, por Yape o transferencia. Solo el canal
 
 ---
 
+## 26. El que vende no es el que cuadra
+
+Cuatro roles, y la línea que los separa es una sola:
+
+| rol | es | puede |
+|---|---|---|
+| `superadmin` | gerente | todo, más métodos de pago y configuración |
+| `admin` | encargado de tienda | toda la operación; apertura y arquea |
+| `jefe_ventas` | jefe de ventas | apertura cajas, entrega fondos, mueve efectivo, arquea, da de alta cajeros |
+| `cajero` | cajero | vende y atiende |
+
+**Por qué la caja tiene dos personas.** `CashSession` guarda `cashier_id`
+—de quién es el cajón— y `opened_by` —quién entregó el fondo—. Antes eran
+la misma columna, y eso significaba que el cajero se abría su caja con el
+fondo que quisiera y declaraba él solo lo que había al final: el arqueo lo
+firmaba exactamente a quien vigila. Salía un papel, pero no era un
+control. Separarlas es lo que convierte esto en control interno y no en un
+formulario.
+
+**Qué no ve quien va a contar.** Con la caja abierta, `paraArqueo()` no
+devuelve ni un importe: ni ventas, ni efectivo, ni desglose. Solo cuántas
+ventas hubo y de qué formas, para saber qué comprobantes juntar. Es la
+misma regla del esperado (decisión 25) llevada hasta el final: contar Yape
+teniendo delante «Yape: 900» no es contar. Al cajero sí se le enseña lo
+que cobró en su propia barra, porque él no es quien cuenta.
+
+**Por qué el cajero no pone el precio.** En el mostrador se regatea, y el
+encargado y el jefe pueden mover el precio de una línea o aplicar un
+descuento a mano. El cajero no. Vendiendo a 10 soles una batería de 155,
+el cajón **cuadra perfecto** al final del turno —el sistema esperaba 10— y
+los 145 no aparecen por ningún lado. No es un descuadre que se pueda ver
+contando dinero, así que la única defensa es que no pueda tocar el precio.
+Lo rechaza `PanelSaleService`, y la pantalla además no le enseña el campo.
+
+**Dónde se decide.** En `SecurityConfig` de order-service, con reglas
+específicas antes del comodín: el orden importa porque Spring se queda con
+la primera que casa. El menú y el middleware del front filtran lo mismo,
+pero solo para no mandar a nadie contra un 403: la decisión es del
+servicio.
+
+**Límite conocido.** `cashierName` lo manda el cliente y se guarda como
+etiqueta para el papel; lo que identifica al cajero es `cashier_id`.
+Ningún permiso se decide con el nombre. order-service tampoco comprueba
+que el id sea de un cajero —no tiene cliente de user-service— así que un
+jefe podría aperturar una caja a nombre de alguien que no lo es. No da
+acceso a nada: para cobrar hace falta el rol igualmente.
+
+---
+
+## 27. Cada forma de pago se cuadra contra su propio comprobante
+
+El arqueo dejó de ser una sola cifra. `cash_counts` guarda una línea por
+forma y turno, con lo esperado, lo contado y la diferencia:
+
+    efectivo  → el dinero del cajón, contado a mano
+    tarjeta   → el cierre de lote del POS (Niubiz)
+    yape/plin → los abonos recibidos en la cuenta del negocio
+
+**Por qué no basta el efectivo.** Con un arqueo de solo efectivo, un turno
+con el cajón perfecto y 50 soles de Yape que nunca llegaron sale en verde.
+Esa diferencia no aparece hasta que alguien revise el banco a fin de mes,
+y para entonces ya no se sabe de qué turno era.
+
+**Qué entra en cada esperado.** El fondo inicial y los movimientos solo
+cuentan en el efectivo, porque es el único dinero que pasa por el cajón.
+En las demás formas lo esperado son las ventas del turno y nada más.
+
+**El efectivo siempre está; el resto, solo si tuvo ventas.** El fondo
+sigue en el cajón aunque no se haya cobrado nada en efectivo, y hay que
+devolverlo. Pedir el cierre de lote un día que nadie pagó con tarjeta es
+ruido, y el ruido hace que el arqueo se rellene sin mirar.
+
+**No se cierra a medias.** Si una forma tuvo ventas y no se declara, el
+cierre se rechaza nombrándola. Un arqueo incompleto que parece completo es
+peor que no tenerlo: el papel saldría firmado dando por bueno un dinero
+que nadie contó.
+
+**El papel.** Al cerrar se imprime un comprobante de 80 mm —el mismo rollo
+de los tickets de venta— con el desglose, los movimientos y dos líneas de
+firma: el cajero reconoce con qué entregó la caja, el encargado que lo
+contó él. Es el artefacto físico que cierra el circuito; por eso el
+sistema no guarda ninguna "firma digital" que no significaría nada.
+
+---
+
 ## Qué está comprobado y qué no
 
 Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 156 pruebas entre
-los cuatro servicios. Cubren las reglas de negocio, la invariante del
-kardex, el plan de carga del pedido y el ciclo completo de una reserva
-—apartar, consumir, liberar, caducar— contra una base en memoria.
+**Comprobado con pruebas automáticas y CI en verde.** 197 pruebas entre
+los cuatro servicios —12 en user, 80 en order, 71 en catalog, 34 en
+support—. Cubren las reglas de negocio, la invariante del kardex, el plan
+de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
+liberar, caducar— y el arqueo por forma de pago, contra una base en
+memoria.
 
 **Comprobado contra el sistema corriendo.** Los endpoints del panel, las
 cifras del dashboard y del reporte, la paginación, y el corte del día en
 hora de Lima, este último con un pedido de prueba insertado dentro de la
 franja problemática y borrado después.
+
+También el turno de caja entero, con los cuatro roles autenticados de
+verdad: el jefe apertura la caja del cajero con su fondo, el cajero vende
+en efectivo y por Yape, el jefe retira, y el cierre se rechaza mientras
+falte una forma por contar. El arqueo final dio cajón exacto y 54.79 de
+Yape sin abonar —el caso que justifica la decisión 27—. También se
+comprobó lo que cada rol NO puede: el cajero no se apertura la caja, no
+cierra, no lista pedidos y no mueve el precio. Los datos de esa prueba se
+borraron después, devolviendo las unidades al stock.
 
 **NO comprobado de punta a punta.** El flujo de compra completo cruza dos
 servicios y RabbitMQ: el checkout reserva por Feign, el pedido se guarda,
@@ -556,10 +652,14 @@ Cada tramo tiene su prueba; la cadena entera, ninguna. Lo primero que hay
 que hacer al levantar el sistema es una compra normal y mirar que
 `products.reserved` vuelve a cero después.
 
-**NO comprobado visualmente.** Todo el trabajo de interfaz —el sistema de
-clases del panel, el gráfico de ventas, las pestañas de inventario— está
-verificado como "el CSS se sirve y la ruta responde 200", no como "se ve
-bien". Nadie ha abierto una pantalla en un navegador.
+**Comprobado visualmente.** Las pantallas de caja, cajas, usuarios,
+dashboard, reportes, inventario y pedidos se han abierto en un navegador
+real con cada rol, mirando la captura y la consola. Así salieron dos
+fallos que ninguna prueba automática iba a ver: clases con `scoped`
+reutilizadas desde otra pantalla —el modal salía sin estilo— y el CSS de
+impresión que apagaba la página entera. El resto del panel —cupones,
+categorías, banners, reseñas, reclamaciones, métodos de pago— sigue
+verificado solo como "responde 200".
 
 **Sin tocar.** La tienda pública: portada, catálogo, ficha, carrito y
 checkout desde el lado del cliente. Los cambios de catalog la afectan —lo
@@ -570,6 +670,19 @@ disponible ahora descuenta lo reservado—, así que merece una pasada.
 ## Trampas conocidas
 
 Cosas que ya han fallado una vez y conviene no repetir.
+
+**Un `@media print` sin condición alcanza a todo el panel.** La pantalla
+de caja tenía `body * { visibility: hidden !important }` en un `<style>`
+sin `scoped` —lo necesita, para llegar al `<body>`—. El bundle agrupa las
+rutas vecinas, así que esa hoja se carga en medio panel: imprimir desde
+cualquier otra pantalla sacaba un folio en blanco. Ahora cuelga de una
+clase que se pone y se quita alrededor de `window.print()`. Si se añade
+otra impresión, misma receta y clase propia.
+
+**`startsWith` con rutas que comparten prefijo.** El middleware mandaba al
+cajero a su caja con `!to.path.startsWith('/admin/caja')`, y eso también
+casaba con `/admin/cajas` —la pantalla de su jefe—. Entraba y veía una
+tabla vacía, que es la peor forma de decir que no. Comparación exacta.
 
 **El orden de las rutas del gateway importa.** Las `/api/admin/**` van
 declaradas antes que los comodines; si no, catálogo y pedidos se las tragan.

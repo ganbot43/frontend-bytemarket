@@ -136,8 +136,11 @@
          ningún turno no sale en ningún arqueo, y basta una para que el
          cuadre del día deje de significar nada. El aviso lo da el propio
          componente del turno, arriba. -->
+    <!-- "Abre la caja" decía antes, y al cajero eso le pedía algo que no
+         puede hacer: la apertura es de su jefe. El aviso de arriba ya
+         explica a quién pedírsela. -->
     <div v-else-if="!esPedido && !cajaAbierta" class="caja-bloqueada">
-      <p>Abre la caja para empezar a cobrar.</p>
+      <p>Sin una caja aperturada no se puede cobrar.</p>
     </div>
 
     <!-- ── Pantalla de venta ─────────────────────────────────── -->
@@ -188,10 +191,17 @@
                 <input v-model.number="l.quantity" type="number" min="1" max="999" />
                 <button @click="paso(i, 1)">+</button>
               </div>
-              <label class="caja-precio">
+              <!-- Al cajero el precio se le enseña, no se le da a escribir:
+                   el servicio le rechaza cualquier otro, y un campo que
+                   siempre devuelve error es peor que no tenerlo. -->
+              <label v-if="puedeTocarPrecios" class="caja-precio">
                 <span>Precio</span>
                 <input v-model.number="l.unitPrice" type="number" min="0" step="0.10" />
               </label>
+              <span v-else class="caja-precio caja-precio--fijo">
+                <span>Precio</span>
+                <strong>{{ money(l.unitPrice) }}</strong>
+              </span>
               <span class="caja-linea__sub">{{ money((l.unitPrice || 0) * (l.quantity || 0)) }}</span>
             </div>
             <p v-if="l.trackStock && l.quantity > l.stock" class="caja-linea__warn">
@@ -232,7 +242,7 @@
 
         <!-- Cobro -->
         <div class="caja-cobro">
-          <div class="caja-field">
+          <div v-if="puedeTocarPrecios" class="caja-field">
             <label>Descuento</label>
             <input v-model.number="descuento" type="number" class="sp-drawer-input" min="0" step="0.10" />
           </div>
@@ -440,6 +450,17 @@ const canales = computed(() => opciones.value?.channels ?? [{ value: "whatsapp",
 const canal = ref("whatsapp");
 const formaDePago = ref("efectivo");
 const descuento = ref(0);
+
+/*
+ * Quién puede mover el precio de una línea o aplicar un descuento a mano.
+ *
+ * En el mostrador se regatea, así que el encargado y el jefe de ventas sí.
+ * El cajero no: con el precio en sus manos, el arqueo deja de servir para
+ * lo que existe —vendiendo a 10 lo que vale 155, el cajón cuadra perfecto
+ * y los 145 no aparecen en ningún sitio—. El servicio lo rechaza igual;
+ * esto solo evita enseñarle un campo que siempre le va a rebotar.
+ */
+const puedeTocarPrecios = computed(() => (user.value as any)?.role !== "cajero");
 const cupon = ref("");
 const pagado = ref(true);
 const efectivo = ref<number | null>(null);
@@ -563,7 +584,14 @@ function nuevaVenta() {
   });
 }
 
-const imprimir = () => window.print();
+/* La clase se pone y se quita alrededor de la impresión: es lo que decide
+   qué sale en la hoja, y dejarla puesta estropearía la siguiente impresión
+   de cualquier otra pantalla. */
+const imprimir = () => {
+  document.body.classList.add("sp-imprimiendo-ticket");
+  window.print();
+  document.body.classList.remove("sp-imprimiendo-ticket");
+};
 </script>
 
 <style scoped>
@@ -905,6 +933,21 @@ const imprimir = () => window.print();
   font-weight: 600;
 }
 
+/* La misma caja que el campo, sin borde: la fila no cambia de altura
+   según quién esté mirando. */
+.caja-precio--fijo strong {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 84px;
+  height: 32px;
+  padding: 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sp-text-strong, #0f172a);
+}
+
 /* ── Formularios ── */
 .caja-cliente,
 .caja-cobro {
@@ -1225,21 +1268,33 @@ const imprimir = () => window.print();
   `visibility` basta una regla y aguanta cambios de layout.
 -->
 <style>
+/*
+ * Este bloque NO lleva scoped a propósito: necesita llegar a <body>, y el
+ * compilador le añadiría el atributo del componente.
+ *
+ * Y justo por eso va colgado de una clase que solo existe mientras se
+ * imprime el comprobante. Sin ella, la regla era `body *` a secas: el
+ * navegador carga esta hoja en todo el panel —el bundle agrupa las rutas
+ * vecinas—, así que imprimir desde cualquier otra pantalla apagaba la
+ * página entera con !important y solo volvía a encender
+ * #caja-comprobante, que allí no existe. Salía una hoja en blanco, y el
+ * cierre de caja de /admin/cajas se topó exactamente con eso.
+ */
 @media print {
   /* Nada se ve... */
-  body * {
+  body.sp-imprimiendo-ticket * {
     visibility: hidden !important;
   }
 
   /* ...salvo el comprobante y lo que lleva dentro. */
-  #caja-comprobante,
-  #caja-comprobante * {
+  body.sp-imprimiendo-ticket #caja-comprobante,
+  body.sp-imprimiendo-ticket #caja-comprobante * {
     visibility: visible !important;
   }
 
   /* Los padres conservan su hueco, así que el comprobante se saca al
      origen de la hoja; si no, aparece desplazado donde estaba en pantalla. */
-  #caja-comprobante {
+  body.sp-imprimiendo-ticket #caja-comprobante {
     position: absolute !important;
     left: 0;
     top: 0;
@@ -1255,15 +1310,15 @@ const imprimir = () => window.print();
   }
 
   /* Tinta: en papel el gris claro no se lee. */
-  #caja-comprobante .caja-ticket__meta,
-  #caja-comprobante .caja-ticket__legal,
-  #caja-comprobante .caja-ticket__info dt,
-  #caja-comprobante .caja-ticket__items th {
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__meta,
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__legal,
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__info dt,
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__items th {
     color: #333 !important;
   }
 
-  #caja-comprobante .caja-ticket__desc,
-  #caja-comprobante .caja-ticket__vuelto {
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__desc,
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__vuelto {
     color: #000 !important;
   }
 

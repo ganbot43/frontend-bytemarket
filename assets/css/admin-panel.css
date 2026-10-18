@@ -2952,3 +2952,50 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
     box-shadow: var(--sp-shadow-sm);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Fechas en tabla
+
+   La clase se usaba en seis pantallas —productos incluida— y no
+   estaba definida en ningún sitio: las fechas heredaban el color de
+   la celda y nada más, así que los dígitos no se alineaban entre
+   filas y la columna se leía torcida.
+   ───────────────────────────────────────────────────────────── */
+.sp-table-date {
+  font-size: var(--sp-text-xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Imprimir el cierre de caja
+
+   El papel vive pegado al <body> (un Teleport) y fuera de la
+   pantalla. Al imprimir se apagan sus hermanos y se trae al origen
+   de la hoja.
+
+   Va aquí y no en el <style scoped> de la pantalla porque el
+   compilador de Vue le añadiría el atributo del componente al
+   último elemento del selector: `body > *[data-v-x]` solo casa con
+   lo que pintó ese componente, y lo que hay que apagar es el resto
+   de la página.
+
+   display:none en los hermanos, y no visibility:hidden, porque con
+   visibility el hueco se queda reservado y el papel sale desplazado
+   hasta donde estaba en pantalla.
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  body.sp-imprimiendo-cierre > *:not(#sp-print-slip) {
+    display: none !important;
+  }
+
+  /* Solo se le quita el escondite. El ancho no se toca: está pensado en
+     80 mm, el del rollo con el que ya se imprimen los comprobantes de
+     venta, y estirado a una A4 el papel queda con cuatro líneas sueltas
+     de lado a lado. */
+  body.sp-imprimiendo-cierre #sp-print-slip {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+  }
+}

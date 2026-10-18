@@ -98,6 +98,9 @@ const { formatTime } = useFormatDateTime();
    entrada por cada página del menú. */
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard",
+  "/admin/cajas": "Cajas",
+  "/admin/caja": "Caja",
+  "/admin/usuarios": "Usuarios",
   "/admin/reportes": "Reportes",
   "/admin/pedidos": "Pedidos",
   "/admin/productos": "Productos",

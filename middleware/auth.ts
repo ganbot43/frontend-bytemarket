@@ -18,8 +18,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   /* El cajero aterriza en la caja, no en el dashboard: es su pantalla, y
-     la del resumen del negocio no le corresponde. */
-  if (role === 'cajero' && !to.path.startsWith('/admin/caja')) {
+     la del resumen del negocio no le corresponde.
+
+     Comparación exacta y no startsWith: con el prefijo, /admin/cajas
+     —aperturas y arqueo, que es de su jefe— también casaba, y el cajero
+     entraba a una pantalla que luego le devuelve 403 en cada llamada. Se
+     vería como una tabla vacía, que es la peor forma de decir que no. */
+  if (role === 'cajero' && to.path !== '/admin/caja') {
     return navigateTo('/admin/caja')
   }
 })
