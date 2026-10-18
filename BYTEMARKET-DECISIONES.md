@@ -7,6 +7,7 @@ las clases, y que si alguien "simplifica" sin saber, rompe algo.
 
 **Contenido:** [el proyecto en cifras](#el-proyecto-en-cifras) ·
 [mapa del código](#mapa-del-código) · [las decisiones](#1-el-frontend-nunca-habla-con-mysql) ·
+[qué está comprobado](#qué-está-comprobado-y-qué-no) ·
 [trampas conocidas](#trampas-conocidas) · [preguntas frecuentes](#preguntas-frecuentes)
 
 ---
@@ -469,10 +470,61 @@ devuelve solas.
 ya se habían apartado. Media reserva es peor que ninguna: el cliente ve un
 error y aun así tendría unidades bloqueadas a su nombre durante el plazo.
 
+**La llave es un UUID, no el código del pedido.** Ese código se genera
+antes de guardar, comprobando que no exista ya en la tabla, así que dos
+checkouts a la vez pueden sacar el mismo: liberar uno devolvería las
+unidades del otro. El código se guarda igual en la reserva, pero solo para
+poder rastrear de quién era.
+
+**Cambiar el estado de una reserva lleva la condición dentro del UPDATE.**
+El barrido de caducadas y una liberación manual pueden caer sobre la misma
+fila a la vez; sin eso, las dos devolverían las mismas unidades y el
+`reserved` bajaría el doble de lo que subió.
+
+**Consumir a medias es un error, no un resultado.** Si no se puede
+consumir una reserva, se relanza y la transacción se deshace entera: el
+mensaje vuelve a la cola y acaba en la de fallidos si insiste. Aceptarlo
+dejaría el pedido dado por servido con el stock sin descontar, y nadie
+volvería a mirarlo.
+
 **La caja no reserva.** En el mostrador la mercancía se entrega en el acto:
 no hay ventana entre prometer y entregar, que es lo único que la reserva
 protege. `descontar` consume la reserva si existe y descuenta directo si
 no, que es también lo que pasa con los pedidos anteriores a esto.
+
+---
+
+## Qué está comprobado y qué no
+
+Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
+comprobación de cada una. Vale la pena mirarlo antes de dar algo por
+seguro.
+
+**Comprobado con pruebas automáticas y CI en verde.** 156 pruebas entre
+los cuatro servicios. Cubren las reglas de negocio, la invariante del
+kardex, el plan de carga del pedido y el ciclo completo de una reserva
+—apartar, consumir, liberar, caducar— contra una base en memoria.
+
+**Comprobado contra el sistema corriendo.** Los endpoints del panel, las
+cifras del dashboard y del reporte, la paginación, y el corte del día en
+hora de Lima, este último con un pedido de prueba insertado dentro de la
+franja problemática y borrado después.
+
+**NO comprobado de punta a punta.** El flujo de compra completo cruza dos
+servicios y RabbitMQ: el checkout reserva por Feign, el pedido se guarda,
+el mensaje viaja por la cola y catalog consume la reserva al otro lado.
+Cada tramo tiene su prueba; la cadena entera, ninguna. Lo primero que hay
+que hacer al levantar el sistema es una compra normal y mirar que
+`products.reserved` vuelve a cero después.
+
+**NO comprobado visualmente.** Todo el trabajo de interfaz —el sistema de
+clases del panel, el gráfico de ventas, las pestañas de inventario— está
+verificado como "el CSS se sirve y la ruta responde 200", no como "se ve
+bien". Nadie ha abierto una pantalla en un navegador.
+
+**Sin tocar.** La tienda pública: portada, catálogo, ficha, carrito y
+checkout desde el lado del cliente. Los cambios de catalog la afectan —lo
+disponible ahora descuenta lo reservado—, así que merece una pasada.
 
 ---
 
@@ -515,6 +567,39 @@ y comentado.
 tablas. Cada pantalla que inventó las suyas acabó con otro verde, otro radio
 y otro grosor de icono; ver el README del frontend antes de escribir CSS
 nuevo.
+
+**Comprobar y actuar en dos pasos.** Es la forma que tuvieron casi todos
+los fallos de integridad de este proyecto, y reaparece disfrazada:
+
+- leer el stock, decidir, y guardarlo → dos ventas leen 2 y las dos
+  escriben 1;
+- validar en el checkout y descontar al llegar el mensaje → dos clientes
+  se llevan la última unidad;
+- leer una reserva, mirar su estado y escribirlo → el barrido y una
+  liberación la devuelven dos veces.
+
+El arreglo es siempre el mismo: que la condición viaje DENTRO del
+`UPDATE` y se mire cuántas filas cambió. Cero filas significa que otro se
+adelantó; una, que la operación es tuya. Validar antes no sirve, porque el
+hueco está después de validar.
+
+Y el matiz que costó tres intentos: **arreglarlo en el camino principal no
+basta**. Las rutas de excepción —el respaldo cuando no cabe, el reintento,
+el fallback— se escriben con prisa y nadie las mira, y ahí volvió a
+colarse el mismo error tres veces en la misma tarde.
+
+**Un 4xx de otro servicio no es una caída.** El 409 de "no hay stock"
+contaba como fallo del circuit breaker de Feign: un producto agotado
+popular lo abría y el fallback rechazaba TODAS las compras durante quince
+segundos, también las de productos que sí había. Va en `ignoreExceptions`.
+Lo mismo valdría para cualquier 4xx: son respuestas, no averías.
+
+**El código del pedido no vale como llave de nada.** `BM-aaaammdd-nnnn` se
+genera ANTES de guardar, comprobando que no exista ya en la tabla, así que
+dos checkouts simultáneos pueden sacar el mismo. Para el cliente está bien;
+para agrupar reservas o cualquier cosa que deba ser única, hace falta un
+UUID.
+
 
 **`kafkaTemplate.send()` bloquea aunque parezca asíncrono.** Mientras busca
 los metadatos del topic retiene el hilo de la petición hasta `max.block.ms`,
