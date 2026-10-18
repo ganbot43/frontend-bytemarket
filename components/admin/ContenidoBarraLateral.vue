@@ -119,6 +119,7 @@ const baseItems = [
     to: "/admin/pedidos",
     label: "Pedidos",
     icon: ShoppingBag,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/productos",
