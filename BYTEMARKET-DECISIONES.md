@@ -567,6 +567,21 @@ los 145 no aparecen por ningún lado. No es un descuadre que se pueda ver
 contando dinero, así que la única defensa es que no pueda tocar el precio.
 Lo rechaza `PanelSaleService`, y la pantalla además no le enseña el campo.
 
+**El puesto de gerente solo lo reparte un gerente.** Lo demás lo
+administra el encargado, pero con `superadmin` no se juega: crear uno,
+ascender a alguien, o tocar —editar, desactivar, borrar— al que ya existe
+pide ser gerente. Sin esa regla había una escalada en toda regla: el
+encargado se ascendía con una llamada a la API, o más fino todavía,
+degradaba al gerente a cliente y se quedaba como la única autoridad del
+sistema. La pantalla no le ofrecía la opción, pero la pantalla no es el
+control.
+
+**Y nadie se toca a sí mismo.** Ni se cambia el rol, ni se desactiva, ni
+se borra. Hacia arriba sería ascenderse; hacia abajo es quedarse fuera sin
+que nadie pueda devolverte, y si el único gerente se degrada el sistema se
+queda sin quien reparta el puesto. De paso, es lo que garantiza que
+siempre quede un gerente en pie.
+
 **Dónde se decide.** En `SecurityConfig` de order-service, con reglas
 específicas antes del comodín: el orden importa porque Spring se queda con
 la primera que casa. El menú y el middleware del front filtran lo mismo,
@@ -624,8 +639,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 197 pruebas entre
-los cuatro servicios —12 en user, 80 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 210 pruebas entre
+los cuatro servicios —25 en user, 80 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en
@@ -642,7 +657,8 @@ en efectivo y por Yape, el jefe retira, y el cierre se rechaza mientras
 falte una forma por contar. El arqueo final dio cajón exacto y 54.79 de
 Yape sin abonar —el caso que justifica la decisión 27—. También se
 comprobó lo que cada rol NO puede: el cajero no se apertura la caja, no
-cierra, no lista pedidos y no mueve el precio. Los datos de esa prueba se
+cierra, no lista pedidos y no mueve el precio; y el encargado no se
+asciende a gerente, ni degrada, desactiva o borra al que hay. Los datos de esa prueba se
 borraron después, devolviendo las unidades al stock.
 
 **NO comprobado de punta a punta.** El flujo de compra completo cruza dos
