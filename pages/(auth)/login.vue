@@ -157,7 +157,14 @@ async function login() {
 
     /* Recarga completa a propósito: el shell del panel y el de la
        tienda son distintos y la sesión debe rehidratarse limpia. */
-    if (user.value?.role === "admin" || user.value?.role === "superadmin") {
+    /* Cada rol a su sitio. El cajero va a la caja y no al dashboard: es
+       su pantalla, y el resumen del negocio no le corresponde —de hecho
+       el middleware lo devolvería igual, pero mandarlo bien de primeras
+       evita el parpadeo—. */
+    const rol = user.value?.role as string | undefined;
+    if (rol === "cajero") {
+      await navigateTo("/admin/caja", { external: true });
+    } else if (rol === "jefe_ventas" || rol === "admin" || rol === "superadmin") {
       await navigateTo("/admin", { external: true });
     } else {
       await navigateTo(redirect || "/mi-cuenta", { external: true });

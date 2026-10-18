@@ -51,7 +51,7 @@
           <span class="sp-topbar__user-name">{{
             userDisplayName
           }}</span>
-          <span class="sp-topbar__user-role">Administrador</span>
+          <span class="sp-topbar__user-role">{{ etiquetaRol }}</span>
         </div>
       </div>
 
@@ -74,6 +74,16 @@
 </template>
 
 <script setup lang="ts">
+/* Decía "Administrador" fijo, y con cuatro roles eso es una etiqueta
+   equivocada en tres de los cuatro casos: un cajero leía que era
+   administrador de la tienda. */
+const ETIQUETA_ROL: Record<string, string> = {
+  superadmin: "Gerente",
+  admin: "Encargado de tienda",
+  jefe_ventas: "Jefe de ventas",
+  cajero: "Cajero",
+};
+
 import { Menu, ChevronRight, LogOut, Loader2 } from 'lucide-vue-next';
 import { useAuthStore } from '~/stores/auth'
 const route = useRoute();
@@ -112,6 +122,11 @@ const pageTitle = computed(() => {
     }
   }
   return "Admin";
+});
+
+const etiquetaRol = computed(() => {
+  const rol = (session.value?.user as Record<string, unknown> | undefined)?.role;
+  return ETIQUETA_ROL[String(rol)] ?? "Administrador";
 });
 
 /* ── Iniciales del usuario ── */

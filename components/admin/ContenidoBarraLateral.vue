@@ -7,7 +7,7 @@
         <div class="sp-brand__text">
           <span class="sp-brand__name">{{ nombre }}</span>
           <span class="sp-brand__role">
-            {{ user?.role === "superadmin" ? "Super Admin" : "Administrador" }}
+            {{ ETIQUETA_ROL[user?.role as string] ?? "Administrador" }}
           </span>
         </div>
       </NuxtLink>
@@ -18,7 +18,7 @@
       <div class="sp-nav-group">
         <span class="sp-nav-group__label">General</span>
         <NuxtLink
-          v-for="item in baseItems"
+          v-for="item in itemsVisibles"
           :key="item.to"
           :to="item.to"
           class="sp-nav-item"
@@ -76,11 +76,33 @@ const emit = defineEmits<{ (e: "close"): void }>();
 
 const route = useRoute();
 
+/** Cómo se presenta cada rol en la cabecera del menú. */
+const ETIQUETA_ROL: Record<string, string> = {
+  superadmin: "Gerente",
+  admin: "Encargado de tienda",
+  jefe_ventas: "Jefe de ventas",
+  cajero: "Cajero",
+};
+
+/*
+ * Qué ve cada rol.
+ *
+ * El menú no es seguridad —el backend decide, y ahí está la regla de
+ * verdad— pero enseñar entradas que acaban en un 403 es peor que no
+ * enseñarlas: el cajero no tiene por qué descubrir a base de errores que
+ * no puede entrar a Productos.
+ *
+ * `roles` ausente = lo ven todos los que llegan al panel.
+ */
+const SOLO_GESTION = ["admin", "superadmin"];
+const CON_EL_JEFE = ["jefe_ventas", "admin", "superadmin"];
+
 const baseItems = [
   {
     to: "/admin",
     label: "Dashboard",
     icon: LayoutDashboard,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/caja",
@@ -91,6 +113,7 @@ const baseItems = [
     to: "/admin/reportes",
     label: "Reportes",
     icon: BarChart,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/pedidos",
@@ -101,21 +124,25 @@ const baseItems = [
     to: "/admin/productos",
     label: "Productos",
     icon: Package,
+    roles: SOLO_GESTION,
   },
   {
     to: "/admin/inventario",
     label: "Inventario",
     icon: Archive,
+    roles: CON_EL_JEFE,
   },
   {
     to: "/admin/categorias",
     label: "Categorías",
     icon: Tags,
+    roles: SOLO_GESTION,
   },
   {
     to: "/admin/subcategories",
     label: "Subcategorías",
     icon: Layers,
+    roles: SOLO_GESTION,
   },
   /* La página existía desde el principio pero no estaba enlazada aquí:
      sin entrada en el menú, los banners de la portada solo se podían
@@ -124,23 +151,32 @@ const baseItems = [
     to: "/admin/banners",
     label: "Banners",
     icon: GalleryHorizontalEnd,
+    roles: SOLO_GESTION,
   },
   {
     to: "/admin/cupones",
     label: "Cupones",
     icon: Ticket,
+    roles: SOLO_GESTION,
   },
   {
     to: "/admin/resenas",
     label: "Reseñas",
     icon: Star,
+    roles: SOLO_GESTION,
   },
   {
     to: "/admin/reclamaciones",
     label: "Libro de Reclamaciones",
     icon: BookOpen,
+    roles: SOLO_GESTION,
   },
 ];
+
+const itemsVisibles = computed(() => {
+  const rol = props.user?.role as string | undefined;
+  return baseItems.filter((i: any) => !i.roles || (rol && i.roles.includes(rol)));
+});
 
 const superadminItems = [
   {

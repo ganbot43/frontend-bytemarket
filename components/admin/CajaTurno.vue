@@ -1,7 +1,22 @@
 <template>
   <div class="turno">
+    <!-- El cajero no abre su caja: se la aperturan. Enseñarle el
+         formulario sería mandarlo contra un 403, y además contradice el
+         control que justifica los roles: quien vende no decide con cuánto
+         fondo empieza. -->
+    <section v-if="!resumen.abierta && esCajero" class="sp-card turno-espera">
+      <h2 class="sp-card__title">Tu caja todavía no está abierta</h2>
+      <p class="turno-nota">
+        Tu jefe de ventas tiene que aperturarla y entregarte el fondo.
+        Cuando lo haga, esta pantalla se actualiza sola y podrás cobrar.
+      </p>
+      <button class="sp-drawer-btn sp-drawer-btn--ghost" :disabled="cargando" @click="cargar">
+        {{ cargando ? "Comprobando…" : "Comprobar de nuevo" }}
+      </button>
+    </section>
+
     <!-- ── Sin caja abierta: lo primero es el fondo ───────────── -->
-    <section v-if="!resumen.abierta" class="sp-card turno-abrir">
+    <section v-else-if="!resumen.abierta" class="sp-card turno-abrir">
       <div class="turno-abrir__texto">
         <h2 class="sp-card__title">Abre tu caja para empezar</h2>
         <p class="turno-nota">
@@ -246,6 +261,9 @@ const TIPOS = [
   { value: "expense", label: "Gasto", hint: "Pagado con el efectivo del cajón" },
 ];
 
+const { user } = useUserSession();
+const esCajero = computed(() => (user.value as any)?.role === "cajero");
+
 const resumen = ref<any>({ abierta: false });
 const cargando = ref(false);
 const error = ref("");
@@ -402,6 +420,13 @@ onMounted(cargar);
 .turno-money { display: flex; align-items: center; gap: 0.35rem; }
 .turno-money span { font-weight: 700; color: var(--sp-text-soft); }
 .turno-money input { width: 9rem; }
+
+.turno-espera {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
 
 .turno-nota {
   margin: 0.3rem 0 0;
