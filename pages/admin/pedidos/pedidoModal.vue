@@ -245,6 +245,7 @@
                   'pmo-status-row--current': opt.value === order.status,
                   'pmo-status-row--upcoming': isUpcoming(opt.value),
                   'pmo-status-row--danger': opt.value === 'cancelled',
+                  'pmo-status-row--bloqueado': !puedePasarA(opt.value) && opt.value !== order.status,
                 }"
               >
                 <div class="pmo-status-row__num">
@@ -271,13 +272,20 @@
                   class="sp-drawer-input sp-drawer-select"
                 >
                   <option
-                    v-for="opt in statusOptions"
+                    v-for="opt in opcionesDisponibles"
                     :key="opt.value"
                     :value="opt.value"
                   >
                     {{ opt.label }}
                   </option>
                 </select>
+                <!-- Explicar la ausencia, no solo esconder la opción: sin
+                     esto, quien busca "Cancelado" y no lo encuentra cree
+                     que la pantalla está rota. -->
+                <p v-if="order.status === 'delivered'" class="pmo-aviso">
+                  Un pedido entregado no se cancela. Si la mercadería volvió,
+                  regístralo como entrada en Inventario.
+                </p>
               </div>
 
               <div class="pmo-form-group">
@@ -364,6 +372,21 @@ const progressSteps = [
   { value: "delivered", short: "Entregado" },
 ];
 
+/*
+ * Un pedido entregado no se puede cancelar: cancelar devuelve el stock, y
+ * entregado significa que las unidades ya salieron. La regla la impone
+ * order-service; aquí solo se deja de ofrecer, para que nadie elija algo
+ * que va a terminar en un mensaje de error.
+ */
+function puedePasarA(value: string) {
+  if (!order.value) return true;
+  return !(value === "cancelled" && order.value.status === "delivered");
+}
+
+const opcionesDisponibles = computed(() =>
+  statusOptions.filter((o) => puedePasarA(o.value)),
+);
+
 const statusOrder = statusOptions.map((o) => o.value);
 
 function isDone(value: string) {
@@ -398,8 +421,14 @@ async function changeStatus() {
     await refresh();
     emit("updated");
     useAppToast().add({ title: "Estado actualizado", color: "success" });
-  } catch {
-    useAppToast().add({ title: "Error al actualizar", color: "error" });
+  } catch (e: any) {
+    // El backend explica POR QUÉ no deja —por ejemplo, que un entregado no
+    // se cancela—. Tragarse ese mensaje y poner "Error al actualizar" deja
+    // al encargado sin saber qué hacer.
+    useAppToast().add({
+      title: e?.data?.message ?? "Error al actualizar",
+      color: "error",
+    });
   } finally {
     updating.value = false;
   }
@@ -878,6 +907,19 @@ const timelineLogs = computed(() =>
 }
 
 /* Cancelado */
+.pmo-aviso {
+  margin: 0.45rem 0 0;
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  line-height: 1.4;
+}
+
+/* El estado al que no se puede pasar se enseña, pero apagado: esconderlo
+   del todo haría pensar que la pantalla está incompleta. */
+.pmo-status-row--bloqueado {
+  opacity: 0.4;
+}
+
 .pmo-status-row--danger .pmo-status-row__num {
   border-color: var(--sp-danger);
   color: var(--sp-danger);

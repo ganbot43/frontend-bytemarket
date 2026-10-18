@@ -362,6 +362,25 @@ veces fue una consulta que se quedó con la regla vieja mientras el resto
 avanzaba. Por eso ahora la regla vive en una sola consulta, reusada, y no
 copiada en cada sitio que la necesita.
 
+## 21. Un pedido entregado no se cancela
+
+`changeStatus` rechaza el paso de `delivered` a `cancelled`.
+
+**Por qué.** Cancelar publica una ENTRADA de stock, y entregado significa
+que las unidades ya salieron por la puerta. Cancelarlo las devolvería al
+inventario sin que nadie las haya traído, y desde ahí la existencia del
+sistema deja de ser la del almacén.
+
+Aunque no tocara el stock seguiría estando mal: el histórico diría que un
+pedido que el cliente tiene en casa nunca ocurrió. Lo que se hace con una
+entrega que vuelve es registrar la devolución —una entrada con su motivo,
+desde Inventario—, no borrar la venta.
+
+**Dónde se comprueba.** En el servicio, no en el panel. El panel es una de
+las formas de llegar, y `/api/admin/**` está abierta a cualquiera con un
+token de administrador. El panel además deja de ofrecer la opción y dice
+por qué, para no mandar a nadie contra un error evitable.
+
 ---
 
 ## Trampas conocidas
