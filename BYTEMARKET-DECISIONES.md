@@ -404,6 +404,23 @@ tablas. Cada pantalla que inventó las suyas acabó con otro verde, otro radio
 y otro grosor de icono; ver el README del frontend antes de escribir CSS
 nuevo.
 
+**`kafkaTemplate.send()` bloquea aunque parezca asíncrono.** Mientras busca
+los metadatos del topic retiene el hilo de la petición hasta `max.block.ms`,
+que por defecto es **un minuto**, y el `try/catch` de alrededor no lo
+atrapa porque no es una excepción: es espera. Con un broker que no resuelve,
+cada compra y cada cambio de estado se quedan colgados. Lo mismo vale para
+`convertAndSend` de RabbitMQ y su `connection-timeout`. Los dos están
+acotados en `application.yml` de order-service; si se añade otro productor,
+acotarlo también.
+
+**Una JVM sin `-Xmx` se cree dueña del 25% de la RAM de la máquina.** Son
+siete servicios Java: sin `mem_limit` en el compose, en un portátil justo el
+sistema empieza a usar swap y se vuelve lento todo a la vez, lo que despista
+porque no apunta a ninguna pantalla concreta. Los topes están en los dos
+`docker-compose`; ojo si se añade un servicio nuevo, que no los hereda solo
+—solo los que usan el ancla `*servicio-negocio`—.
+
+
 **Las instancias de resilience4j NO se llaman como el método.** Spring Cloud
 registra el circuito quitando `#`, `(`, `)` y las comas de la firma:
 
