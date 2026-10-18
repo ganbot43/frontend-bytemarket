@@ -392,6 +392,53 @@ las formas de llegar, y `/api/admin/**` está abierta a cualquiera con un
 token de administrador. El panel, además, sustituye el formulario de
 cambio de estado por la explicación: un desplegable sin opciones parece una
 pantalla rota.
+## 22. El kardex explica la existencia, y si no, se nota
+
+Sumar los `delta` de los movimientos de un producto tiene que dar su stock.
+Las dos cifras cuentan lo mismo desde sitios distintos, y mientras cuadren
+el histórico sirve para auditar.
+
+**Qué lo rompía.** `setStock(Math.max(0, actual + delta))` recortaba la
+existencia a cero, pero el movimiento se guardaba con la cantidad pedida
+entera. Vender 5 con stock 2 dejaba la columna en 0 —se habían movido 2— y
+el kardex anotando −5. A partir de ahí el histórico dejaba de explicar la
+existencia, y nada lo avisaba: ni excepción, ni aviso, ni rastro. El
+recorte era invisible.
+
+**Cómo queda.** El movimiento anota lo que SE MOVIÓ, no lo que se pidió, y
+el motivo deja escrito que faltaban unidades. La diferencia entre lo pedido
+y lo habido se investiga leyendo el kardex, que es para lo que está.
+
+**Por qué el ajuste manual rechaza en vez de recortar.** En la cola, el
+mensaje llega cuando la venta ya ocurrió: recortar y anotarlo es lo único
+que se puede hacer. En el panel es una persona dando una orden, y si se
+equivoca de número lo que necesita es que se lo digan. Para una salida que
+de verdad supera lo registrado —mermas que nadie anotó— está "Conté el
+almacén", que fija la cifra real.
+
+## 23. El stock se mueve con un UPDATE, no leyendo y guardando
+
+`moverStock` hace la suma dentro del `UPDATE`, con la condición de que el
+resultado no sea negativo.
+
+**Por qué.** Leer el stock, sumarle y guardarlo son tres pasos, y entre el
+primero y el tercero cabe otra venta: las dos leen 2, las dos escriben 1, y
+se ha vendido una unidad que no existía. Es la condición de carrera clásica
+del inventario, y **no la arregla validar antes**, porque el hueco está
+después de validar.
+
+Dentro del `UPDATE` la suma es atómica y dos peticiones simultáneas se
+serializan solas. Cuando no cabe, devuelve 0 filas y quien llama se entera,
+en vez de escribir un número inventado.
+
+**Lo que esto todavía no resuelve.** Validar el stock es síncrono y
+descontarlo es asíncrono (decisión 5), así que entre la validación del
+checkout y el consumo del mensaje sigue cabiendo otra venta. Lo que hace
+esto es que esa carrera deje de corromper el dato: se descuenta hasta cero
+y queda anotada. La solución completa es reservar en el checkout y
+confirmar al pagar, que es como lo resuelven las tiendas grandes y que aquí
+no está hecho.
+
 ---
 
 ## Trampas conocidas
