@@ -20,6 +20,10 @@
       </div>
     </div>
 
+    <!-- El turno solo rige la caja. Un pedido de WhatsApp no pasa por
+         el cajón: se cobra después, por Yape o transferencia. -->
+    <AdminCajaTurno v-if="!esPedido" v-model:abierta="cajaAbierta" />
+
     <!-- ── Comprobante de la venta cerrada ───────────────────── -->
     <div v-if="hecho" class="caja-ticket-wrap">
       <div id="caja-comprobante" class="caja-ticket">
@@ -128,6 +132,14 @@
         </NuxtLink>
       </div>
     </div>
+    <!-- Sin turno abierto no se vende: una venta que no pertenece a
+         ningún turno no sale en ningún arqueo, y basta una para que el
+         cuadre del día deje de significar nada. El aviso lo da el propio
+         componente del turno, arriba. -->
+    <div v-else-if="!esPedido && !cajaAbierta" class="caja-bloqueada">
+      <p>Abre la caja para empezar a cobrar.</p>
+    </div>
+
     <!-- ── Pantalla de venta ─────────────────────────────────── -->
     <div v-else class="caja-grid">
       <!-- Catálogo -->
@@ -357,6 +369,9 @@ const sinStock = (p: Producto) => p.trackStock && p.stock <= 0;
 // Se guarda en el navegador: una venta a medias no puede perderse porque
 // alguien recargue la página o se le cierre la pestaña.
 const BORRADOR = "bytemarket-caja-venta";
+/** Lo mantiene AdminCajaTurno; aquí solo decide si se puede cobrar. */
+const cajaAbierta = ref(false);
+
 const lineas = ref<Linea[]>([]);
 
 onMounted(() => {
@@ -998,6 +1013,13 @@ const imprimir = () => window.print();
 }
 
 /* ── Ticket ── */
+.caja-bloqueada {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--sp-text-soft);
+  font-size: var(--sp-text-sm);
+}
+
 .caja-ticket-wrap {
   max-width: 420px;
   margin: 1rem auto;

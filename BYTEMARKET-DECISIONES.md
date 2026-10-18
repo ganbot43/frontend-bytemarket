@@ -22,13 +22,13 @@ las clases, y que si alguien "simplifica" sin saber, rompe algo.
 | Componentes y páginas Vue | 77 (34 páginas, 39 componentes, 4 layouts) |
 | Tests automatizados | 156 (58 catalog, 52 order, 34 support, 12 user) |
 | Esquemas MySQL | 4, uno por servicio de negocio |
-| Tablas | 19 |
+| Tablas | 21 |
 
 | Esquema | Tablas |
 |---|---|
 | `bytemarket_user` | `users`, `customers`, `business_config` |
 | `bytemarket_catalog` | `products`, `product_images`, `categories`, `subcategories`, `banners`, `reviews`, `favorites`, `inventory_movements`, `stock_reservations` |
-| `bytemarket_order` | `orders`, `order_items`, `order_status_logs`, `payment_methods`, `coupons` |
+| `bytemarket_order` | `orders`, `order_items`, `order_status_logs`, `payment_methods`, `coupons`, `cash_sessions`, `cash_movements` |
 | `bytemarket_support` | `complaints`, `order_notifications` |
 
 ---
@@ -491,6 +491,45 @@ volvería a mirarlo.
 no hay ventana entre prometer y entregar, que es lo único que la reserva
 protege. `descontar` consume la reserva si existe y descuenta directo si
 no, que es también lo que pasa con los pedidos anteriores a esto.
+
+## 25. Una venta de mostrador pertenece a un turno de caja
+
+`/admin/caja` no cobra si no hay turno abierto. Cada venta guarda su
+`cash_session_id`, y al cerrar se cuadra:
+
+    esperado   = fondo + ventas en efectivo + ingresos − retiros − gastos
+    diferencia = contado − esperado
+
+**Por qué obligatorio.** Una venta que no pertenece a ningún turno no
+aparece en ningún arqueo, y basta una para que el cuadre del día deje de
+significar nada: el cajón tendría dinero que el sistema no sabe explicar.
+
+**Por qué solo el efectivo.** Yape, tarjeta y transferencia se informan
+—el encargado quiere ver el total del turno— pero no entran en el
+esperado: ese dinero nunca pasó por el cajón. Sumarlo es el error típico y
+hace que la caja descuadre siempre por la misma cantidad sin que nadie
+entienda por qué.
+
+**Por qué el esperado NO se enseña con la caja abierta.** `resumen()` lo
+omite mientras el turno está abierto, y eso es parte de la regla, no de la
+pantalla: quien ve la cifra objetivo deja de contar y la copia, y entonces
+el arqueo no detecta nada —que es justo para lo que existe—.
+
+**Por qué se congela al cerrar.** Recalcularlo al leer el histórico daría
+otra cifra en cuanto se anulara una venta de ese turno, y un arqueo
+firmado no puede cambiar a posteriori.
+
+**Por qué por persona y no por local.** Encaja con que el comprobante ya
+imprime quién atendió, y hace que un faltante tenga dueño. Con una caja
+compartida el descuadre aparece y no hay a quién preguntar.
+
+**Los movimientos exigen motivo.** Un retiro de 200 soles sin explicar es
+indistinguible de un faltante cuando alguien revise el turno dentro de un
+mes.
+
+**El pedido a mano no lleva turno.** Un WhatsApp o un teléfono no pasan
+por el cajón: se cobran después, por Yape o transferencia. Solo el canal
+`caja` exige turno abierto.
 
 ---
 

@@ -100,6 +100,16 @@
         </section>
       </div>
 
+      <!-- El cuadre de caja va en Reportes y no en la pantalla de caja:
+           ahí se cobra, aquí se revisa lo que ya pasó. -->
+      <section class="sp-card">
+        <div class="sp-card__head">
+          <h2>Cierres de caja</h2>
+          <span class="sp-card__note">Los turnos ya cuadrados</span>
+        </div>
+        <AdminCajaHistorial />
+      </section>
+
       <section class="sp-card">
         <div class="sp-card__head"><h2>Exportar</h2></div>
         <AdminReportsExportPanel />
