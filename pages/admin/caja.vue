@@ -631,7 +631,7 @@ function elegirForma(valor: string) {
 function cobrarSiSePuede() {
   if (puedeCobrar.value && !guardando.value) cobrar();
 }
-const { imprimirPapel } = useImpresion();
+const { imprimirPapel, imprimirTicket } = useImpresion();
 const pagado = ref(true);
 const efectivo = ref<number | null>(null);
 
@@ -764,21 +764,17 @@ function nuevaVenta() {
   });
 }
 
-/* La clase se pone y se quita alrededor de la impresión: es lo que decide
-   qué sale en la hoja, y dejarla puesta estropearía la siguiente impresión
-   de cualquier otra pantalla. */
-const imprimir = () => {
-  document.body.classList.add("sp-imprimiendo-ticket");
-  window.print();
-  document.body.classList.remove("sp-imprimiendo-ticket");
-};
+/* El nombre con el que se guarda si eligen "Guardar como PDF". Sin él,
+   boleta, voucher y comprobante se guardan los tres como "Caja · Admin". */
+const imprimir = () =>
+  imprimirTicket(`Boleta ${hecho.value?.boleta || hecho.value?.orderCode || ""}`.trim());
 
 /** El voucher de comercio, que va aparte y antes. */
 async function imprimirVoucher() {
   if (!hecho.value?.voucher) return;
   papelVoucher.value = true;
   try {
-    await imprimirPapel();
+    await imprimirPapel(`Voucher ${hecho.value.voucher}`);
   } finally {
     /* En el finally y no después: si la impresión falla, el papel se
        quedaba montado para siempre. No se ve —vive fuera de la pantalla—

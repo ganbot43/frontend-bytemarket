@@ -800,7 +800,7 @@ async function cuadrar() {
 async function imprimir() {
   papel.value = true;
   try {
-    await imprimirPapel();
+    await imprimirPapel(`Papel de caja ${cuadrado.value?.id ?? ""}`.trim());
   } finally {
     // En el finally: si la impresión falla, el papel se quedaba montado
     // y la siguiente sacaría dos en la misma hoja.

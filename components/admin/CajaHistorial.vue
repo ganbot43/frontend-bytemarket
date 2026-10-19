@@ -250,7 +250,7 @@ const abrir = (t: any) => { abierto.value = t; };
 async function reimprimir() {
   papel.value = abierto.value;
   try {
-    await imprimirPapel();
+    await imprimirPapel(`Papel de caja ${abierto.value?.id ?? ""}`.trim());
   } finally {
     papel.value = null;
   }

@@ -365,7 +365,8 @@ async function cerrar() {
 async function imprimir(cual: "apertura" | "cierre") {
   papel.value = cual;
   try {
-    await imprimirPapel();
+    const nombre = cual === "apertura" ? "Apertura de caja" : "Cierre de caja";
+    await imprimirPapel(`${nombre} ${turno.value?.id ?? ""}`.trim());
   } finally {
     // En el finally: si la impresión falla, el papel se quedaba montado
     // y la siguiente sacaría dos en la misma hoja.
