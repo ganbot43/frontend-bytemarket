@@ -72,6 +72,25 @@ export const useFormatDateTime = () => {
     }).format(parsed)
   }
 
+  /* Solo la hora y el minuto. Para listas donde la fecha ya está en otro
+     sitio —la línea de tiempo de un turno, el detalle de un papel— y
+     repetirla en cada fila es ruido. Pasa por parseDateInput como todo lo
+     demás: un `new Date()` crudo sobre lo que manda la API pinta cinco
+     horas de más, que es el fallo que esta función existe para no
+     repetir. */
+  const formatHoraCorta = (date: string | Date | null | undefined): string => {
+    const parsed = parseDateInput(date)
+    if (!parsed) return '–'
+    return formatAmPm(
+      new Intl.DateTimeFormat('es-PE', {
+        timeZone: PERU_TIME_ZONE,
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }).format(parsed),
+    )
+  }
+
   const formatTime = (date: string | Date | null | undefined): string => {
     const parsed = parseDateInput(date)
     if (!parsed) return '–'
@@ -112,6 +131,7 @@ export const useFormatDateTime = () => {
     formatDateTime,
     formatDate,
     formatTime,
+    formatHoraCorta,
     formatDateTimeCompact,
     formatRelativeTime,
     getTimeValue,

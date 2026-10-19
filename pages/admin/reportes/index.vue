@@ -101,11 +101,15 @@
       </div>
 
       <!-- El cuadre de caja va en Reportes y no en la pantalla de caja:
-           ahí se cobra, aquí se revisa lo que ya pasó. -->
+           ahí se cobra, aquí se revisa lo que ya pasó. Lo ven el jefe de
+           ventas, el encargado y el gerente; el cajero no entra a esta
+           pantalla. -->
       <section class="sp-card">
         <div class="sp-card__head">
-          <h2>Cierres de caja</h2>
-          <span class="sp-card__note">Los turnos ya cuadrados</span>
+          <h2>Auditoría de caja</h2>
+          <span class="sp-card__note">
+            Turnos cuadrados: quién firmó, los arqueos y lo que pasó
+          </span>
         </div>
         <AdminCajaHistorial />
       </section>

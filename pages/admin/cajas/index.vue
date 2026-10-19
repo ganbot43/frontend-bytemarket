@@ -374,7 +374,7 @@
                   <summary>Historial del turno ({{ turno.historial.length }})</summary>
                   <ol>
                     <li v-for="h in turno.historial" :key="h.id">
-                      <span class="cajas-historial__hora">{{ soloHora(h.createdAt) }}</span>
+                      <span class="cajas-historial__hora">{{ formatHoraCorta(h.createdAt) }}</span>
                       <span class="cajas-historial__que">{{ ACCION[h.action] || h.action }}</span>
                       <span class="cajas-historial__quien">{{ h.userName || "—" }}</span>
                       <span class="cajas-historial__detalle">{{ h.detail }}</span>
@@ -447,73 +447,10 @@
       </Transition>
     </Teleport>
 
-    <!-- ── El papel de caja ───────────────────────────────────── -->
-    <Teleport to="body">
-      <div v-if="papel && cuadrado" class="sp-papel">
-        <header class="sp-papel__head">
-          <p class="sp-papel__store">{{ negocio.name || nombre }}</p>
-          <p v-if="negocio.ruc" class="sp-papel__meta">RUC {{ negocio.ruc }}</p>
-          <p v-if="negocio.address" class="sp-papel__meta">{{ negocio.address }}</p>
-        </header>
-
-        <p class="sp-papel__kind">Papel de caja Nº {{ cuadrado.id }}</p>
-
-        <dl class="sp-papel__info">
-          <div><dt>Cajero</dt><dd>{{ cuadrado.cashierName || "—" }}</dd></div>
-          <div v-if="cuadrado.cashierDni"><dt>DNI</dt><dd>{{ cuadrado.cashierDni }}</dd></div>
-          <div><dt>Fondo entregado por</dt><dd>{{ cuadrado.assignedByName || "—" }}</dd></div>
-          <div><dt>Cuadró</dt><dd>{{ cuadrado.settledByName || "—" }}</dd></div>
-          <div><dt>Apertura</dt><dd>{{ formatDateTimeCompact(cuadrado.openedAt) }}</dd></div>
-          <div><dt>Cierre</dt><dd>{{ formatDateTimeCompact(cuadrado.closedAt) }}</dd></div>
-        </dl>
-
-        <table class="sp-papel__tabla">
-          <thead>
-            <tr><th>Forma</th><th>Esperado</th><th>Contado</th><th>Dif.</th><th>Vouch.</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="c in (cuadrado.counts || [])" :key="c.type">
-              <td>{{ c.label }}</td>
-              <td>{{ money(c.expected) }}</td>
-              <td>{{ money(c.counted) }}</td>
-              <td>{{ conSigno(c.difference) }}</td>
-              <td>{{ c.vouchersCounted ?? "—" }}/{{ c.sales }}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <ul class="sp-papel__lista">
-          <li><span>Fondo inicial</span><strong>{{ money(cuadrado.openingFloat) }}</strong></li>
-          <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadrado.movementsTotal) }}</strong></li>
-          <li v-for="m in (cuadrado.movements || [])" :key="m.id" class="sp-papel__chico">
-            <span>{{ etiquetaMov(m.type) }} · {{ m.reason }}</span>
-            <strong>{{ conSigno(m.delta) }}</strong>
-          </li>
-          <li v-for="a in (cuadrado.audits || [])" :key="'a' + a.id" class="sp-papel__chico">
-            <span>Arqueo {{ formatDateTimeCompact(a.createdAt) }} · {{ a.performedByName }}</span>
-            <strong>{{ conSigno(a.difference) }}</strong>
-          </li>
-        </ul>
-
-        <p class="sp-papel__destacado">{{ textoDif(cuadrado.difference) }}</p>
-        <p v-if="cuadrado.closingNotes" class="sp-papel__nota">
-          Observación: {{ cuadrado.closingNotes }}
-        </p>
-
-        <!-- Las dos firmas son el motivo de que esto se imprima: el cajero
-             reconoce con qué efectivo y qué vouchers entregó la caja, y el
-             encargado que los contó él. -->
-        <div class="sp-papel__firmas">
-          <div><span>Firma del cajero</span><p>{{ cuadrado.cashierName || "" }}</p></div>
-          <div><span>Firma del encargado</span><p>{{ cuadrado.settledByName || "" }}</p></div>
-        </div>
-
-        <p class="sp-papel__pie">
-          Conforme con el cuadre arriba detallado. Documento interno de control
-          de caja; no es un comprobante de pago.
-        </p>
-      </div>
-    </Teleport>
+    <!-- El papel vive en su propio componente: se imprime también
+         desde el historial de Reportes, y dos copias del mismo documento
+         firmado acabarían diciendo cosas distintas. -->
+    <AdminCajaPapel :turno="papel ? cuadrado : null" />
   </div>
 </template>
 
@@ -536,7 +473,7 @@ import { Plus, Wallet, ArrowLeftRight, ClipboardCheck, Search, Check } from "luc
 definePageMeta({ layout: "admin", middleware: "auth" });
 useSeoMeta({ title: "Cajas · Admin" });
 
-const { formatDateTimeCompact } = useFormatDateTime();
+const { formatDateTimeCompact, formatHoraCorta } = useFormatDateTime();
 const formatPrice = useFormatPrice();
 const { imprimirPapel } = useImpresion();
 const { nombre } = useLogo();
@@ -580,11 +517,6 @@ const ACCION: Record<string, string> = {
   settled: "Cuadrada",
 };
 
-/* En el historial solo cabe la hora: el turno es de un día y la fecha ya
-   está en la cabecera. */
-const soloHora = (v: any) =>
-  v ? new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", timeStyle: "short" })
-        .format(new Date(v)) : "";
 
 const turnos = ref<any[]>([]);
 const cajeros = ref<any[]>([]);
@@ -1093,7 +1025,7 @@ onMounted(() => {
 }
 .cajas-historial li {
   display: grid;
-  grid-template-columns: 3.4rem 7rem 1fr;
+  grid-template-columns: 4.8rem 7rem 1fr;
   gap: 0.4rem;
   padding: 0.3rem 0;
   border-bottom: 1px solid var(--sp-border);

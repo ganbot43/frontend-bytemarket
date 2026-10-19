@@ -232,7 +232,7 @@
             </thead>
             <tbody>
               <tr v-for="v in turno.voucherSales" :key="v.orderCode">
-                <td>{{ soloHora(v.at) }}</td>
+                <td>{{ formatHoraCorta(v.at) }}</td>
                 <td>{{ v.boleta || v.orderCode }}</td>
                 <td>{{ v.voucher || "—" }}</td>
                 <td>{{ money(v.amount) }}</td>
@@ -275,7 +275,7 @@
  */
 const abierta = defineModel<boolean>("abierta", { default: false });
 
-const { formatDateTimeCompact } = useFormatDateTime();
+const { formatDateTimeCompact, formatHoraCorta } = useFormatDateTime();
 const formatPrice = useFormatPrice();
 const { imprimirPapel } = useImpresion();
 const { nombre } = useLogo();
@@ -304,11 +304,6 @@ const conVoucher = computed(() =>
 const totalConVoucher = computed(() =>
   conVoucher.value.reduce((a: number, f: any) => a + Number(f.amount || 0), 0)
 );
-/* En el papel solo cabe la hora: la fecha ya está arriba, en la apertura
-   y el cierre del turno. */
-const soloHora = (v: any) =>
-  v ? new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", timeStyle: "short" })
-        .format(new Date(v)) : "";
 
 const ultimoArqueo = computed(() => {
   const a = turno.value.audits || [];
