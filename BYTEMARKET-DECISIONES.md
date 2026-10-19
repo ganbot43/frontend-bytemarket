@@ -692,8 +692,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 215 pruebas entre
-los cuatro servicios —25 en user, 85 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 216 pruebas entre
+los cuatro servicios —25 en user, 86 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en
