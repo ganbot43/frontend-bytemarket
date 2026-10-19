@@ -495,7 +495,7 @@ no, que es también lo que pasa con los pedidos anteriores a esto.
 ## 25. Una venta de mostrador pertenece a un turno de caja
 
 `/admin/caja` no cobra si no hay turno abierto. Cada venta guarda su
-`cash_session_id`, y al cerrar se cuadra:
+`cash_session_id`, y al cuadrar se resta:
 
     esperado   = fondo + ventas en efectivo + ingresos − retiros − gastos
     diferencia = contado − esperado
@@ -544,6 +544,29 @@ Cuatro roles, y la línea que los separa es una sola:
 | `jefe_ventas` | jefe de ventas | apertura cajas, entrega fondos, mueve efectivo, arquea, da de alta cajeros |
 | `cajero` | cajero | vende y atiende |
 
+**El turno tiene cinco estados, no dos.**
+
+    el jefe asigna el fondo y habilita   →  fund_assigned / enabled
+    el cajero confirma y firma su ticket →  open
+    vende; el jefe arquea cuando quiera, sin cerrar nada
+    el cajero cierra al acabar el turno  →  closed
+    el jefe cuenta, firma y cuadra       →  settled
+
+Que sean cinco es lo que separa «dejo de vender» de «me cuentan el
+dinero». Con dos, o el cajero declaraba su propio dinero o el jefe le
+cerraba la caja desde otra pantalla sin que él lo supiera.
+
+**Por qué abre el cajero y no el jefe.** Esa confirmación es la que firma
+en el ticket de apertura, y es lo que convierte el fondo en
+responsabilidad suya. Si se la abriera el jefe, podría encontrarse un
+turno empezado con un fondo que nunca contó. El fondo, eso sí, no lo
+toca: se lo asignó el jefe, y si no coincide con lo que tiene en la mano
+es una conversación, no un campo editable.
+
+**Por qué cierra el cajero y cuadra el jefe.** Cerrar es «he acabado», no
+«esto es lo que hay»: no declara ninguna cifra. Contar es del encargado y
+ocurre después, delante de él.
+
 **Por qué la caja tiene dos personas.** `CashSession` guarda `cashier_id`
 —de quién es el cajón— y `opened_by` —quién entregó el fondo—. Antes eran
 la misma columna, y eso significaba que el cajero se abría su caja con el
@@ -552,12 +575,25 @@ firmaba exactamente a quien vigila. Salía un papel, pero no era un
 control. Separarlas es lo que convierte esto en control interno y no en un
 formulario.
 
-**Qué no ve quien va a contar.** Con la caja abierta, `paraArqueo()` no
-devuelve ni un importe: ni ventas, ni efectivo, ni desglose. Solo cuántas
-ventas hubo y de qué formas, para saber qué comprobantes juntar. Es la
-misma regla del esperado (decisión 25) llevada hasta el final: contar Yape
-teniendo delante «Yape: 900» no es contar. Al cajero sí se le enseña lo
-que cobró en su propia barra, porque él no es quien cuenta.
+**Qué ve cada uno.** Al encargado se le enseñan los importes —fondo,
+ventas en efectivo, efectivo esperado— y es deliberado: mira su monitor y
+con esa cifra se pone a contar billetes. Quien vigila es él; el vigilado
+es el cajero, que no ve esa pantalla. Al cajero se le dice lo que cobró
+en efectivo, porque lo necesita para dar vuelto y para saber si hará
+falta un retiro, pero no el esperado ni el cuadre hasta que están
+firmados.
+
+Lo pensé al revés al principio —esconderle el esperado también al que
+cuenta, para que no copiara la cifra— y es una idea defendible, pero no
+es el procedimiento de la tienda: el encargado necesita saber qué busca
+para saber si lo que encuentra está mal.
+
+**El arqueo sorpresivo no cierra nada.** Se hace con la caja abierta y el
+cajero sigue vendiendo en cuanto termina. Si para contar hubiera que
+cerrar el turno, nadie lo haría a media mañana y dejaría de ser
+sorpresivo. Cada uno queda guardado entero —quién, cuándo, esperado,
+contado, diferencia y observación—: un arqueo que no se guarda es una
+conversación, y al mes siguiente nadie puede decir si se hizo.
 
 **Por qué el cajero no pone el precio.** En el mostrador se regatea, y el
 encargado y el jefe pueden mover el precio de una línea o aplicar un
@@ -621,14 +657,31 @@ devolverlo. Pedir el cierre de lote un día que nadie pagó con tarjeta es
 ruido, y el ruido hace que el arqueo se rellene sin mirar.
 
 **No se cierra a medias.** Si una forma tuvo ventas y no se declara, el
-cierre se rechaza nombrándola. Un arqueo incompleto que parece completo es
+cuadre se rechaza nombrándola. Un arqueo incompleto que parece completo es
 peor que no tenerlo: el papel saldría firmado dando por bueno un dinero
 que nadie contó.
 
-**El papel.** Al cerrar se imprime un comprobante de 80 mm —el mismo rollo
-de los tickets de venta— con el desglose, los movimientos y dos líneas de
-firma: el cajero reconoce con qué entregó la caja, el encargado que lo
-contó él. Es el artefacto físico que cierra el circuito; por eso el
+**Los papeles también se cuentan.** Quince ventas con tarjeta tienen que
+ser quince vouchers en la mano. Cuadrar solo el importe deja pasar una
+venta cobrada dos veces por el mismo total; por eso cada venta que no es
+en efectivo guarda su número de operación y el cuadre compara cantidades
+además de montos.
+
+**Si algo no cuadra, la observación es obligatoria.** Vale para el dinero
+y para los papeles, y también para el arqueo sorpresivo. Un faltante sin
+explicar es un faltante que nadie va a poder reconstruir dentro de un
+mes.
+
+**Tres papeles, todos de 80 mm.** El mismo rollo de los tickets de venta:
+
+    ticket de apertura  al abrir     nombre, DNI, fondo, firma del cajero
+    boleta de cierre    al cerrar    solo lo que lleva voucher, sin efectivo
+    papel de caja       al cuadrar   desglose, diferencias y las dos firmas
+
+La boleta de cierre va sin efectivo a propósito: acompaña a los vouchers,
+y si trajera la cifra del cajón, contar sería copiarla.
+
+Las firmas son el motivo de que esto se imprima, y son físicas: el
 sistema no guarda ninguna "firma digital" que no significaría nada.
 
 ---
@@ -639,8 +692,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 210 pruebas entre
-los cuatro servicios —25 en user, 80 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 215 pruebas entre
+los cuatro servicios —25 en user, 85 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en
@@ -652,9 +705,12 @@ hora de Lima, este último con un pedido de prueba insertado dentro de la
 franja problemática y borrado después.
 
 También el turno de caja entero, con los cuatro roles autenticados de
-verdad: el jefe apertura la caja del cajero con su fondo, el cajero vende
-en efectivo y por Yape, el jefe retira, y el cierre se rechaza mientras
-falte una forma por contar. El arqueo final dio cajón exacto y 54.79 de
+verdad y recorriendo los cinco estados: el jefe asigna el fondo y
+habilita, el cajero abre y vende, el jefe arquea por sorpresa sin cerrar
+nada —y el cajero sigue vendiendo—, el cajero cierra, y el cuadre se
+rechaza mientras falte una forma por contar o una diferencia sin
+explicar. Los tres papeles se capturaron en el momento de imprimirlos,
+con su DNI y sus firmas. El arqueo final dio cajón exacto y 54.79 de
 Yape sin abonar —el caso que justifica la decisión 27—. También se
 comprobó lo que cada rol NO puede: el cajero no se apertura la caja, no
 cierra, no lista pedidos y no mueve el precio; y el encargado no se
@@ -699,6 +755,14 @@ otra impresión, misma receta y clase propia.
 cajero a su caja con `!to.path.startsWith('/admin/caja')`, y eso también
 casaba con `/admin/cajas` —la pantalla de su jefe—. Entraba y veía una
 tabla vacía, que es la peor forma de decir que no. Comparación exacta.
+
+**`ddl-auto: update` añade, pero no afloja.** Al pasar la caja a cinco
+estados, `opened_at` y `opened_by` dejaron de escribirse al crear el
+turno. En Java se marcaron nullable y Hibernate no dijo nada... porque
+ese modo solo AÑADE columnas: el `NOT NULL` que ya estaba en la tabla se
+quedó, y la primera asignación de fondo reventó con un 500 y «Column
+'opened_at' cannot be null». Los cambios sobre columnas existentes van a
+mano en `CajaMigracion`.
 
 **El orden de las rutas del gateway importa.** Las `/api/admin/**` van
 declaradas antes que los comodines; si no, catálogo y pedidos se las tragan.

@@ -4,12 +4,12 @@
       <div>
         <h1 class="sp-page-toolbar__title">Cajas</h1>
         <p class="sp-page-toolbar__sub">
-          {{ abiertas.length }} caja(s) abierta(s) · aperturas, fondos y arqueo
+          {{ turnos.length }} turno(s) en curso · fondos, arqueo y cuadre
         </p>
       </div>
-      <button class="sp-page-btn" @click="abrirApertura">
+      <button class="sp-page-btn" @click="abrirAsignacion">
         <Plus class="w-3.5 h-3.5" stroke-width="2" />
-        Aperturar caja
+        Asignar fondo
       </button>
     </div>
 
@@ -19,57 +19,75 @@
           <thead>
             <tr>
               <th class="sp-th">Cajero</th>
-              <th class="sp-th">Aperturada</th>
-              <th class="sp-th sp-th--right">Fondo entregado</th>
+              <th class="sp-th">Estado</th>
+              <th class="sp-th sp-th--right">Fondo</th>
+              <th class="sp-th sp-th--right">Efectivo esperado</th>
               <th class="sp-th">Ventas del turno</th>
-              <th class="sp-th">Movimientos</th>
-              <th class="sp-th sp-th--center" style="width: 110px">Acciones</th>
+              <th class="sp-th sp-th--center" style="width: 150px">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in abiertas" :key="t.id" class="sp-tr">
+            <tr v-for="t in turnos" :key="t.id" class="sp-tr">
               <td class="sp-td">
                 <p class="sp-table-title">{{ t.cashierName || "—" }}</p>
-                <p class="sp-table-sub">La aperturó {{ t.openedByName || "—" }}</p>
+                <p class="sp-table-sub">
+                  <template v-if="t.cashierDni">DNI {{ t.cashierDni }} · </template>
+                  fondo de {{ t.assignedByName || "—" }}
+                </p>
               </td>
-              <td class="sp-td sp-td--muted">
-                <span class="sp-table-date">{{ formatDateTimeCompact(t.openedAt) }}</span>
+              <td class="sp-td">
+                <span class="sp-badge" :class="badgeEstado(t.estado)">
+                  <span class="sp-badge__dot" />
+                  {{ t.estadoTexto }}
+                </span>
+                <p class="sp-table-sub">{{ formatDateTimeCompact(t.openedAt || t.assignedAt) }}</p>
               </td>
               <td class="sp-td sp-td--right">
                 <span class="sp-table-amount">{{ money(t.openingFloat) }}</span>
               </td>
+              <td class="sp-td sp-td--right">
+                <!-- Aquí sí va la cifra: es con lo que el encargado se pone a
+                     contar billetes. El vigilado es el cajero, y el cajero no
+                     ve esta pantalla. -->
+                <span class="sp-table-num">{{ money(t.expectedCash) }}</span>
+                <p class="sp-table-sub">{{ money(t.cashSales) }} cobrados</p>
+              </td>
               <td class="sp-td">
-                <!-- Cuántas y de qué formas, nunca cuánto: quien va a contar
-                     no puede tener la respuesta delante. -->
-                <span class="sp-table-num">{{ t.salesCount ?? 0 }}</span>
+                <span class="sp-table-num">{{ totalVentas(t) }}</span>
                 <p class="sp-table-sub">{{ formasDe(t) }}</p>
               </td>
               <td class="sp-td">
-                <span class="sp-table-num">{{ t.movementsCount ?? 0 }}</span>
-              </td>
-              <td class="sp-td">
                 <div class="sp-table-actions">
-                  <button class="sp-table-btn sp-table-btn--edit" title="Movimiento de efectivo"
-                          @click="abrirMovimiento(t)">
+                  <button v-if="t.estado === 'fund_assigned'" class="sp-table-btn sp-table-btn--view"
+                          title="Habilitar al cajero" @click="habilitar(t)">
+                    <Check class="w-3.5 h-3.5" stroke-width="1.5" />
+                  </button>
+                  <button v-if="t.estado === 'open'" class="sp-table-btn sp-table-btn--edit"
+                          title="Movimiento de efectivo" @click="abrirMovimiento(t)">
                     <ArrowLeftRight class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
-                  <button class="sp-table-btn sp-table-btn--warn" title="Arquear y cerrar"
-                          @click="abrirArqueo(t)">
+                  <button v-if="t.estado === 'open'" class="sp-table-btn sp-table-btn--view"
+                          title="Arqueo sorpresivo" @click="abrirArqueo(t)">
+                    <Search class="w-3.5 h-3.5" stroke-width="1.5" />
+                  </button>
+                  <button v-if="t.estado === 'closed'" class="sp-table-btn sp-table-btn--warn"
+                          title="Cuadrar y firmar" @click="abrirCuadre(t)">
                     <ClipboardCheck class="w-3.5 h-3.5" stroke-width="1.5" />
                   </button>
+                  <span v-if="t.estado === 'enabled'" class="cajas-espera">esperando al cajero</span>
                 </div>
               </td>
             </tr>
 
-            <tr v-if="!abiertas.length">
+            <tr v-if="!turnos.length">
               <td colspan="6" class="sp-table-empty">
                 <div class="sp-table-empty__inner">
                   <div class="sp-table-empty__icon">
                     <Wallet class="w-8 h-8 text-current" stroke-width="1.5" />
                   </div>
-                  <p class="sp-table-empty__msg">No hay ninguna caja abierta</p>
-                  <button class="sp-table-empty__cta" @click="abrirApertura">
-                    Aperturar la primera
+                  <p class="sp-table-empty__msg">No hay ningún turno en curso</p>
+                  <button class="sp-table-empty__cta" @click="abrirAsignacion">
+                    Asignar el primer fondo
                   </button>
                 </div>
               </td>
@@ -84,16 +102,16 @@
       <NuxtLink to="/admin/reportes">Reportes</NuxtLink>.
     </p>
 
-    <!-- ── Aperturar ──────────────────────────────────────────── -->
+    <!-- ── Asignar fondo ──────────────────────────────────────── -->
     <Teleport to="body">
       <Transition name="sp-modal">
-        <div v-if="modal === 'abrir'" class="sp-modal-backdrop" @click.self="cerrarModal">
+        <div v-if="modal === 'fondo'" class="sp-modal-backdrop" @click.self="cerrarModal">
           <div class="sp-modal-box cajas-modal" role="dialog" aria-modal="true">
             <div class="sp-modal-header">
               <div class="sp-modal-header__content">
-                <h3 class="sp-modal-header__title">Aperturar caja</h3>
+                <h3 class="sp-modal-header__title">Asignar fondo</h3>
                 <p class="sp-modal-header__meta">
-                  Entrega el fondo y queda registrado que lo entregaste tú.
+                  Entregas el dinero y queda registrado que lo entregaste tú.
                 </p>
               </div>
               <button class="sp-modal-close" aria-label="Cerrar" @click="cerrarModal">✕</button>
@@ -102,43 +120,55 @@
             <div class="sp-modal-body">
               <div class="cajas-campo">
                 <label class="sp-drawer-label" for="cajero">Cajero</label>
-                <select id="cajero" v-model="apertura.cashierId"
-                        class="sp-drawer-input sp-drawer-select">
-                  <option :value="null" disabled>Elige a quién le entregas la caja</option>
+                <select id="cajero" v-model="fondo.cashierId" class="sp-drawer-input sp-drawer-select">
+                  <option :value="null" disabled>Elige a quién le entregas el fondo</option>
                   <option v-for="c in cajeros" :key="c.id" :value="c.id">
-                    {{ c.name }} ({{ c.email }})
+                    {{ c.name }}{{ c.dni ? ` · DNI ${c.dni}` : "" }}
                   </option>
                   <!-- El encargado que también atiende: su caja es la suya,
-                       pero sigue constando quién la aperturó. -->
+                       pero sigue constando quién entregó el fondo. -->
                   <option v-if="yo?.id" :value="yo.id">Yo mismo ({{ yo.email }})</option>
                 </select>
                 <p v-if="!cajeros.length" class="cajas-nota">
                   No hay cajeros activos. Da de alta uno en
                   <NuxtLink to="/admin/usuarios">Usuarios</NuxtLink> y vuelve.
                 </p>
+                <p v-else-if="elegidoSinDni" class="cajas-nota">
+                  Ese cajero no tiene DNI registrado: el ticket de apertura
+                  saldrá sin él. Puedes añadírselo en
+                  <NuxtLink to="/admin/usuarios">Usuarios</NuxtLink>.
+                </p>
               </div>
 
               <div class="cajas-campo">
-                <label class="sp-drawer-label" for="fondo">Fondo inicial</label>
+                <label class="sp-drawer-label" for="monto">Fondo inicial</label>
                 <div class="cajas-money">
                   <span>S/</span>
-                  <input id="fondo" ref="fondoRef" v-model.number="apertura.openingFloat"
+                  <input id="monto" ref="montoRef" v-model.number="fondo.openingFloat"
                          type="number" min="0" step="0.10" class="sp-drawer-input"
-                         placeholder="0.00" @keydown.enter.prevent="aperturar" />
+                         placeholder="0.00" @keydown.enter.prevent="asignar" />
                 </div>
                 <p class="cajas-nota">
                   Cuenta el sencillo antes de entregarlo. Es la cifra contra la
-                  que se cuadrará al cerrar, así que vale la pena contarlo bien.
+                  que se cuadrará al final, así que vale la pena contarlo bien.
                 </p>
               </div>
+
+              <label class="cajas-check">
+                <input v-model="fondo.habilitar" type="checkbox" />
+                <span>
+                  Habilitarlo ya para que pueda abrir
+                  <em>Si lo dejas sin marcar, el fondo queda registrado y lo habilitas cuando abra la tienda.</em>
+                </span>
+              </label>
 
               <p v-if="error" class="cajas-error">{{ error }}</p>
             </div>
 
             <div class="sp-modal-footer">
               <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarModal">Cancelar</button>
-              <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="cargando" @click="aperturar">
-                {{ cargando ? "Aperturando…" : "Aperturar y entregar fondo" }}
+              <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="cargando" @click="asignar">
+                {{ cargando ? "Guardando…" : "Entregar fondo" }}
               </button>
             </div>
           </div>
@@ -203,19 +233,85 @@
       </Transition>
     </Teleport>
 
-    <!-- ── Arqueo y cierre ────────────────────────────────────── -->
+    <!-- ── Arqueo sorpresivo ──────────────────────────────────── -->
     <Teleport to="body">
       <Transition name="sp-modal">
         <div v-if="modal === 'arqueo'" class="sp-modal-backdrop" @click.self="cerrarModal">
           <div class="sp-modal-box cajas-modal" role="dialog" aria-modal="true">
-            <!-- Paso 1: contar -->
-            <template v-if="!cuadre">
+            <div class="sp-modal-header">
+              <div class="sp-modal-header__content">
+                <h3 class="sp-modal-header__title">Arqueo sorpresivo</h3>
+                <p class="sp-modal-header__meta">
+                  Caja de {{ turno?.cashierName || "—" }} · no la cierra, el cajero
+                  sigue vendiendo en cuanto termines.
+                </p>
+              </div>
+              <button class="sp-modal-close" aria-label="Cerrar" @click="cerrarModal">✕</button>
+            </div>
+
+            <div class="sp-modal-body">
+              <ul class="cajas-cuadre">
+                <li><span>Fondo inicial</span><strong>{{ money(turno?.openingFloat) }}</strong></li>
+                <li><span>Cobrado en efectivo</span><strong>{{ money(turno?.cashSales) }}</strong></li>
+                <li v-if="(turno?.movementsTotal ?? 0) !== 0">
+                  <span>Entradas y salidas</span><strong>{{ conSigno(turno?.movementsTotal) }}</strong>
+                </li>
+                <li class="cajas-cuadre__total">
+                  <span>Debería haber en el cajón</span>
+                  <strong>{{ money(turno?.expectedCash) }}</strong>
+                </li>
+              </ul>
+
+              <div class="cajas-campo">
+                <label class="sp-drawer-label" for="arq-contado">Efectivo contado</label>
+                <div class="cajas-money">
+                  <span>S/</span>
+                  <input id="arq-contado" ref="contadoRef" v-model.number="arqueo.countedCash"
+                         type="number" min="0" step="0.10" class="sp-drawer-input" placeholder="0.00" />
+                </div>
+              </div>
+
+              <p v-if="difArqueo !== null" class="cajas-dif" :class="claseDif(difArqueo)">
+                {{ textoDif(difArqueo) }}
+              </p>
+
+              <div class="cajas-campo">
+                <label class="sp-drawer-label" for="arq-obs">
+                  Observación
+                  <span v-if="difArqueo && Math.abs(difArqueo) >= 0.005" class="cajas-req">obligatoria</span>
+                  <span v-else class="cajas-opt">(opcional)</span>
+                </label>
+                <input id="arq-obs" v-model="arqueo.observation" type="text" class="sp-drawer-input"
+                       placeholder="Ej: el cajero fue al banco con 200" />
+              </div>
+
+              <p v-if="error" class="cajas-error">{{ error }}</p>
+            </div>
+
+            <div class="sp-modal-footer">
+              <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarModal">Cancelar</button>
+              <button class="sp-drawer-btn sp-drawer-btn--primary"
+                      :disabled="cargando || arqueo.countedCash === null" @click="guardarArqueo">
+                {{ cargando ? "Guardando…" : "Finalizar arqueo" }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ── Cuadre ─────────────────────────────────────────────── -->
+    <Teleport to="body">
+      <Transition name="sp-modal">
+        <div v-if="modal === 'cuadre'" class="sp-modal-backdrop" @click.self="cerrarModal">
+          <div class="sp-modal-box cajas-modal" role="dialog" aria-modal="true">
+            <template v-if="!cuadrado">
               <div class="sp-modal-header">
                 <div class="sp-modal-header__content">
-                  <h3 class="sp-modal-header__title">Arqueo de caja</h3>
+                  <h3 class="sp-modal-header__title">Cuadre de caja</h3>
                   <p class="sp-modal-header__meta">
                     Caja de {{ turno?.cashierName || "—" }} ·
-                    aperturada {{ formatDateTimeCompact(turno?.openedAt) }}
+                    cerrada {{ formatDateTimeCompact(turno?.closedAt) }}
                   </p>
                 </div>
                 <button class="sp-modal-close" aria-label="Cerrar" @click="cerrarModal">✕</button>
@@ -223,30 +319,44 @@
 
               <div class="sp-modal-body">
                 <p class="cajas-aviso">
-                  <strong>No te enseñamos ninguna cifra hasta que cuentes.</strong>
-                  Si vieras los totales antes, el arqueo no detectaría nada: es
-                  para lo único que existe.
+                  Cuenta el efectivo y los vouchers <strong>delante del cajero</strong>.
+                  Lo que escribas aquí es lo que los dos firmáis.
                 </p>
 
-                <div v-for="f in (turno?.toCount || [])" :key="f.type" class="cajas-campo">
-                  <label class="sp-drawer-label" :for="`cnt-${f.type}`">
-                    {{ f.label }}
-                    <span class="cajas-contra">{{ CONTRA[f.type] || "contra su comprobante" }}</span>
-                  </label>
-                  <div class="cajas-money">
-                    <span>S/</span>
-                    <input :id="`cnt-${f.type}`" v-model.number="contado[f.type]" type="number"
-                           min="0" step="0.10" class="sp-drawer-input" placeholder="0.00" />
+                <div v-for="f in (turno?.toCount || [])" :key="f.type" class="cajas-forma">
+                  <div class="cajas-forma__head">
+                    <strong>{{ f.label }}</strong>
+                    <span>{{ CONTRA[f.type] || "contra su comprobante" }}</span>
                   </div>
-                  <p class="cajas-nota">{{ f.sales }} venta(s) por esta forma en el turno</p>
+                  <ul class="cajas-forma__sistema">
+                    <li><span>El sistema dice</span><strong>{{ money(f.amount) }}</strong></li>
+                    <li><span>Ventas</span><strong>{{ f.sales }}</strong></li>
+                  </ul>
+                  <div class="cajas-forma__campos">
+                    <label>
+                      <span>Contado</span>
+                      <input v-model.number="contado[f.type]" type="number" min="0" step="0.10"
+                             class="sp-drawer-input" placeholder="0.00" />
+                    </label>
+                    <!-- En efectivo no hay papeles que contar: el comprobante
+                         del cajero es el propio dinero. -->
+                    <label v-if="f.type !== 'efectivo'">
+                      <span>Vouchers en mano</span>
+                      <input v-model.number="vouchers[f.type]" type="number" min="0" step="1"
+                             class="sp-drawer-input" :placeholder="String(f.sales)" />
+                    </label>
+                  </div>
+                  <p v-if="avisoDe(f)" class="cajas-forma__aviso">{{ avisoDe(f) }}</p>
                 </div>
 
                 <div class="cajas-campo">
-                  <label class="sp-drawer-label" for="notas">
-                    Notas <span class="cajas-opt">(opcional)</span>
+                  <label class="sp-drawer-label" for="cua-obs">
+                    Observación
+                    <span v-if="hayDiferencias" class="cajas-req">obligatoria</span>
+                    <span v-else class="cajas-opt">(opcional)</span>
                   </label>
-                  <input id="notas" v-model="notas" type="text" class="sp-drawer-input"
-                         placeholder="Ej: faltó un billete de 10" />
+                  <input id="cua-obs" v-model="observacion" type="text" class="sp-drawer-input"
+                         placeholder="Ej: faltó un billete de 10 y un voucher de Niubiz" />
                 </div>
 
                 <p v-if="error" class="cajas-error">{{ error }}</p>
@@ -254,65 +364,48 @@
 
               <div class="sp-modal-footer">
                 <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarModal">Cancelar</button>
-                <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="cargando || !todoContado"
-                        @click="cerrarCaja">
-                  {{ cargando ? "Cerrando…" : "Arquear y cerrar" }}
+                <button class="sp-drawer-btn sp-drawer-btn--primary"
+                        :disabled="cargando || !todoContado" @click="cuadrar">
+                  {{ cargando ? "Cuadrando…" : "Cuadrar e imprimir" }}
                 </button>
               </div>
             </template>
 
-            <!-- Paso 2: el cuadre -->
             <template v-else>
               <div class="sp-modal-header">
                 <div class="sp-modal-header__content">
-                  <h3 class="sp-modal-header__title">Caja cerrada</h3>
-                  <p class="sp-modal-header__meta">{{ formatDateTimeCompact(cuadre.closedAt) }}</p>
+                  <h3 class="sp-modal-header__title">Caja cuadrada</h3>
+                  <p class="sp-modal-header__meta">{{ formatDateTimeCompact(cuadrado.settledAt) }}</p>
                 </div>
               </div>
 
               <div class="sp-modal-body">
-                <ul class="cajas-cuadre">
-                  <li><span>Fondo inicial</span><strong>{{ money(cuadre.openingFloat) }}</strong></li>
-                  <li><span>Cobrado en efectivo</span><strong>{{ money(cuadre.cashSales) }}</strong></li>
-                  <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadre.movementsTotal) }}</strong></li>
-                  <li class="cajas-cuadre__total">
-                    <span>Debería haber en el cajón</span>
-                    <strong>{{ money(cuadre.expectedCash) }}</strong>
-                  </li>
-                  <li><span>Contaste</span><strong>{{ money(cuadre.countedCash) }}</strong></li>
-                </ul>
-
-                <p class="cajas-dif" :class="claseDif(cuadre.difference)">
-                  {{ textoDif(cuadre.difference) }}
+                <p class="cajas-dif" :class="claseDif(cuadrado.difference)">
+                  {{ textoDif(cuadrado.difference) }}
                 </p>
 
-                <div v-if="(cuadre.counts || []).length" class="cajas-arqueo">
-                  <p class="cajas-arqueo__label">Arqueo por forma de pago</p>
-                  <table class="cajas-arqueo__tabla">
-                    <thead>
-                      <tr>
-                        <th>Forma</th>
-                        <th>Esperado</th>
-                        <th>Contado</th>
-                        <th>Diferencia</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="c in cuadre.counts" :key="c.type">
-                        <td>{{ c.label }}</td>
-                        <td>{{ money(c.expected) }}</td>
-                        <td>{{ money(c.counted) }}</td>
-                        <td :class="claseDif(c.difference)">{{ conSigno(c.difference) }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                <table class="cajas-arqueo__tabla">
+                  <thead>
+                    <tr><th>Forma</th><th>Esperado</th><th>Contado</th><th>Dif.</th><th>Vouchers</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="c in (cuadrado.counts || [])" :key="c.type">
+                      <td>{{ c.label }}</td>
+                      <td>{{ money(c.expected) }}</td>
+                      <td>{{ money(c.counted) }}</td>
+                      <td :class="claseDif(c.difference)">{{ conSigno(c.difference) }}</td>
+                      <td>{{ c.vouchersCounted ?? "—" }} / {{ c.sales }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p v-if="cuadrado.closingNotes" class="cajas-nota">{{ cuadrado.closingNotes }}</p>
               </div>
 
               <div class="sp-modal-footer">
                 <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="cerrarModal">Cerrar</button>
-                <button class="sp-drawer-btn sp-drawer-btn--primary" @click="imprimirCierre">
-                  Imprimir para firmar
+                <button class="sp-drawer-btn sp-drawer-btn--primary" @click="imprimir()">
+                  Imprimir papel de caja
                 </button>
               </div>
             </template>
@@ -321,64 +414,69 @@
       </Transition>
     </Teleport>
 
-    <!-- ── El papel que firma el cajero ───────────────────────── -->
-    <!-- Fuera de la pantalla siempre y visible solo al imprimir. Va aquí,
-         pegado al body, porque la regla de impresión apaga los hermanos del
-         body: dentro del modal se imprimiría el modal entero. -->
+    <!-- ── El papel de caja ───────────────────────────────────── -->
     <Teleport to="body">
-      <div v-if="cuadre" id="sp-print-slip" class="slip">
-        <header class="slip__head">
-          <p class="slip__store">{{ negocio.name || nombre }}</p>
-          <p v-if="negocio.ruc" class="slip__meta">RUC {{ negocio.ruc }}</p>
-          <p v-if="negocio.address" class="slip__meta">{{ negocio.address }}</p>
+      <div v-if="papel && cuadrado" class="sp-papel">
+        <header class="sp-papel__head">
+          <p class="sp-papel__store">{{ negocio.name || nombre }}</p>
+          <p v-if="negocio.ruc" class="sp-papel__meta">RUC {{ negocio.ruc }}</p>
+          <p v-if="negocio.address" class="sp-papel__meta">{{ negocio.address }}</p>
         </header>
 
-        <p class="slip__kind">Cierre de caja Nº {{ cuadre.id }}</p>
+        <p class="sp-papel__kind">Papel de caja Nº {{ cuadrado.id }}</p>
 
-        <dl class="slip__info">
-          <div><dt>Cajero</dt><dd>{{ cuadre.cashierName || "—" }}</dd></div>
-          <div><dt>Aperturó</dt><dd>{{ cuadre.openedByName || "—" }}</dd></div>
-          <div><dt>Apertura</dt><dd>{{ formatDateTimeCompact(cuadre.openedAt) }}</dd></div>
-          <div><dt>Cierre</dt><dd>{{ formatDateTimeCompact(cuadre.closedAt) }}</dd></div>
+        <dl class="sp-papel__info">
+          <div><dt>Cajero</dt><dd>{{ cuadrado.cashierName || "—" }}</dd></div>
+          <div v-if="cuadrado.cashierDni"><dt>DNI</dt><dd>{{ cuadrado.cashierDni }}</dd></div>
+          <div><dt>Fondo entregado por</dt><dd>{{ cuadrado.assignedByName || "—" }}</dd></div>
+          <div><dt>Cuadró</dt><dd>{{ cuadrado.settledByName || "—" }}</dd></div>
+          <div><dt>Apertura</dt><dd>{{ formatDateTimeCompact(cuadrado.openedAt) }}</dd></div>
+          <div><dt>Cierre</dt><dd>{{ formatDateTimeCompact(cuadrado.closedAt) }}</dd></div>
         </dl>
 
-        <table class="slip__tabla">
+        <table class="sp-papel__tabla">
           <thead>
-            <tr><th>Forma</th><th>Ventas</th><th>Esperado</th><th>Contado</th><th>Dif.</th></tr>
+            <tr><th>Forma</th><th>Esperado</th><th>Contado</th><th>Dif.</th><th>Vouch.</th></tr>
           </thead>
           <tbody>
-            <tr v-for="c in (cuadre.counts || [])" :key="c.type">
+            <tr v-for="c in (cuadrado.counts || [])" :key="c.type">
               <td>{{ c.label }}</td>
-              <td class="slip__n">{{ c.sales }}</td>
-              <td class="slip__n">{{ money(c.expected) }}</td>
-              <td class="slip__n">{{ money(c.counted) }}</td>
-              <td class="slip__n">{{ conSigno(c.difference) }}</td>
+              <td>{{ money(c.expected) }}</td>
+              <td>{{ money(c.counted) }}</td>
+              <td>{{ conSigno(c.difference) }}</td>
+              <td>{{ c.vouchersCounted ?? "—" }}/{{ c.sales }}</td>
             </tr>
           </tbody>
         </table>
 
-        <ul class="slip__detalle">
-          <li><span>Fondo inicial</span><strong>{{ money(cuadre.openingFloat) }}</strong></li>
-          <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadre.movementsTotal) }}</strong></li>
-          <li v-for="m in (cuadre.movements || [])" :key="m.id" class="slip__mov">
+        <ul class="sp-papel__lista">
+          <li><span>Fondo inicial</span><strong>{{ money(cuadrado.openingFloat) }}</strong></li>
+          <li><span>Entradas y salidas</span><strong>{{ conSigno(cuadrado.movementsTotal) }}</strong></li>
+          <li v-for="m in (cuadrado.movements || [])" :key="m.id" class="sp-papel__chico">
             <span>{{ etiquetaMov(m.type) }} · {{ m.reason }}</span>
             <strong>{{ conSigno(m.delta) }}</strong>
           </li>
+          <li v-for="a in (cuadrado.audits || [])" :key="'a' + a.id" class="sp-papel__chico">
+            <span>Arqueo {{ formatDateTimeCompact(a.createdAt) }} · {{ a.performedByName }}</span>
+            <strong>{{ conSigno(a.difference) }}</strong>
+          </li>
         </ul>
 
-        <p class="slip__dif">{{ textoDif(cuadre.difference) }}</p>
-        <p v-if="cuadre.closingNotes" class="slip__notas">Notas: {{ cuadre.closingNotes }}</p>
+        <p class="sp-papel__destacado">{{ textoDif(cuadrado.difference) }}</p>
+        <p v-if="cuadrado.closingNotes" class="sp-papel__nota">
+          Observación: {{ cuadrado.closingNotes }}
+        </p>
 
         <!-- Las dos firmas son el motivo de que esto se imprima: el cajero
              reconoce con qué efectivo y qué vouchers entregó la caja, y el
              encargado que los contó él. -->
-        <div class="slip__firmas">
-          <div><span>Firma del cajero</span><p>{{ cuadre.cashierName || "" }}</p></div>
-          <div><span>Firma del encargado</span><p>{{ cuadre.openedByName || "" }}</p></div>
+        <div class="sp-papel__firmas">
+          <div><span>Firma del cajero</span><p>{{ cuadrado.cashierName || "" }}</p></div>
+          <div><span>Firma del encargado</span><p>{{ cuadrado.settledByName || "" }}</p></div>
         </div>
 
-        <p class="slip__pie">
-          Conforme con el arqueo arriba detallado. Documento interno de control
+        <p class="sp-papel__pie">
+          Conforme con el cuadre arriba detallado. Documento interno de control
           de caja; no es un comprobante de pago.
         </p>
       </div>
@@ -388,40 +486,40 @@
 
 <script setup lang="ts">
 /**
- * Aperturas y arqueo: la pantalla del jefe de ventas y del encargado.
+ * Fondos, arqueo y cuadre: la pantalla del jefe de ventas y del encargado.
  *
- * Aquí viven las tres cosas que el cajero no hace: entregarle el fondo,
- * mover el efectivo del cajón y cuadrarlo al final. Están separadas de la
- * pantalla de venta a propósito —no es una pestaña más—, porque son de otra
- * persona.
+ * Aquí viven las cuatro cosas que el cajero no hace: entregarle el fondo,
+ * mover el efectivo del cajón, arquearlo por sorpresa y cuadrarlo al final.
+ * Está separada de /admin/caja a propósito —no es una pestaña más—, porque
+ * es de otra persona.
  *
- * La decisión que gobierna el arqueo: mientras la caja está abierta esta
- * pantalla no recibe ni un importe del servidor. Ni ventas, ni efectivo
- * esperado, ni desglose. Solo cuántas ventas hubo y de qué formas, para
- * saber qué comprobantes juntar. Quien ve la cifra objetivo deja de contar y
- * la copia.
+ * A diferencia de la pantalla del cajero, esta SÍ enseña los importes, y es
+ * deliberado: el encargado mira cuánto lleva vendido el cajero en efectivo
+ * y con esa cifra se pone a contar billetes. Quien vigila es él; el vigilado
+ * es el cajero, que no ve esta pantalla.
  */
-import { Plus, Wallet, ArrowLeftRight, ClipboardCheck } from "lucide-vue-next";
+import { Plus, Wallet, ArrowLeftRight, ClipboardCheck, Search, Check } from "lucide-vue-next";
 
 definePageMeta({ layout: "admin", middleware: "auth" });
 useSeoMeta({ title: "Cajas · Admin" });
 
 const { formatDateTimeCompact } = useFormatDateTime();
 const formatPrice = useFormatPrice();
+const { imprimirPapel } = useImpresion();
+const { nombre } = useLogo();
+const negocio = computed<any>(() => useBusinessConfig().value ?? {});
+const { user } = useUserSession();
+const yo = computed<any>(() => user.value ?? null);
+
 const money = (n: any) => formatPrice.format(Number(n ?? 0));
 const conSigno = (n: any) => {
   const v = Number(n ?? 0);
   return (v > 0 ? "+" : "") + money(v).replace("S/", "S/ ").trim();
 };
 
-const { nombre } = useLogo();
-const negocio = computed<any>(() => useBusinessConfig().value ?? {});
-const { user } = useUserSession();
-const yo = computed<any>(() => user.value ?? null);
-
-/* Contra qué se cuenta cada forma. Es la mitad del arqueo: sin decirlo, el
+/* Contra qué se cuenta cada forma. Es la mitad del cuadre: sin decirlo, el
    encargado no sabe de dónde sacar la cifra de Yape y acaba copiando la del
-   sistema —que es justo lo que el arqueo intenta comprobar—. */
+   sistema —que es justo lo que el cuadre intenta comprobar—. */
 const CONTRA: Record<string, string> = {
   efectivo: "cuenta el dinero del cajón",
   tarjeta: "cierre de lote del POS (Niubiz)",
@@ -437,25 +535,40 @@ const TIPOS = [
 ];
 const etiquetaMov = (t: string) => TIPOS.find((x) => x.value === t)?.label ?? t;
 
-const abiertas = ref<any[]>([]);
+const turnos = ref<any[]>([]);
 const cajeros = ref<any[]>([]);
 const cargando = ref(false);
 const error = ref("");
 
-const modal = ref<"" | "abrir" | "movimiento" | "arqueo">("");
+const modal = ref<"" | "fondo" | "movimiento" | "arqueo" | "cuadre">("");
 const turno = ref<any>(null);
-const fondoRef = ref<HTMLInputElement>();
+const montoRef = ref<HTMLInputElement>();
+const contadoRef = ref<HTMLInputElement>();
 
-const apertura = reactive<{ cashierId: number | null; openingFloat: number | null }>({
+const fondo = reactive<{ cashierId: number | null; openingFloat: number | null; habilitar: boolean }>({
   cashierId: null,
   openingFloat: null,
+  habilitar: true,
 });
 const mov = reactive({ type: "out", amount: null as number | null, reason: "" });
+const arqueo = reactive({ countedCash: null as number | null, observation: "" });
 const contado = ref<Record<string, number | null>>({});
-const notas = ref("");
-const cuadre = ref<any>(null);
+const vouchers = ref<Record<string, number | null>>({});
+const observacion = ref("");
+const cuadrado = ref<any>(null);
+const papel = ref(false);
 
-/** Ninguna forma puede quedar en blanco: un arqueo a medias parece completo. */
+const elegidoSinDni = computed(() => {
+  const c = cajeros.value.find((x: any) => x.id === fondo.cashierId);
+  return Boolean(c && !c.dni);
+});
+
+const difArqueo = computed(() => {
+  if (arqueo.countedCash === null || turno.value?.expectedCash === undefined) return null;
+  return Math.round((Number(arqueo.countedCash) - Number(turno.value.expectedCash)) * 100) / 100;
+});
+
+/** Ninguna forma puede quedar en blanco: un cuadre a medias parece completo. */
 const todoContado = computed(() =>
   (turno.value?.toCount || []).every((f: any) => {
     const v = contado.value[f.type];
@@ -463,23 +576,57 @@ const todoContado = computed(() =>
   })
 );
 
+/** Si algo no cuadra —dinero o papeles— la observación deja de ser opcional. */
+const hayDiferencias = computed(() =>
+  (turno.value?.toCount || []).some((f: any) => {
+    const c = contado.value[f.type];
+    if (c !== null && c !== undefined && Math.abs(Number(c) - Number(f.amount)) >= 0.005) return true;
+    if (f.type === "efectivo") return false;
+    const v = vouchers.value[f.type];
+    return v !== null && v !== undefined && Number(v) !== Number(f.sales);
+  })
+);
+
+function avisoDe(f: any) {
+  const c = contado.value[f.type];
+  if (c !== null && c !== undefined && Math.abs(Number(c) - Number(f.amount)) >= 0.005) {
+    const d = Number(c) - Number(f.amount);
+    return d > 0 ? `Sobran ${money(d)}` : `Faltan ${money(Math.abs(d))}`;
+  }
+  if (f.type === "efectivo") return "";
+  const v = vouchers.value[f.type];
+  if (v !== null && v !== undefined && Number(v) !== Number(f.sales)) {
+    return `El sistema dice ${f.sales} venta(s) y tienes ${v} voucher(s)`;
+  }
+  return "";
+}
+
+const totalVentas = (t: any) =>
+  (t.toCount || []).reduce((a: number, f: any) => a + Number(f.sales || 0), 0);
 const formasDe = (t: any) =>
-  (t.toCount || []).map((f: any) => f.label).join(" · ") || "sin ventas aún";
+  (t.toCount || []).filter((f: any) => f.sales > 0).map((f: any) => f.label).join(" · ") || "sin ventas aún";
+
+function badgeEstado(estado: string) {
+  if (estado === "open") return "sp-badge--success";
+  if (estado === "closed") return "sp-badge--warning";
+  if (estado === "enabled") return "sp-badge--primary";
+  return "sp-badge--neutral";
+}
 
 async function cargar() {
   try {
-    const res: any = await $fetch("/api/admin/caja/sesiones/abiertas");
-    abiertas.value = res?.data ?? [];
+    const res: any = await $fetch("/api/admin/caja/sesiones/activas");
+    turnos.value = res?.data ?? [];
   } catch {
-    abiertas.value = [];
+    turnos.value = [];
   }
 }
 
 async function cargarCajeros() {
   try {
-    const res: any = await $fetch("/api/admin/users", { query: { role: "cajero", limit: 100 } });
-    // Un cajero desactivado no puede entrar: aperturarle una caja deja un
-    // turno abierto que nadie va a usar y que alguien tendrá que cuadrar.
+    const res: any = await $fetch("/api/admin/users", { query: { role: "cajero", size: 100 } });
+    // Un cajero desactivado no puede entrar: asignarle fondo deja un turno
+    // abierto que nadie va a usar y que alguien tendrá que cuadrar.
     cajeros.value = (res?.data ?? []).filter((u: any) => u.isActive);
   } catch {
     cajeros.value = [];
@@ -493,63 +640,80 @@ function mensaje(e: any, porDefecto: string) {
 function cerrarModal() {
   modal.value = "";
   error.value = "";
-  if (cuadre.value) {
-    cuadre.value = null;
+  if (cuadrado.value) {
+    cuadrado.value = null;
     cargar();
   }
 }
 
-function abrirApertura() {
+// ── Asignar fondo ───────────────────────────────────────────
+
+function abrirAsignacion() {
   error.value = "";
-  apertura.cashierId = null;
-  apertura.openingFloat = null;
-  modal.value = "abrir";
+  fondo.cashierId = null;
+  fondo.openingFloat = null;
+  fondo.habilitar = true;
+  modal.value = "fondo";
   cargarCajeros();
-  nextTick(() => fondoRef.value?.focus());
+  nextTick(() => montoRef.value?.focus());
 }
 
-async function aperturar() {
+async function asignar() {
   error.value = "";
-  if (!apertura.cashierId) {
-    error.value = "Elige a qué cajero le entregas la caja.";
+  if (!fondo.cashierId) {
+    error.value = "Elige a qué cajero le entregas el fondo.";
     return;
   }
-  /* Vacío no es cero. Una caja puede aperturarse sin fondo —se escribe 0—
-     pero dejarlo en blanco suele ser un despiste, y abrir con 0 por
-     accidente hace que el arqueo salga mal sin que nadie sepa por qué. */
-  if (apertura.openingFloat === null || (apertura.openingFloat as any) === "") {
+  /* Vacío no es cero. Un turno puede empezar sin fondo —se escribe 0— pero
+     dejarlo en blanco suele ser un despiste, y empezar con 0 por accidente
+     hace que el cuadre salga mal sin que nadie sepa por qué. */
+  if (fondo.openingFloat === null || (fondo.openingFloat as any) === "") {
     error.value = "Escribe el fondo inicial. Si empieza sin sencillo, pon 0.";
-    fondoRef.value?.focus();
+    montoRef.value?.focus();
     return;
   }
-  if (apertura.openingFloat < 0) {
+  if (fondo.openingFloat < 0) {
     error.value = "El fondo no puede ser negativo.";
-    fondoRef.value?.focus();
+    montoRef.value?.focus();
     return;
   }
 
   const elegido =
-    cajeros.value.find((c: any) => c.id === apertura.cashierId) ??
-    (apertura.cashierId === yo.value?.id ? yo.value : null);
+    cajeros.value.find((c: any) => c.id === fondo.cashierId) ??
+    (fondo.cashierId === yo.value?.id ? yo.value : null);
 
   cargando.value = true;
   try {
-    await $fetch("/api/admin/caja/abrir", {
+    await $fetch("/api/admin/caja/asignar-fondo", {
       method: "POST",
       body: {
-        cashierId: apertura.cashierId,
+        cashierId: fondo.cashierId,
         cashierName: elegido?.name || elegido?.email || null,
-        openingFloat: apertura.openingFloat,
+        cashierDni: elegido?.dni || null,
+        openingFloat: fondo.openingFloat,
+        habilitar: fondo.habilitar,
       },
     });
     modal.value = "";
     await cargar();
   } catch (e: any) {
-    error.value = mensaje(e, "No se pudo aperturar la caja");
+    error.value = mensaje(e, "No se pudo asignar el fondo");
   } finally {
     cargando.value = false;
   }
 }
+
+async function habilitar(t: any) {
+  error.value = "";
+  try {
+    await $fetch(`/api/admin/caja/${t.id}/habilitar`, { method: "POST" });
+    await cargar();
+  } catch (e: any) {
+    error.value = mensaje(e, "No se pudo habilitar");
+  }
+}
+
+// ── Movimientos ─────────────────────────────────────────────
 
 function abrirMovimiento(t: any) {
   error.value = "";
@@ -577,40 +741,76 @@ async function guardarMovimiento() {
   }
 }
 
+// ── Arqueo sorpresivo ───────────────────────────────────────
+
 function abrirArqueo(t: any) {
   error.value = "";
   turno.value = t;
-  cuadre.value = null;
-  notas.value = "";
-  contado.value = {};
-  for (const f of t.toCount || []) contado.value[f.type] = null;
+  arqueo.countedCash = null;
+  arqueo.observation = "";
   modal.value = "arqueo";
+  nextTick(() => contadoRef.value?.focus());
 }
 
-async function cerrarCaja() {
+async function guardarArqueo() {
   error.value = "";
   cargando.value = true;
   try {
-    const cifras: Record<string, number> = {};
-    for (const [k, v] of Object.entries(contado.value)) cifras[k] = Number(v ?? 0);
-    cuadre.value = await $fetch("/api/admin/caja/cerrar", {
+    await $fetch(`/api/admin/caja/${turno.value?.id}/arqueo`, {
       method: "POST",
-      body: { sessionId: turno.value?.id, counted: cifras, notes: notas.value },
+      body: { countedCash: arqueo.countedCash, observation: arqueo.observation },
     });
+    modal.value = "";
+    await cargar();
   } catch (e: any) {
-    error.value = mensaje(e, "No se pudo cerrar la caja");
+    error.value = mensaje(e, "No se pudo guardar el arqueo");
   } finally {
     cargando.value = false;
   }
 }
 
-/* La clase en el body es lo que decide qué se imprime, y se quita después:
-   si se quedara puesta, la siguiente impresión de cualquier pantalla saldría
-   en blanco. */
-function imprimirCierre() {
-  document.body.classList.add("sp-imprimiendo-cierre");
-  window.print();
-  document.body.classList.remove("sp-imprimiendo-cierre");
+// ── Cuadre ──────────────────────────────────────────────────
+
+function abrirCuadre(t: any) {
+  error.value = "";
+  turno.value = t;
+  cuadrado.value = null;
+  observacion.value = "";
+  contado.value = {};
+  vouchers.value = {};
+  for (const f of t.toCount || []) {
+    contado.value[f.type] = null;
+    if (f.type !== "efectivo") vouchers.value[f.type] = null;
+  }
+  modal.value = "cuadre";
+}
+
+async function cuadrar() {
+  error.value = "";
+  cargando.value = true;
+  try {
+    const cifras: Record<string, number> = {};
+    for (const [k, v] of Object.entries(contado.value)) cifras[k] = Number(v ?? 0);
+    const papeles: Record<string, number> = {};
+    for (const [k, v] of Object.entries(vouchers.value)) {
+      if (v !== null && v !== undefined && (v as any) !== "") papeles[k] = Number(v);
+    }
+    cuadrado.value = await $fetch(`/api/admin/caja/${turno.value?.id}/cuadrar`, {
+      method: "POST",
+      body: { counted: cifras, vouchers: papeles, observation: observacion.value },
+    });
+    await imprimir();
+  } catch (e: any) {
+    error.value = mensaje(e, "No se pudo cuadrar la caja");
+  } finally {
+    cargando.value = false;
+  }
+}
+
+async function imprimir() {
+  papel.value = true;
+  await imprimirPapel();
+  papel.value = false;
 }
 
 function claseDif(d: any) {
@@ -623,8 +823,8 @@ function textoDif(d: any) {
   const v = Number(d ?? 0);
   if (Math.abs(v) < 0.005) return "El efectivo cuadra exactamente.";
   return v > 0
-    ? `Sobran ${money(v)} en el cajón. Queda anotado en el turno.`
-    : `Faltan ${money(Math.abs(v))} en el cajón. Queda anotado en el turno.`;
+    ? `Sobran ${money(v)} en el cajón.`
+    : `Faltan ${money(Math.abs(v))} en el cajón.`;
 }
 
 onMounted(() => {
@@ -641,7 +841,13 @@ onMounted(() => {
 }
 .cajas-pie a { color: var(--sp-primary); font-weight: 600; }
 
-.cajas-modal { max-width: 560px; }
+.cajas-espera {
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  font-style: italic;
+}
+
+.cajas-modal { max-width: 580px; }
 
 .cajas-campo { margin-bottom: 1rem; }
 .cajas-campo input,
@@ -649,16 +855,15 @@ onMounted(() => {
 .cajas-money { display: flex; align-items: center; gap: 0.4rem; }
 .cajas-money > span { font-weight: 700; color: var(--sp-text-soft); }
 
-.cajas-contra {
-  display: block;
-  margin-top: 0.1rem;
-  font-size: var(--sp-text-xs);
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--sp-text-soft);
-}
 .cajas-opt { font-weight: 500; color: var(--sp-text-soft); }
+.cajas-req {
+  margin-left: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #b91c1c;
+}
 
 .cajas-nota {
   margin: 0.35rem 0 0;
@@ -667,6 +872,24 @@ onMounted(() => {
   line-height: 1.45;
 }
 .cajas-nota a { color: var(--sp-primary); font-weight: 600; }
+
+.cajas-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: var(--sp-text-sm);
+  cursor: pointer;
+}
+.cajas-check input { margin-top: 0.2rem; }
+.cajas-check em {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  line-height: 1.4;
+}
 
 .cajas-aviso {
   margin: 0 0 1rem;
@@ -716,7 +939,36 @@ onMounted(() => {
 .cajas-tipo:hover { border-color: var(--sp-border-strong); }
 .cajas-tipo--on { border-color: var(--sp-primary); background: var(--sp-primary-soft); }
 
-/* ── El cuadre ── */
+/* Una tarjeta por forma de pago: el conteo de cada una con lo que dice el
+   sistema al lado, que es contra lo que se contrasta. */
+.cajas-forma {
+  margin-bottom: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-surface-subtle);
+}
+.cajas-forma__head { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.5rem; }
+.cajas-forma__head strong { font-size: var(--sp-text-sm); color: var(--sp-text-strong); }
+.cajas-forma__head span { font-size: var(--sp-text-xs); color: var(--sp-text-soft); }
+
+.cajas-forma__sistema { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; gap: 1.25rem; }
+.cajas-forma__sistema li { display: flex; flex-direction: column; }
+.cajas-forma__sistema span { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sp-text-soft); font-weight: 700; }
+.cajas-forma__sistema strong { font-size: var(--sp-text-sm); font-variant-numeric: tabular-nums; }
+
+.cajas-forma__campos { display: flex; gap: 0.75rem; }
+.cajas-forma__campos label { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+.cajas-forma__campos span { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sp-text-soft); font-weight: 700; }
+.cajas-forma__campos input { width: 100%; }
+
+.cajas-forma__aviso {
+  margin: 0.5rem 0 0;
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: #92600a;
+}
+
 .cajas-cuadre { list-style: none; margin: 0 0 1rem; padding: 0; }
 .cajas-cuadre li {
   display: flex;
@@ -748,12 +1000,13 @@ onMounted(() => {
 .cajas-dif--sobra { background: var(--sp-warning-soft); color: #92600a; }
 .cajas-dif--falta { background: var(--sp-danger-soft); color: #b91c1c; }
 
-/* En la tabla del arqueo la diferencia es una celda, no un bloque: hereda
+/* En la tabla del cuadre la diferencia es una celda, no un bloque: hereda
    el color pero no el fondo ni el relleno. */
 .cajas-arqueo__tabla td.cajas-dif--ok,
 .cajas-arqueo__tabla td.cajas-dif--sobra,
 .cajas-arqueo__tabla td.cajas-dif--falta {
   background: none;
+  margin: 0;
   padding: 0.35rem 0.5rem;
   font-weight: 700;
 }
@@ -761,14 +1014,6 @@ onMounted(() => {
 .cajas-arqueo__tabla td.cajas-dif--sobra { color: #92600a; }
 .cajas-arqueo__tabla td.cajas-dif--falta { color: #b91c1c; }
 
-.cajas-arqueo__label {
-  margin: 0 0 0.4rem;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  color: var(--sp-text-soft);
-}
 .cajas-arqueo__tabla { width: 100%; border-collapse: collapse; font-size: var(--sp-text-sm); }
 .cajas-arqueo__tabla th {
   text-align: right;
@@ -787,67 +1032,4 @@ onMounted(() => {
   border-bottom: 1px solid var(--sp-border);
   font-variant-numeric: tabular-nums;
 }
-
-/* ── El papel ──
-   Fuera de la pantalla, no display:none: un elemento con display:none no se
-   imprime nunca, por mucho que la regla de impresión lo pida. */
-.slip {
-  position: absolute;
-  left: -10000px;
-  top: 0;
-  width: 80mm;
-  padding: 4mm;
-  background: #fff;
-  color: #000;
-  font-family: var(--sp-font, system-ui), sans-serif;
-  font-size: 10px;
-  line-height: 1.4;
-}
-.slip__head { text-align: center; margin-bottom: 2mm; }
-.slip__store { margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; }
-.slip__meta { margin: 0; font-size: 9px; }
-.slip__kind {
-  margin: 2mm 0;
-  padding: 1mm 0;
-  border-top: 1px dashed #000;
-  border-bottom: 1px dashed #000;
-  text-align: center;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-.slip__info { margin: 0 0 2mm; display: grid; gap: 0.5mm; }
-.slip__info > div { display: flex; justify-content: space-between; gap: 2mm; }
-.slip__info dt { margin: 0; font-weight: 700; }
-.slip__info dd { margin: 0; text-align: right; }
-
-.slip__tabla { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
-.slip__tabla th {
-  text-align: right;
-  border-bottom: 1px solid #000;
-  padding: 0.5mm 0;
-  font-size: 9px;
-}
-.slip__tabla th:first-child, .slip__tabla td:first-child { text-align: left; }
-.slip__tabla td { padding: 0.5mm 0; }
-.slip__n { text-align: right; font-variant-numeric: tabular-nums; }
-
-.slip__detalle { list-style: none; margin: 0 0 2mm; padding: 2mm 0 0; border-top: 1px dashed #000; }
-.slip__detalle li { display: flex; justify-content: space-between; gap: 2mm; }
-.slip__mov { font-size: 9px; }
-.slip__dif {
-  margin: 0 0 2mm;
-  padding: 1mm 0;
-  border-top: 1px dashed #000;
-  border-bottom: 1px dashed #000;
-  font-weight: 800;
-  text-align: center;
-}
-.slip__notas { margin: 0 0 3mm; font-size: 9px; }
-
-.slip__firmas { display: flex; gap: 4mm; margin: 8mm 0 2mm; }
-.slip__firmas > div { flex: 1; border-top: 1px solid #000; padding-top: 1mm; text-align: center; }
-.slip__firmas span { display: block; font-size: 9px; font-weight: 700; }
-.slip__firmas p { margin: 0; font-size: 9px; }
-
-.slip__pie { margin: 0; font-size: 8px; text-align: center; }
 </style>

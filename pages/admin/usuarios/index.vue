@@ -160,6 +160,19 @@
               <p class="sp-drawer-hint">{{ ayudaRol }}</p>
             </div>
 
+            <!-- El DNI del personal va impreso en el ticket de apertura
+                 de caja y en el papel de caja: un papel firmado que solo
+                 dice "Cajero" no identifica a nadie cuando hay dos con el
+                 mismo nombre de pila. -->
+            <div v-if="esPersonal" class="sp-drawer-field">
+              <label class="sp-drawer-label">DNI</label>
+              <input v-model="form.dni" type="text" class="sp-drawer-input"
+                     placeholder="70123456" maxlength="20" />
+              <p class="sp-drawer-hint">
+                Se imprime en los papeles de caja que firma.
+              </p>
+            </div>
+
             <!-- La ficha de cliente solo existe para el rol cliente: el
                  backend la borra si el rol cambia a staff. -->
             <template v-if="form.role === 'customer'">
@@ -414,6 +427,10 @@ async function guardar() {
       body.phone = form.phone.trim() || null;
       body.dni = form.dni.trim() || null;
       body.address = form.address.trim() || null;
+    } else {
+      // El personal no tiene ficha de cliente, pero sí DNI: va impreso en
+      // los papeles de caja que firma.
+      body.dni = form.dni.trim() || null;
     }
 
     if (editando.value) {

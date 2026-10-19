@@ -2968,32 +2968,120 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Imprimir el cierre de caja
+   Los papeles de caja
 
-   El papel vive pegado al <body> (un Teleport) y fuera de la
-   pantalla. Al imprimir se apagan sus hermanos y se trae al origen
-   de la hoja.
+   Son tres —ticket de apertura, boleta de cierre y papel de
+   caja— y los tres salen por el mismo rollo de 80 mm que los
+   comprobantes de venta. Un solo bloque de estilos para los
+   tres: con uno por componente, el día que cambie el ancho del
+   rollo hay que acordarse de tres sitios.
 
-   Va aquí y no en el <style scoped> de la pantalla porque el
+   Viven fuera de la pantalla, no con display:none: un elemento
+   con display:none no se imprime nunca, por mucho que la regla
+   de impresión lo pida.
+   ───────────────────────────────────────────────────────────── */
+.sp-papel {
+  position: absolute;
+  left: -10000px;
+  top: 0;
+  width: 80mm;
+  padding: 4mm;
+  background: #fff;
+  color: #000;
+  font-family: var(--sp-font), system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.sp-papel__head { text-align: center; margin-bottom: 2mm; }
+.sp-papel__store { margin: 0; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+.sp-papel__meta { margin: 0; font-size: 9px; }
+
+.sp-papel__kind {
+  margin: 2mm 0;
+  padding: 1mm 0;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  text-align: center;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sp-papel__info { margin: 0 0 2mm; display: grid; gap: 0.5mm; }
+.sp-papel__info > div { display: flex; justify-content: space-between; gap: 2mm; }
+.sp-papel__info dt { margin: 0; font-weight: 700; }
+.sp-papel__info dd { margin: 0; text-align: right; }
+
+.sp-papel__tabla { width: 100%; border-collapse: collapse; margin-bottom: 2mm; }
+.sp-papel__tabla th {
+  text-align: right;
+  border-bottom: 1px solid #000;
+  padding: 0.5mm 0;
+  font-size: 9px;
+}
+.sp-papel__tabla th:first-child,
+.sp-papel__tabla td:first-child { text-align: left; }
+.sp-papel__tabla td { padding: 0.5mm 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+.sp-papel__lista { list-style: none; margin: 0 0 2mm; padding: 2mm 0 0; border-top: 1px dashed #000; }
+.sp-papel__lista li { display: flex; justify-content: space-between; gap: 2mm; }
+.sp-papel__lista li span { padding-right: 2mm; }
+.sp-papel__lista strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sp-papel__chico { font-size: 9px; }
+
+.sp-papel__destacado {
+  margin: 0 0 2mm;
+  padding: 1mm 0;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  font-weight: 800;
+  text-align: center;
+}
+
+.sp-papel__nota { margin: 0 0 3mm; font-size: 9px; }
+
+/* El hueco en blanco antes de la línea es el sitio para firmar:
+   sin él la firma se monta encima del texto. */
+.sp-papel__firmas { display: flex; gap: 4mm; margin: 10mm 0 2mm; }
+.sp-papel__firmas > div { flex: 1; border-top: 1px solid #000; padding-top: 1mm; text-align: center; }
+.sp-papel__firmas span { display: block; font-size: 9px; font-weight: 700; }
+.sp-papel__firmas p { margin: 0; font-size: 9px; }
+
+.sp-papel__pie { margin: 0; font-size: 8px; text-align: center; }
+
+/* ─────────────────────────────────────────────────────────────
+   Imprimir uno de los papeles
+
+   El papel cuelga del <body> (un Teleport) y fuera de la
+   pantalla. Al imprimir se apagan sus hermanos y se trae al
+   origen de la hoja. Solo hay uno montado a la vez: el
+   componente renderiza el que toca y ninguno más.
+
+   Va aquí y no en el <style scoped> de cada pantalla porque el
    compilador de Vue le añadiría el atributo del componente al
-   último elemento del selector: `body > *[data-v-x]` solo casa con
-   lo que pintó ese componente, y lo que hay que apagar es el resto
-   de la página.
+   último elemento del selector: `body > *[data-v-x]` solo casa
+   con lo que pintó ese componente, y lo que hay que apagar es
+   el resto de la página.
 
-   display:none en los hermanos, y no visibility:hidden, porque con
-   visibility el hueco se queda reservado y el papel sale desplazado
-   hasta donde estaba en pantalla.
+   display:none en los hermanos, y no visibility:hidden, porque
+   con visibility el hueco se queda reservado y el papel sale
+   desplazado hasta donde estaba en pantalla.
    ───────────────────────────────────────────────────────────── */
 @media print {
-  body.sp-imprimiendo-cierre > *:not(#sp-print-slip) {
+  /* El comprobante de venta de /admin/caja no entra aquí: va
+     dentro de la página porque el cajero lo ve en pantalla
+     después de cobrar, así que no se puede apagar a sus
+     hermanos. Lleva su propia clase, sp-imprimiendo-ticket, y
+     la técnica de visibility. Son dos mecanismos a propósito. */
+  body.sp-imprimiendo > *:not(.sp-papel) {
     display: none !important;
   }
 
-  /* Solo se le quita el escondite. El ancho no se toca: está pensado en
-     80 mm, el del rollo con el que ya se imprimen los comprobantes de
-     venta, y estirado a una A4 el papel queda con cuatro líneas sueltas
-     de lado a lado. */
-  body.sp-imprimiendo-cierre #sp-print-slip {
+  /* Solo se le quita el escondite. El ancho no se toca: está
+     pensado en 80 mm, el del rollo con el que ya se imprimen los
+     comprobantes de venta, y estirado a una A4 el papel queda
+     con cuatro líneas sueltas de lado a lado. */
+  body.sp-imprimiendo .sp-papel {
     position: static !important;
     left: auto !important;
     top: auto !important;

@@ -5,7 +5,7 @@
         <thead>
           <tr>
             <th class="sp-th">Cajero</th>
-            <th class="sp-th">Cerrada</th>
+            <th class="sp-th">Cuadrada</th>
             <th class="sp-th sp-th--right">Fondo</th>
             <th class="sp-th sp-th--right">Efectivo</th>
             <th class="sp-th sp-th--right">Esperado</th>
@@ -16,14 +16,15 @@
         <tbody>
           <tr v-for="t in turnos" :key="t.id" class="sp-tr">
             <td class="sp-td">
-              <p class="sp-table-title">{{ t.cashierName || t.openedByName || "—" }}</p>
+              <p class="sp-table-title">{{ t.cashierName || "—" }}</p>
               <p class="sp-table-sub">
                 {{ formatDateTimeCompact(t.openedAt) }}
-                <template v-if="t.openedByName"> · la aperturó {{ t.openedByName }}</template>
+                <template v-if="t.assignedByName"> · fondo de {{ t.assignedByName }}</template>
               </p>
             </td>
             <td class="sp-td sp-td--muted">
-              <span class="sp-table-date">{{ formatDateTimeCompact(t.closedAt) }}</span>
+              <span class="sp-table-date">{{ formatDateTimeCompact(t.settledAt) }}</span>
+              <p v-if="t.settledByName" class="sp-table-sub">por {{ t.settledByName }}</p>
             </td>
             <td class="sp-td sp-td--right"><span class="sp-table-num">{{ money(t.openingFloat) }}</span></td>
             <td class="sp-td sp-td--right"><span class="sp-table-num">{{ money(t.cashSales) }}</span></td>
@@ -40,6 +41,12 @@
               <p v-for="c in descuadres(t)" :key="c.type" class="sp-table-sub">
                 {{ c.label }}: {{ etiqueta(c.difference) }}
               </p>
+              <p v-for="c in sinPapeles(t)" :key="'v' + c.type" class="sp-table-sub">
+                {{ c.label }}: {{ c.vouchersCounted }} voucher(s) de {{ c.sales }} venta(s)
+              </p>
+              <p v-if="(t.audits || []).length" class="sp-table-sub">
+                {{ t.audits.length }} arqueo(s) sorpresivo(s) durante el turno
+              </p>
               <p v-if="t.closingNotes" class="sp-table-sub">{{ t.closingNotes }}</p>
             </td>
           </tr>
@@ -50,7 +57,7 @@
                 <div class="sp-table-empty__icon">
                   <Wallet class="w-8 h-8 text-current" stroke-width="1.5" />
                 </div>
-                <p class="sp-table-empty__msg">Todavía no se ha cerrado ninguna caja</p>
+                <p class="sp-table-empty__msg">Todavía no se ha cuadrado ninguna caja</p>
               </div>
             </td>
           </tr>
@@ -66,9 +73,9 @@
 /**
  * Los turnos de caja ya cuadrados.
  *
- * Las cifras se leen tal cual se guardaron al cerrar, no se recalculan:
- * un arqueo es una foto de ese momento, y recalcularlo daría otro número
- * en cuanto se anule una venta de ese turno.
+ * Las cifras se leen tal cual se guardaron al cuadrar, no se recalculan: un
+ * cuadre es una foto de ese momento, y recalcularlo daría otro número en
+ * cuanto se anule una venta de ese turno.
  */
 import { Wallet } from "lucide-vue-next";
 
@@ -108,6 +115,18 @@ function badge(d: any) {
 function descuadres(t: any) {
   return (t.counts || []).filter(
     (c: any) => c.type !== "efectivo" && Math.abs(Number(c.difference ?? 0)) >= 0.005
+  );
+}
+
+/* Y las que cuadraron de dinero pero no de papeles: quince ventas con
+   tarjeta tienen que ser quince vouchers. */
+function sinPapeles(t: any) {
+  return (t.counts || []).filter(
+    (c: any) =>
+      c.type !== "efectivo" &&
+      c.vouchersCounted !== null &&
+      c.vouchersCounted !== undefined &&
+      Number(c.vouchersCounted) !== Number(c.sales)
   );
 }
 

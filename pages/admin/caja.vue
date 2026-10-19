@@ -267,6 +267,17 @@
             <label>Efectivo recibido</label>
             <input v-model.number="efectivo" type="number" class="sp-drawer-input" min="0" step="0.10" placeholder="0.00" />
           </div>
+          <!-- El nº de operación solo donde hay voucher. En efectivo el
+               comprobante del cajero es el propio dinero, y pedirlo ahí
+               sería un campo que nadie puede rellenar.
+               Es lo que permite contrastar el papel con el sistema al
+               cuadrar: sin él, dos ventas del mismo importe cobradas por
+               error se ven idénticas. -->
+          <div v-else-if="!esPedido" class="caja-field">
+            <label>Nº de operación del voucher</label>
+            <input v-model="voucher" type="text" class="sp-drawer-input"
+                   placeholder="El del voucher de comercio" />
+          </div>
         </div>
 
         <dl class="caja-totales">
@@ -449,6 +460,9 @@ const canales = computed(() => opciones.value?.channels ?? [{ value: "whatsapp",
 
 const canal = ref("whatsapp");
 const formaDePago = ref("efectivo");
+/* El número que trae el voucher de comercio. Se guarda en la venta para
+   que el cuadre pueda contrastar papeles con sistema. */
+const voucher = ref("");
 const descuento = ref(0);
 
 /*
@@ -522,6 +536,7 @@ async function cobrar() {
         paymentType: formaDePago.value,
         paymentStatus: esPedido.value && !pagado.value ? "pending" : "paid",
         cashReceived: formaDePago.value === "efectivo" ? efectivo.value : null,
+        voucherNumber: formaDePago.value === "efectivo" ? null : voucher.value.trim() || null,
       },
     });
 
@@ -571,6 +586,9 @@ function limpiar() {
   descuento.value = 0;
   cupon.value = "";
   efectivo.value = null;
+  // Si no se limpia, el nº de la venta anterior se arrastra a la siguiente
+  // y el cuadre encuentra dos ventas con el mismo voucher.
+  voucher.value = "";
   pagado.value = true;
   Object.assign(cliente, vacio());
   error.value = "";

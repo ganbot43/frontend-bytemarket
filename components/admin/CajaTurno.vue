@@ -1,19 +1,12 @@
 <template>
   <div class="turno">
-    <!-- ── Sin caja: no hay nada que pulsar aquí ──────────────── -->
-    <!-- El cajero no se apertura su propia caja y tampoco la cuadra. Antes
-         esta tarjeta tenía el formulario del fondo, y eso era justo lo que
-         rompía el control: quien vende decidía con cuánto empieza y
-         declaraba él solo lo que había al final. -->
-    <section v-if="!resumen.abierta" class="sp-card turno-espera">
-      <h2 class="sp-card__title">Tu caja todavía no está abierta</h2>
-      <p class="turno-nota" v-if="esCajero">
-        Tu jefe de ventas tiene que aperturarla y entregarte el fondo.
-        Cuando lo haga, pulsa aquí y podrás cobrar.
-      </p>
-      <p class="turno-nota" v-else>
-        Para cobrar en el mostrador necesitas una caja aperturada a tu
-        nombre. Puedes aperturarla tú desde Cajas.
+    <!-- ── Sin fondo asignado ─────────────────────────────────── -->
+    <section v-if="!turno.estado" class="sp-card turno-aviso">
+      <h2 class="sp-card__title">Todavía no tienes fondo asignado</h2>
+      <p class="turno-nota">
+        {{ esCajero
+          ? "Tu jefe de ventas tiene que registrarte el fondo y habilitarte. Cuando lo haga, pulsa aquí."
+          : "Para cobrar en el mostrador necesitas un turno a tu nombre. Puedes asignártelo tú desde Cajas." }}
       </p>
       <div class="turno-acciones turno-acciones--inicio">
         <button class="sp-drawer-btn sp-drawer-btn--ghost" :disabled="cargando" @click="cargar">
@@ -25,61 +18,249 @@
       </div>
     </section>
 
-    <!-- ── Caja abierta: la barra del turno ───────────────────── -->
-    <section v-else class="sp-card turno-barra">
+    <!-- ── Fondo asignado pero sin habilitar ──────────────────── -->
+    <section v-else-if="turno.estado === 'fund_assigned'" class="sp-card turno-aviso">
+      <h2 class="sp-card__title">Tu fondo está registrado</h2>
+      <p class="turno-nota">
+        {{ turno.assignedByName || "Tu jefe" }} registró {{ money(turno.openingFloat) }},
+        pero todavía no te ha habilitado para abrir.
+      </p>
+      <button class="sp-drawer-btn sp-drawer-btn--ghost" :disabled="cargando" @click="cargar">
+        {{ cargando ? "Comprobando…" : "Comprobar de nuevo" }}
+      </button>
+    </section>
+
+    <!-- ── Habilitada: el cajero confirma y firma ─────────────── -->
+    <section v-else-if="turno.estado === 'enabled'" class="sp-card turno-abrir">
+      <div class="turno-abrir__texto">
+        <h2 class="sp-card__title">Tu caja está lista para abrir</h2>
+        <p class="turno-nota">
+          <strong>{{ turno.assignedByName || "Tu jefe" }}</strong> te asignó un fondo de
+          <strong>{{ money(turno.openingFloat) }}</strong>. Cuéntalo antes de abrir: al
+          confirmar, ese dinero pasa a ser tu responsabilidad y se imprime el
+          ticket que firmas.
+        </p>
+        <p class="turno-nota">
+          Si lo que tienes en la mano no coincide, no abras: díselo a tu jefe.
+        </p>
+      </div>
+      <div class="turno-abrir__form">
+        <div class="turno-fondo">
+          <span class="turno-fondo__label">Fondo recibido</span>
+          <strong class="turno-fondo__valor">{{ money(turno.openingFloat) }}</strong>
+        </div>
+        <button class="sp-page-btn" :disabled="cargando" @click="abrir">
+          {{ cargando ? "Abriendo…" : "Abrir caja" }}
+        </button>
+      </div>
+      <p v-if="error" class="turno-error">{{ error }}</p>
+    </section>
+
+    <!-- ── Abierta: la barra del turno ────────────────────────── -->
+    <section v-else-if="turno.estado === 'open'" class="sp-card turno-barra">
       <div class="turno-dato">
         <span class="turno-dato__label">Caja abierta</span>
-        <strong class="turno-dato__valor">{{ formatDateTimeCompact(resumen.openedAt) }}</strong>
+        <strong class="turno-dato__valor">{{ formatDateTimeCompact(turno.openedAt) }}</strong>
         <span class="turno-dato__pie">
-          {{ resumen.cashierName || "—" }}
-          <template v-if="resumen.openedByName"> · la aperturó {{ resumen.openedByName }}</template>
+          {{ turno.cashierName || "—" }}
+          <template v-if="turno.assignedByName"> · fondo de {{ turno.assignedByName }}</template>
         </span>
       </div>
       <div class="turno-dato">
         <span class="turno-dato__label">Fondo recibido</span>
-        <strong class="turno-dato__valor">{{ money(resumen.openingFloat) }}</strong>
+        <strong class="turno-dato__valor">{{ money(turno.openingFloat) }}</strong>
       </div>
       <div class="turno-dato">
         <span class="turno-dato__label">Cobrado en efectivo</span>
-        <strong class="turno-dato__valor">{{ money(resumen.cashSales) }}</strong>
+        <strong class="turno-dato__valor">{{ money(turno.cashSales) }}</strong>
       </div>
       <div class="turno-dato">
         <span class="turno-dato__label">Entradas y salidas</span>
-        <strong class="turno-dato__valor" :class="{ 'turno-neg': (resumen.movementsTotal ?? 0) < 0 }">
-          {{ conSigno(resumen.movementsTotal) }}
+        <strong class="turno-dato__valor" :class="{ 'turno-neg': (turno.movementsTotal ?? 0) < 0 }">
+          {{ conSigno(turno.movementsTotal) }}
         </strong>
-        <span class="turno-dato__pie">{{ (resumen.movements || []).length }} movimiento(s)</span>
+        <span class="turno-dato__pie">{{ (turno.movements || []).length }} movimiento(s)</span>
+      </div>
+      <div v-if="(turno.audits || []).length" class="turno-dato">
+        <span class="turno-dato__label">Arqueos del turno</span>
+        <strong class="turno-dato__valor">{{ turno.audits.length }}</strong>
+        <span class="turno-dato__pie">el último, {{ formatDateTimeCompact(ultimoArqueo) }}</span>
       </div>
 
-      <!-- Ni "cerrar caja" ni "movimiento": las dos son del encargado, y un
-           botón que siempre devuelve 403 solo sirve para que el cajero crea
-           que algo está roto. Lo que ve es a quién le toca. -->
-      <p class="turno-cierre">
-        El cierre lo hace {{ esCajero ? "tu jefe de ventas" : "el encargado" }}:
-        cuenta el efectivo y los vouchers, arquea y te da el papel para firmar.
-      </p>
+      <div class="turno-acciones">
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="imprimir('apertura')">
+          Reimprimir apertura
+        </button>
+        <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="cargando" @click="confirmarCierre = true">
+          Cerrar caja
+        </button>
+      </div>
+      <p v-if="error" class="turno-error turno-error--ancho">{{ error }}</p>
     </section>
+
+    <!-- ── Cerrada, esperando al encargado ────────────────────── -->
+    <section v-else-if="turno.estado === 'closed'" class="sp-card turno-aviso">
+      <h2 class="sp-card__title">Cerraste tu caja</h2>
+      <p class="turno-nota">
+        {{ formatDateTimeCompact(turno.closedAt) }}. Lleva el efectivo y los
+        vouchers a tu jefe de ventas: él los cuenta, cuadra el turno y te da
+        el papel de caja para firmar. Hasta entonces no puedes volver a vender.
+      </p>
+      <div class="turno-acciones turno-acciones--inicio">
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="imprimir('cierre')">
+          Reimprimir mi cierre
+        </button>
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" :disabled="cargando" @click="cargar">
+          {{ cargando ? "Comprobando…" : "Comprobar de nuevo" }}
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Confirmar el cierre ────────────────────────────────── -->
+    <Teleport to="body">
+      <Transition name="sp-modal">
+        <div v-if="confirmarCierre" class="sp-modal-backdrop" @click.self="confirmarCierre = false">
+          <div class="sp-modal-box turno-modal" role="dialog" aria-modal="true">
+            <div class="sp-modal-header">
+              <div class="sp-modal-header__content">
+                <h3 class="sp-modal-header__title">¿Cerrar tu caja?</h3>
+                <p class="sp-modal-header__meta">No podrás cobrar más hasta que la cuadren.</p>
+              </div>
+              <button class="sp-modal-close" aria-label="Cerrar" @click="confirmarCierre = false">✕</button>
+            </div>
+            <div class="sp-modal-body">
+              <p class="turno-nota">
+                Se imprime tu boleta de cierre con las ventas por tarjeta y QR,
+                que es la que llevas con los vouchers. El efectivo no va en ese
+                papel: eso lo cuenta tu jefe delante de ti.
+              </p>
+              <p v-if="error" class="turno-error">{{ error }}</p>
+            </div>
+            <div class="sp-modal-footer">
+              <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="confirmarCierre = false">
+                Todavía no
+              </button>
+              <button class="sp-drawer-btn sp-drawer-btn--primary" :disabled="cargando" @click="cerrar">
+                {{ cargando ? "Cerrando…" : "Sí, cerrar" }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- ── Ticket de apertura ─────────────────────────────────── -->
+    <Teleport to="body">
+      <div v-if="papel === 'apertura'" class="sp-papel">
+        <header class="sp-papel__head">
+          <p class="sp-papel__store">{{ negocio.name || nombre }}</p>
+          <p v-if="negocio.ruc" class="sp-papel__meta">RUC {{ negocio.ruc }}</p>
+          <p v-if="negocio.address" class="sp-papel__meta">{{ negocio.address }}</p>
+        </header>
+
+        <p class="sp-papel__kind">Apertura de caja Nº {{ turno.id }}</p>
+
+        <dl class="sp-papel__info">
+          <div><dt>Cajero</dt><dd>{{ turno.cashierName || "—" }}</dd></div>
+          <div v-if="turno.cashierDni"><dt>DNI</dt><dd>{{ turno.cashierDni }}</dd></div>
+          <div><dt>Fondo entregado por</dt><dd>{{ turno.assignedByName || "—" }}</dd></div>
+          <div><dt>Fecha y hora</dt><dd>{{ formatDateTimeCompact(turno.openedAt) }}</dd></div>
+        </dl>
+
+        <p class="sp-papel__destacado">Fondo inicial: {{ money(turno.openingFloat) }}</p>
+
+        <p class="sp-papel__nota">
+          Recibo el fondo arriba indicado y quedo responsable de él hasta el
+          cuadre de este turno.
+        </p>
+
+        <div class="sp-papel__firmas">
+          <div><span>Firma del cajero</span><p>{{ turno.cashierName || "" }}</p></div>
+        </div>
+
+        <p class="sp-papel__pie">
+          Documento interno de control de caja; no es un comprobante de pago.
+        </p>
+      </div>
+    </Teleport>
+
+    <!-- ── Boleta de cierre: solo lo que lleva voucher ────────── -->
+    <Teleport to="body">
+      <div v-if="papel === 'cierre'" class="sp-papel">
+        <header class="sp-papel__head">
+          <p class="sp-papel__store">{{ negocio.name || nombre }}</p>
+          <p v-if="negocio.ruc" class="sp-papel__meta">RUC {{ negocio.ruc }}</p>
+        </header>
+
+        <p class="sp-papel__kind">Cierre de cajero Nº {{ turno.id }}</p>
+
+        <dl class="sp-papel__info">
+          <div><dt>Cajero</dt><dd>{{ turno.cashierName || "—" }}</dd></div>
+          <div v-if="turno.cashierDni"><dt>DNI</dt><dd>{{ turno.cashierDni }}</dd></div>
+          <div><dt>Apertura</dt><dd>{{ formatDateTimeCompact(turno.openedAt) }}</dd></div>
+          <div><dt>Cierre</dt><dd>{{ formatDateTimeCompact(turno.closedAt) }}</dd></div>
+        </dl>
+
+        <!-- Sin efectivo a propósito: este papel acompaña a los vouchers, y
+             el conteo del cajón lo hace el encargado delante del cajero. Si
+             el papel trajera la cifra del efectivo, contar sería copiarla. -->
+        <table class="sp-papel__tabla">
+          <thead>
+            <tr><th>Forma</th><th>Ventas</th><th>Vouchers</th><th>Importe</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="f in conVoucher" :key="f.type">
+              <td>{{ f.label }}</td>
+              <td>{{ f.sales }}</td>
+              <td>{{ f.vouchers }}</td>
+              <td>{{ money(f.amount) }}</td>
+            </tr>
+            <tr v-if="!conVoucher.length">
+              <td colspan="4">Sin ventas con voucher en este turno</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="sp-papel__destacado">Total con voucher: {{ money(totalConVoucher) }}</p>
+        <p class="sp-papel__nota">
+          El efectivo no figura en este papel: lo cuenta el encargado en el
+          cuadre.
+        </p>
+
+        <div class="sp-papel__firmas">
+          <div><span>Firma del cajero</span><p>{{ turno.cashierName || "" }}</p></div>
+        </div>
+
+        <p class="sp-papel__pie">
+          Documento interno de control de caja; no es un comprobante de pago.
+        </p>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * La barra del turno en la pantalla de venta.
+ * El turno de caja en la pantalla de venta, desde el lado del cajero.
  *
- * Es solo para mirar. Aperturar, mover efectivo y arquear se hacen en
- * /admin/cajas y son del jefe de ventas o del encargado: quien vende no
- * cuadra su propio cajón, porque un arqueo firmado por la persona a la que
- * vigila no vigila nada.
+ * Hace dos cosas y ninguna más: abrir su caja y cerrarla. El fondo se lo
+ * asigna el jefe y no se puede tocar; el conteo del final lo hace el
+ * encargado en /admin/cajas. Quien vende no cuenta su propio cajón, porque
+ * un papel firmado por la persona a la que vigila no vigila nada.
  *
- * Lo que sí se le enseña al cajero es cuánto ha cobrado en efectivo —lo
- * necesita para dar vuelto y para saber si va a hacer falta un retiro—. No
- * rompe el arqueo porque él no es quien cuenta: a quien va a contar,
- * /admin/cajas no le enseña ningún importe hasta que escribe el suyo.
+ * Abrir sí es suyo, y es importante que lo sea: esa confirmación es la que
+ * firma en el ticket de apertura, y es lo que convierte el dinero del cajón
+ * en responsabilidad suya. Si se la abriera el jefe, podría encontrarse un
+ * turno empezado con un fondo que nunca contó.
  */
 const abierta = defineModel<boolean>("abierta", { default: false });
 
 const { formatDateTimeCompact } = useFormatDateTime();
 const formatPrice = useFormatPrice();
+const { imprimirPapel } = useImpresion();
+const { nombre } = useLogo();
+const negocio = computed<any>(() => useBusinessConfig().value ?? {});
+
 const money = (n: any) => formatPrice.format(Number(n ?? 0));
 const conSigno = (n: any) => {
   const v = Number(n ?? 0);
@@ -89,19 +270,81 @@ const conSigno = (n: any) => {
 const { user } = useUserSession();
 const esCajero = computed(() => (user.value as any)?.role === "cajero");
 
-const resumen = ref<any>({ abierta: false });
+const turno = ref<any>({ estado: null });
 const cargando = ref(false);
+const error = ref("");
+const confirmarCierre = ref(false);
+const papel = ref<"" | "apertura" | "cierre">("");
+
+/* Solo las formas que dejan un papel en la mano. El efectivo no: su
+   comprobante es el propio dinero, y va en el cuadre, no aquí. */
+const conVoucher = computed(() =>
+  (turno.value.byPaymentType || []).filter((f: any) => f.type !== "efectivo")
+);
+const totalConVoucher = computed(() =>
+  conVoucher.value.reduce((a: number, f: any) => a + Number(f.amount || 0), 0)
+);
+const ultimoArqueo = computed(() => {
+  const a = turno.value.audits || [];
+  return a.length ? a[a.length - 1].createdAt : null;
+});
 
 async function cargar() {
   cargando.value = true;
   try {
-    resumen.value = await $fetch("/api/admin/caja/sesion");
+    turno.value = await $fetch("/api/admin/caja/sesion");
   } catch {
-    resumen.value = { abierta: false };
+    turno.value = { estado: null };
   } finally {
     cargando.value = false;
   }
-  abierta.value = Boolean(resumen.value?.abierta);
+  abierta.value = Boolean(turno.value?.abierta);
+}
+
+function mensaje(e: any, porDefecto: string) {
+  return e?.data?.message ?? porDefecto;
+}
+
+async function abrir() {
+  error.value = "";
+  cargando.value = true;
+  try {
+    turno.value = await $fetch("/api/admin/caja/abrir", { method: "POST" });
+    abierta.value = true;
+    await imprimir("apertura");
+  } catch (e: any) {
+    error.value = mensaje(e, "No se pudo abrir la caja");
+  } finally {
+    cargando.value = false;
+  }
+}
+
+async function cerrar() {
+  error.value = "";
+  cargando.value = true;
+  try {
+    turno.value = await $fetch("/api/admin/caja/cerrar", { method: "POST", body: {} });
+    abierta.value = false;
+    confirmarCierre.value = false;
+    await imprimir("cierre");
+  } catch (e: any) {
+    error.value = mensaje(e, "No se pudo cerrar la caja");
+  } finally {
+    cargando.value = false;
+  }
+}
+
+/* El papel se monta, se imprime y se desmonta. Dejarlo montado no estorba
+   —vive fuera de la pantalla— pero entonces habría dos a la vez en el body
+   y la regla de impresión sacaría los dos en la misma hoja.
+   Un único camino, llamado desde abrir(), cerrar() y los dos botones de
+   reimprimir: con un watcher sobre `papel` había que distinguir quién lo
+   había puesto para no imprimir dos veces, y eso se rompe al primer
+   cambio que alguien haga aquí. */
+async function imprimir(cual: "apertura" | "cierre") {
+  papel.value = cual;
+  await imprimirPapel();
+  papel.value = "";
 }
 
 onMounted(cargar);
@@ -110,22 +353,62 @@ onMounted(cargar);
 <style scoped>
 .turno { margin-bottom: 1.25rem; }
 
-.turno-espera {
+.turno-aviso {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.75rem;
 }
 
-.turno-nota {
-  margin: 0.3rem 0 0;
-  max-width: 60ch;
-  font-size: var(--sp-text-xs);
+.turno-abrir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+/* El texto no se estira hasta el borde: una línea de 90 caracteres no se
+   lee, y al lado del formulario parecía que los dos competían. */
+.turno-abrir__texto { flex: 1 1 22rem; max-width: 52ch; }
+.turno-abrir__form { display: flex; align-items: flex-end; gap: 1rem; }
+
+.turno-fondo { display: flex; flex-direction: column; gap: 0.15rem; }
+.turno-fondo__label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
   color: var(--sp-text-soft);
-  line-height: 1.45;
+}
+/* El fondo es un dato, no un campo: lo asignó el jefe y el cajero no lo
+   cambia. Un input aquí invitaría a corregirlo por su cuenta. */
+.turno-fondo__valor {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--sp-text-strong);
 }
 
-/* ── Barra del turno ── */
+.turno-nota {
+  margin: 0.3rem 0 0;
+  max-width: 62ch;
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft);
+  line-height: 1.5;
+}
+.turno-nota strong { color: var(--sp-text-strong); }
+
+.turno-error {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--sp-radius-sm);
+  background: var(--sp-danger-soft);
+  color: #b91c1c;
+  font-size: var(--sp-text-xs);
+  font-weight: 600;
+}
+.turno-error--ancho { flex: 1 1 100%; }
+
 .turno-barra {
   display: flex;
   flex-wrap: wrap;
@@ -152,21 +435,12 @@ onMounted(cargar);
 .turno-acciones { margin-left: auto; display: flex; gap: 0.5rem; }
 .turno-acciones--inicio { margin-left: 0; }
 
-/* La nota del cierre ocupa el hueco donde estaban los botones: así la
-   barra no queda con un vacío raro a la derecha. */
-.turno-cierre {
-  margin: 0 0 0 auto;
-  max-width: 32ch;
-  font-size: var(--sp-text-xs);
-  color: var(--sp-text-soft);
-  line-height: 1.45;
-  text-align: right;
-}
+.turno-modal { max-width: 460px; }
 
 @media (max-width: 760px) {
   .turno-barra { gap: 1rem; }
-  .turno-cierre { margin-left: 0; text-align: left; max-width: none; }
-  .turno-acciones { width: 100%; }
-  .turno-acciones button, .turno-acciones a { flex: 1 1 auto; }
+  .turno-acciones { margin-left: 0; width: 100%; }
+  .turno-acciones button,
+  .turno-acciones a { flex: 1 1 auto; }
 }
 </style>
