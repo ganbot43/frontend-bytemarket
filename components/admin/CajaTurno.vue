@@ -378,6 +378,11 @@ async function imprimir(cual: "apertura" | "cierre") {
   }
 }
 
+/* La pantalla de venta la llama después de cada cobro: si no, la barra
+   se queda diciendo "cobrado en efectivo S/ 0.00" con tres ventas hechas,
+   y un cajero que ve eso deja de fiarse del resto de las cifras. */
+defineExpose({ recargar: cargar });
+
 onMounted(cargar);
 </script>
 

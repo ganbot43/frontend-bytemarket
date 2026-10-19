@@ -23,7 +23,7 @@
               <th class="sp-th sp-th--right">Fondo</th>
               <th class="sp-th sp-th--right">Efectivo esperado</th>
               <th class="sp-th">Ventas del turno</th>
-              <th class="sp-th sp-th--center" style="width: 150px">Acciones</th>
+              <th class="sp-th" style="width: 220px">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -56,23 +56,25 @@
                 <span class="sp-table-num">{{ totalVentas(t) }}</span>
                 <p class="sp-table-sub">{{ formasDe(t) }}</p>
               </td>
+              <!-- Con el icono solo, cada jefe nuevo tiene que pasar el
+                   ratón por los tres para averiguar cuál es cuál. Con la
+                   palabra al lado se aprende en la primera mirada, y aquí
+                   caben: son dos acciones por fila como mucho. -->
               <td class="sp-td">
-                <div class="sp-table-actions">
-                  <button v-if="t.estado === 'fund_assigned'" class="sp-table-btn sp-table-btn--view"
-                          title="Habilitar al cajero" @click="habilitar(t)">
-                    <Check class="w-3.5 h-3.5" stroke-width="1.5" />
+                <div class="cajas-acciones">
+                  <button v-if="t.estado === 'fund_assigned'" class="cajas-accion cajas-accion--ok"
+                          @click="habilitar(t)">
+                    <Check class="w-3.5 h-3.5" stroke-width="2" /> Habilitar
                   </button>
-                  <button v-if="t.estado === 'open'" class="sp-table-btn sp-table-btn--edit"
-                          title="Movimiento de efectivo" @click="abrirMovimiento(t)">
-                    <ArrowLeftRight class="w-3.5 h-3.5" stroke-width="1.5" />
+                  <button v-if="t.estado === 'open'" class="cajas-accion" @click="abrirArqueo(t)">
+                    <Search class="w-3.5 h-3.5" stroke-width="2" /> Arquear
                   </button>
-                  <button v-if="t.estado === 'open'" class="sp-table-btn sp-table-btn--view"
-                          title="Arqueo sorpresivo" @click="abrirArqueo(t)">
-                    <Search class="w-3.5 h-3.5" stroke-width="1.5" />
+                  <button v-if="t.estado === 'open'" class="cajas-accion" @click="abrirMovimiento(t)">
+                    <ArrowLeftRight class="w-3.5 h-3.5" stroke-width="2" /> Movimiento
                   </button>
-                  <button v-if="t.estado === 'closed'" class="sp-table-btn sp-table-btn--warn"
-                          title="Cuadrar y firmar" @click="abrirCuadre(t)">
-                    <ClipboardCheck class="w-3.5 h-3.5" stroke-width="1.5" />
+                  <button v-if="t.estado === 'closed'" class="cajas-accion cajas-accion--fin"
+                          @click="abrirCuadre(t)">
+                    <ClipboardCheck class="w-3.5 h-3.5" stroke-width="2" /> Cuadrar y firmar
                   </button>
                   <span v-if="t.estado === 'enabled'" class="cajas-espera">esperando al cajero</span>
                 </div>
@@ -901,6 +903,34 @@ onMounted(() => {
   color: var(--sp-text-soft);
 }
 .cajas-pie a { color: var(--sp-primary); font-weight: 600; }
+
+/* Botón con palabra: la acción se lee, no se adivina. */
+.cajas-acciones { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.cajas-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--sp-border);
+  border-radius: 999px;
+  background: var(--sp-surface-solid);
+  font-family: var(--sp-font);
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--sp-t-fast) var(--sp-ease),
+    background var(--sp-t-fast) var(--sp-ease), color var(--sp-t-fast) var(--sp-ease);
+}
+.cajas-accion:hover {
+  border-color: var(--sp-border-strong);
+  color: var(--sp-text-strong);
+}
+/* Habilitar y cuadrar son los dos pasos que mueven el turno adelante;
+   se distinguen del resto para que el jefe sepa cuál toca. */
+.cajas-accion--ok { border-color: #a7f3d0; background: var(--sp-success-soft); color: #0a7a56; }
+.cajas-accion--fin { border-color: #fed7aa; background: var(--sp-warning-soft); color: #92600a; }
 
 .cajas-espera {
   font-size: var(--sp-text-xs);

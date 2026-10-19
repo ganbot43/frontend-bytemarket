@@ -22,7 +22,7 @@
 
     <!-- El turno solo rige la caja. Un pedido de WhatsApp no pasa por
          el cajón: se cobra después, por Yape o transferencia. -->
-    <AdminCajaTurno v-if="!esPedido" v-model:abierta="cajaAbierta" />
+    <AdminCajaTurno v-if="!esPedido" ref="turnoRef" v-model:abierta="cajaAbierta" />
 
     <!-- ── Voucher de comercio ────────────────────────────────── -->
     <!-- Se imprime ANTES que la boleta y se lo queda el cajero: es el
@@ -49,11 +49,9 @@
           <div><dt>Pedido</dt><dd>{{ hecho.orderCode }}</dd></div>
         </dl>
 
-        <!-- La tarjeta se firma; el QR no, que lo confirma el teléfono. -->
-        <div v-if="hecho.paymentType === 'tarjeta'" class="sp-papel__firmas">
-          <div><span>Firma del cliente</span><p>&nbsp;</p></div>
-        </div>
-
+        <!-- Sin línea de firma: el papel del POS ya lo firma el cliente si
+             la tarjeta lo pide. Este es el del cajero, y lo que hace con
+             él es guardarlo para el cuadre. -->
         <p class="sp-papel__pie">
           Copia para el comercio. Guárdalo: con él se cuadra la caja al
           cerrar el turno.
@@ -63,6 +61,31 @@
 
     <!-- ── Comprobante de la venta cerrada ───────────────────── -->
     <div v-if="hecho" class="caja-ticket-wrap">
+      <!-- Antes del papel, lo único que el cajero necesita en ese segundo:
+           cuánto devolver. Estaba dentro del ticket, en letra de
+           comprobante, y es la cifra que más rápido hay que leer. -->
+      <div class="caja-hecho" :class="{ 'caja-hecho--vuelto': (hecho.vuelto ?? 0) > 0 }">
+        <div class="caja-hecho__texto">
+          <p class="caja-hecho__que">
+            {{ (hecho.vuelto ?? 0) > 0 ? "Devuelve al cliente" : "Cobrado" }}
+          </p>
+          <strong class="caja-hecho__cifra">
+            {{ (hecho.vuelto ?? 0) > 0 ? money(hecho.vuelto ?? 0) : money(hecho.total) }}
+          </strong>
+          <p class="caja-hecho__pie">
+            {{ hecho.boleta || hecho.orderCode }} · {{ hecho.formaDePago }}
+            <template v-if="hecho.voucher"> · voucher {{ hecho.voucher }}</template>
+          </p>
+        </div>
+        <div class="caja-hecho__acciones">
+          <button class="sp-page-btn" @click="nuevaVenta">Nueva venta</button>
+          <button class="sp-drawer-btn sp-drawer-btn--ghost"
+                  @click="hecho.voucher ? imprimirTodo() : imprimir()">
+            {{ hecho.voucher ? "Imprimir voucher y boleta" : "Imprimir boleta" }}
+          </button>
+        </div>
+      </div>
+
       <div id="caja-comprobante" class="caja-ticket">
         <header class="caja-ticket__head">
           <p class="caja-ticket__store">{{ negocio.name || nombre }}</p>
@@ -308,11 +331,19 @@
             <label>Cupón</label>
             <input v-model="cupon" type="text" class="sp-drawer-input" placeholder="Código" />
           </div>
-          <div class="caja-field">
+          <!-- Botones y no un desplegable: son cuatro, y escondidas tras
+               un clic hay que explicarle a cada cajero nuevo que están
+               ahí. A la vista se aprenden solas y se cobra con un toque
+               menos, que en una cola se nota. -->
+          <div class="caja-field caja-field--wide">
             <label>Forma de pago</label>
-            <select v-model="formaDePago" class="sp-drawer-input sp-drawer-select">
-              <option v-for="p in formasDePago" :key="p.value" :value="p.value">{{ p.label }}</option>
-            </select>
+            <div class="caja-formas">
+              <button v-for="p in formasDePago" :key="p.value" type="button" class="caja-forma"
+                      :class="{ 'caja-forma--on': formaDePago === p.value }"
+                      @click="elegirForma(p.value)">
+                {{ p.label }}
+              </button>
+            </div>
           </div>
           <div v-if="esPedido" class="caja-field">
             <label>Estado del pago</label>
@@ -321,9 +352,18 @@
               <option :value="false">Por cobrar</option>
             </select>
           </div>
-          <div v-if="formaDePago === 'efectivo'" class="caja-field">
+          <div v-if="formaDePago === 'efectivo'" class="caja-field caja-field--wide">
             <label>Efectivo recibido</label>
-            <input v-model.number="efectivo" type="number" class="sp-drawer-input" min="0" step="0.10" placeholder="0.00" />
+            <input ref="efectivoRef" v-model.number="efectivo" type="number" class="sp-drawer-input"
+                   min="0" step="0.10" placeholder="0.00" @keydown.enter.prevent="cobrarSiSePuede" />
+            <!-- Los billetes con los que de verdad paga la gente. Evita
+                 teclear y, sobre todo, evita teclear mal: el vuelto sale
+                 de esta cifra. -->
+            <div class="caja-billetes">
+              <button type="button" class="caja-billete" @click="efectivo = total">Justo</button>
+              <button v-for="b in billetes" :key="b" type="button" class="caja-billete"
+                      @click="efectivo = b">{{ b }}</button>
+            </div>
           </div>
           <!-- Sin campo para el voucher: el cliente paga, se confirma, y
                el sistema emite el voucher de comercio con su número. Pedirlo
@@ -344,11 +384,16 @@
             <dt>Total</dt>
             <dd>{{ money(total) }}</dd>
           </div>
-          <div v-if="vuelto != null" class="caja-totales__vuelto" :class="{ 'caja-totales__vuelto--bad': vuelto < 0 }">
-            <dt>{{ vuelto < 0 ? "Falta" : "Vuelto" }}</dt>
-            <dd>{{ money(Math.abs(vuelto)) }}</dd>
-          </div>
         </dl>
+
+        <!-- El vuelto, grande y aparte. Es la cifra que el cajero lee en
+             un segundo con el cliente delante, y como una línea más de la
+             lista se confundía con el subtotal. En rojo cuando falta: eso
+             no es un vuelto, es que el billete no alcanza. -->
+        <div v-if="vuelto != null" class="caja-vuelto" :class="{ 'caja-vuelto--falta': vuelto < 0 }">
+          <span>{{ vuelto < 0 ? "Falta" : "Devuelve" }}</span>
+          <strong>{{ money(Math.abs(vuelto)) }}</strong>
+        </div>
 
         <p v-if="error" class="caja-error">{{ error }}</p>
 
@@ -449,6 +494,7 @@ const sinStock = (p: Producto) => p.trackStock && p.stock <= 0;
 const BORRADOR = "bytemarket-caja-venta";
 /** Lo mantiene AdminCajaTurno; aquí solo decide si se puede cobrar. */
 const cajaAbierta = ref(false);
+const turnoRef = ref<{ recargar: () => Promise<void> } | null>(null);
 
 const lineas = ref<Linea[]>([]);
 
@@ -553,6 +599,38 @@ const cupon = ref("");
 /* El papel del voucher se monta solo mientras se imprime: si se quedara
    montado, la regla de impresión lo sacaría junto a cualquier otro. */
 const papelVoucher = ref(false);
+const efectivoRef = ref<HTMLInputElement>();
+
+/**
+ * Con cuánto es probable que pague.
+ *
+ * No son los billetes del bolsillo sino las cifras que de verdad se
+ * entregan: para una venta de 224.67, la gente da 230, 250 o 300. La
+ * primera versión filtraba billetes sueltos mayores que el total y para
+ * esa venta solo ofrecía 500, que es el botón menos útil de todos.
+ *
+ * Tres como mucho: cada atajo de más es una cosa más que mirar con el
+ * cliente delante.
+ */
+const billetes = computed(() => {
+  const t = total.value;
+  if (t <= 0) return [];
+  const arriba = (paso: number) => Math.ceil(t / paso) * paso;
+  return [...new Set([arriba(10), arriba(50), arriba(100)])]
+    .filter((v) => v > t)
+    .slice(0, 3);
+});
+
+/** Elegir forma lleva el foco donde toca: en efectivo, al importe. */
+function elegirForma(valor: string) {
+  formaDePago.value = valor;
+  if (valor === "efectivo") nextTick(() => efectivoRef.value?.focus());
+}
+
+/** Enter en el importe cobra, si se puede. Un cajero no suelta el teclado. */
+function cobrarSiSePuede() {
+  if (puedeCobrar.value && !guardando.value) cobrar();
+}
 const { imprimirPapel } = useImpresion();
 const pagado = ref(true);
 const efectivo = ref<number | null>(null);
@@ -617,6 +695,9 @@ async function cobrar() {
         cashReceived: formaDePago.value === "efectivo" ? efectivo.value : null,
       },
     });
+
+    // La barra del turno tiene que enterarse de lo que se acaba de cobrar.
+    turnoRef.value?.recargar();
 
     const tel = (cliente.customerPhone || "").replace(/\D/g, "");
     const waTel = /^9\d{8}$/.test(tel) ? `51${tel}` : tel;
@@ -1073,6 +1154,120 @@ async function imprimirTodo() {
   font-variant-numeric: tabular-nums;
   color: var(--sp-text-strong, #0f172a);
 }
+
+/* ── Forma de pago: botones, no desplegable ── */
+.caja-formas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+  gap: 0.4rem;
+}
+.caja-forma {
+  padding: 0.55rem 0.5rem;
+  border: 1px solid var(--sp-border, #e2e8f0);
+  border-radius: 8px;
+  background: #fff;
+  font-family: var(--sp-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--sp-text-soft, #64748b);
+  cursor: pointer;
+  transition: border-color var(--sp-t-fast) var(--sp-ease),
+    background var(--sp-t-fast) var(--sp-ease), color var(--sp-t-fast) var(--sp-ease);
+}
+.caja-forma:hover { border-color: var(--sp-border-strong, #cbd5e1); }
+/* La elegida se ve desde el otro lado del mostrador: el cajero mira la
+   pantalla de reojo mientras cuenta billetes. */
+.caja-forma--on {
+  border-color: var(--sp-primary, #1d4ed8);
+  background: var(--sp-primary, #1d4ed8);
+  color: #fff;
+}
+
+/* ── Billetes ── */
+.caja-billetes { display: flex; gap: 0.35rem; margin-top: 0.4rem; }
+.caja-billete {
+  flex: 1;
+  padding: 0.4rem 0.3rem;
+  border: 1px dashed var(--sp-border-strong, #cbd5e1);
+  border-radius: 7px;
+  background: #fff;
+  font-family: var(--sp-font);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--sp-text-soft, #64748b);
+  cursor: pointer;
+}
+.caja-billete:hover { border-style: solid; color: var(--sp-text-strong, #0f172a); }
+
+/* ── El vuelto, que es lo que se lee de un vistazo ── */
+.caja-vuelto {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.5rem 0 0.9rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  background: var(--sp-success-soft, #ecfdf5);
+}
+.caja-vuelto span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0a7a56;
+}
+.caja-vuelto strong {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0a7a56;
+}
+/* Que falte no es un vuelto pequeño: es que el billete no alcanza. */
+.caja-vuelto--falta { background: var(--sp-danger-soft, #fef2f2); }
+.caja-vuelto--falta span,
+.caja-vuelto--falta strong { color: #b91c1c; }
+
+/* ── Tras cobrar ── */
+.caja-hecho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 420px;
+  margin: 0 auto 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  background: var(--sp-surface-solid, #fff);
+  border: 1px solid var(--sp-border, #e2e8f0);
+  box-shadow: var(--sp-shadow-sm);
+}
+.caja-hecho--vuelto { background: var(--sp-success-soft, #ecfdf5); border-color: #a7f3d0; }
+.caja-hecho__que {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sp-text-soft, #64748b);
+}
+.caja-hecho--vuelto .caja-hecho__que { color: #0a7a56; }
+.caja-hecho__cifra {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--sp-text-strong, #0f172a);
+}
+.caja-hecho--vuelto .caja-hecho__cifra { color: #0a7a56; }
+.caja-hecho__pie {
+  margin: 0.2rem 0 0;
+  font-size: var(--sp-text-xs);
+  color: var(--sp-text-soft, #64748b);
+}
+.caja-hecho__acciones { display: flex; flex-direction: column; gap: 0.4rem; }
 
 /* ── Formularios ── */
 .caja-cliente,
