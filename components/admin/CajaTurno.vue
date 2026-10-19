@@ -221,6 +221,26 @@
           </tbody>
         </table>
 
+        <!-- Una por una, no solo el total. El cajero llega con un fajo de
+             vouchers y este papel dice cuáles deberían ser: con el
+             agregado, un voucher de menos se sabe que falta pero no cuál. -->
+        <template v-if="(turno.voucherSales || []).length">
+          <p class="sp-papel__kind">Detalle</p>
+          <table class="sp-papel__tabla">
+            <thead>
+              <tr><th>Hora</th><th>Comprobante</th><th>Nº oper.</th><th>Importe</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="v in turno.voucherSales" :key="v.orderCode">
+                <td>{{ soloHora(v.at) }}</td>
+                <td>{{ v.boleta || v.orderCode }}</td>
+                <td>{{ v.voucher || "—" }}</td>
+                <td>{{ money(v.amount) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
+
         <p class="sp-papel__destacado">Total con voucher: {{ money(totalConVoucher) }}</p>
         <p class="sp-papel__nota">
           El efectivo no figura en este papel: lo cuenta el encargado en el
@@ -284,6 +304,12 @@ const conVoucher = computed(() =>
 const totalConVoucher = computed(() =>
   conVoucher.value.reduce((a: number, f: any) => a + Number(f.amount || 0), 0)
 );
+/* En el papel solo cabe la hora: la fecha ya está arriba, en la apertura
+   y el cierre del turno. */
+const soloHora = (v: any) =>
+  v ? new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", timeStyle: "short" })
+        .format(new Date(v)) : "";
+
 const ultimoArqueo = computed(() => {
   const a = turno.value.audits || [];
   return a.length ? a[a.length - 1].createdAt : null;

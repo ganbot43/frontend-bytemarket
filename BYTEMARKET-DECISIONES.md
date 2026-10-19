@@ -612,6 +612,13 @@ degradaba al gerente a cliente y se quedaba como la única autoridad del
 sistema. La pantalla no le ofrecía la opción, pero la pantalla no es el
 control.
 
+**Cada paso queda apuntado.** `cash_logs` guarda la línea de tiempo del
+turno —asignar, habilitar, abrir, cada venta, cada movimiento, cada
+arqueo, cerrar y cuadrar— con quién y cuándo. Los datos ya estaban, pero
+repartidos entre cuatro tablas: para responder «qué pasó en este turno»
+había que juntarlos y ordenarlos a mano, que es tanto como no tener
+historial. Es lo que se mira cuando el cuadre sale raro.
+
 **Y nadie se toca a sí mismo.** Ni se cambia el rol, ni se desactiva, ni
 se borra. Hacia arriba sería ascenderse; hacia abajo es quedarse fuera sin
 que nadie pueda devolverte, y si el único gerente se degrada el sistema se
@@ -679,7 +686,10 @@ mes.
     papel de caja       al cuadrar   desglose, diferencias y las dos firmas
 
 La boleta de cierre va sin efectivo a propósito: acompaña a los vouchers,
-y si trajera la cifra del cajón, contar sería copiarla.
+y si trajera la cifra del cajón, contar sería copiarla. Y lleva las ventas
+una por una, no solo el total: el cajero llega con un fajo de vouchers y
+el papel dice cuáles deberían ser. Con el agregado, un voucher de menos se
+sabe que falta pero no cuál.
 
 Las firmas son el motivo de que esto se imprima, y son físicas: el
 sistema no guarda ninguna "firma digital" que no significaría nada.
@@ -728,8 +738,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 224 pruebas entre
-los cuatro servicios —25 en user, 94 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 227 pruebas entre
+los cuatro servicios —25 en user, 97 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en

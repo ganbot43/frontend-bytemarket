@@ -252,13 +252,30 @@
             <div class="sp-modal-body">
               <ul class="cajas-cuadre">
                 <li><span>Fondo inicial</span><strong>{{ money(turno?.openingFloat) }}</strong></li>
-                <li><span>Cobrado en efectivo</span><strong>{{ money(turno?.cashSales) }}</strong></li>
+                <li>
+                  <span>Cobrado en efectivo<em v-if="ventasDe('efectivo')"> · {{ ventasDe("efectivo") }} venta(s)</em></span>
+                  <strong>{{ money(turno?.cashSales) }}</strong>
+                </li>
                 <li v-if="(turno?.movementsTotal ?? 0) !== 0">
                   <span>Entradas y salidas</span><strong>{{ conSigno(turno?.movementsTotal) }}</strong>
                 </li>
                 <li class="cajas-cuadre__total">
                   <span>Debería haber en el cajón</span>
                   <strong>{{ money(turno?.expectedCash) }}</strong>
+                </li>
+              </ul>
+
+              <!-- Lo cobrado por tarjeta y QR no entra en el cajón, pero el
+                   encargado lo quiere ver: es el otro lado del turno, y si
+                   sospecha de algo va a querer contrastar los vouchers
+                   aunque el efectivo le cuadre. -->
+              <ul v-if="sinEfectivo.length" class="cajas-cuadre cajas-cuadre--aparte">
+                <li v-for="f in sinEfectivo" :key="f.type">
+                  <span>{{ f.label }}<em> · {{ f.sales }} venta(s), {{ f.vouchers }} voucher(s)</em></span>
+                  <strong>{{ money(f.amount) }}</strong>
+                </li>
+                <li class="cajas-cuadre__pie">
+                  <span>No pasa por el cajón: no entra en esta cuenta.</span>
                 </li>
               </ul>
 
@@ -348,6 +365,20 @@
                   </div>
                   <p v-if="avisoDe(f)" class="cajas-forma__aviso">{{ avisoDe(f) }}</p>
                 </div>
+
+                <!-- La línea de tiempo del turno. Es lo que se mira cuando
+                     el cuadre sale raro: quién movió qué y a qué hora. -->
+                <details v-if="(turno?.historial || []).length" class="cajas-historial">
+                  <summary>Historial del turno ({{ turno.historial.length }})</summary>
+                  <ol>
+                    <li v-for="h in turno.historial" :key="h.id">
+                      <span class="cajas-historial__hora">{{ soloHora(h.createdAt) }}</span>
+                      <span class="cajas-historial__que">{{ ACCION[h.action] || h.action }}</span>
+                      <span class="cajas-historial__quien">{{ h.userName || "—" }}</span>
+                      <span class="cajas-historial__detalle">{{ h.detail }}</span>
+                    </li>
+                  </ol>
+                </details>
 
                 <div class="cajas-campo">
                   <label class="sp-drawer-label" for="cua-obs">
@@ -535,6 +566,24 @@ const TIPOS = [
 ];
 const etiquetaMov = (t: string) => TIPOS.find((x) => x.value === t)?.label ?? t;
 
+/** Los pasos del turno, en palabras. */
+const ACCION: Record<string, string> = {
+  assigned: "Fondo asignado",
+  enabled: "Habilitado",
+  opened: "Caja abierta",
+  sale: "Venta",
+  movement: "Movimiento",
+  audit: "Arqueo",
+  closed: "Caja cerrada",
+  settled: "Cuadrada",
+};
+
+/* En el historial solo cabe la hora: el turno es de un día y la fecha ya
+   está en la cabecera. */
+const soloHora = (v: any) =>
+  v ? new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", timeStyle: "short" })
+        .format(new Date(v)) : "";
+
 const turnos = ref<any[]>([]);
 const cajeros = ref<any[]>([]);
 const cargando = ref(false);
@@ -600,6 +649,13 @@ function avisoDe(f: any) {
   }
   return "";
 }
+
+/** Lo cobrado por formas que no pasan por el cajón. */
+const sinEfectivo = computed(() =>
+  (turno.value?.toCount || []).filter((f: any) => f.type !== "efectivo" && f.sales > 0)
+);
+const ventasDe = (tipo: string) =>
+  (turno.value?.toCount || []).find((f: any) => f.type === tipo)?.sales ?? 0;
 
 const totalVentas = (t: any) =>
   (t.toCount || []).reduce((a: number, f: any) => a + Number(f.sales || 0), 0);
@@ -979,6 +1035,39 @@ onMounted(() => {
   font-size: var(--sp-text-sm);
 }
 .cajas-cuadre li span { color: var(--sp-text-soft); }
+.cajas-cuadre li em { font-style: normal; font-size: var(--sp-text-xs); opacity: 0.8; }
+.cajas-cuadre--aparte { margin-top: -0.4rem; }
+.cajas-cuadre__pie { border-bottom: none; padding-top: 0.2rem; }
+.cajas-cuadre__pie span { font-size: var(--sp-text-xs); font-style: italic; }
+
+/* Plegado: la mayoría de los cuadres no lo necesitan, y abierto empuja el
+   conteo fuera de la pantalla, que es lo que de verdad hay que rellenar. */
+.cajas-historial { margin-bottom: 1rem; }
+.cajas-historial summary {
+  cursor: pointer;
+  font-size: var(--sp-text-xs);
+  font-weight: 700;
+  color: var(--sp-text-soft);
+}
+.cajas-historial ol {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+.cajas-historial li {
+  display: grid;
+  grid-template-columns: 3.4rem 7rem 1fr;
+  gap: 0.4rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--sp-border);
+  font-size: var(--sp-text-xs);
+}
+.cajas-historial__hora { font-variant-numeric: tabular-nums; color: var(--sp-text-soft); }
+.cajas-historial__que { font-weight: 700; color: var(--sp-text-strong); }
+.cajas-historial__quien { grid-column: 2; color: var(--sp-text-soft); }
+.cajas-historial__detalle { grid-column: 3; grid-row: 1 / span 2; color: var(--sp-text-soft); }
 .cajas-cuadre li strong { font-variant-numeric: tabular-nums; }
 .cajas-cuadre__total {
   background: var(--sp-surface-subtle);
