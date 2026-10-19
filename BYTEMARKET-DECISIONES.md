@@ -697,10 +697,31 @@ sistema no guarda ninguna "firma digital" que no significaría nada.
 
 ---
 
-## 28. La boleta lleva serie y correlativo, y acompaña al dinero
+## 28. Dos papeles por venta, los dos numerados
 
-Cada venta cobrada sale con su número —`B001-00000123`— impreso en el
-papel que se lleva el cliente.
+Cada venta cobrada emite hasta dos documentos, y salen en este orden:
+
+    voucher de comercio  V001-00000045   se lo queda el cajero
+    boleta de venta      B001-00000123   se la lleva el cliente
+
+El cliente paga, se confirma el cobro, sale el voucher —que firma si fue
+con tarjeta— y encima va la boleta. El voucher solo donde hay algo que
+cuadrar contra un papel: en efectivo no sale, porque allí el comprobante
+del cajero es el propio dinero.
+
+**Por qué lo emite el sistema y no se teclea.** Al principio se pedía el
+nº de operación a mano, copiándolo del voucher del POS. Es teclear un
+dato en el único sitio donde un dedo torcido rompe justo lo que sirve
+para cuadrar, y además obliga al cajero a esperar al papel del POS antes
+de poder cerrar la venta. Ahora el número lo pone la caja y el papel sale
+con él.
+
+**En el mostrador se cobra con menos formas.** Efectivo, tarjeta y QR
+—Yape o Plin, los que el negocio tenga dados de alta y activos—.
+Transferencia no: el cliente está delante y se va con el producto, y una
+transferencia hay que esperar a verla en el banco. Eso es un pedido por
+cobrar, no una venta de mostrador, y dejarla en caja haría que el cuadre
+esperara un dinero que todavía no ha llegado.
 
 **Por qué no es un MAX(numero)+1.** Dos cajeros cobrando a la vez leerían
 el mismo máximo y emitirían dos boletas con el mismo número: el error
@@ -719,7 +740,10 @@ nadie ha pagado es un papel que luego hay que anular.
 ella; lo que corresponde es una nota de crédito. Un correlativo que vuelve
 a salir deja dos papeles distintos diciendo ser el mismo comprobante.
 
-**La serie se configura** con `BOLETA_SERIE` (por defecto `B001`). En una
+**Las series se configuran** con `BOLETA_SERIE` y `VOUCHER_SERIE` (por
+defecto `B001` y `V001`), y llevan contadores independientes: una venta en
+efectivo gasta boleta y no gasta voucher, así que compartir contador los
+descuadraría para siempre. En una
 tienda con varias cajas cada punto de venta suele llevar la suya: con una
 sola compartida, dos cajeros se pelean por el mismo contador y uno de los
 dos espera en cada cobro.
@@ -738,8 +762,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 227 pruebas entre
-los cuatro servicios —25 en user, 97 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 230 pruebas entre
+los cuatro servicios —25 en user, 100 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en

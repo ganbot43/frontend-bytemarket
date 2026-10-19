@@ -24,6 +24,43 @@
          el cajón: se cobra después, por Yape o transferencia. -->
     <AdminCajaTurno v-if="!esPedido" v-model:abierta="cajaAbierta" />
 
+    <!-- ── Voucher de comercio ────────────────────────────────── -->
+    <!-- Se imprime ANTES que la boleta y se lo queda el cajero: es el
+         papel contra el que se cuadra la tarjeta y el QR al cerrar el
+         turno. En efectivo no sale, porque allí el comprobante es el
+         propio dinero. -->
+    <Teleport to="body">
+      <div v-if="papelVoucher && hecho?.voucher" class="sp-papel">
+        <header class="sp-papel__head">
+          <p class="sp-papel__store">{{ negocio.name || nombre }}</p>
+          <p v-if="negocio.ruc" class="sp-papel__meta">RUC {{ negocio.ruc }}</p>
+          <p v-if="negocio.address" class="sp-papel__meta">{{ negocio.address }}</p>
+        </header>
+
+        <p class="sp-papel__kind">Voucher de comercio</p>
+        <p class="sp-papel__destacado">{{ hecho.voucher }}</p>
+
+        <dl class="sp-papel__info">
+          <div><dt>Forma de pago</dt><dd>{{ hecho.formaDePago }}</dd></div>
+          <div><dt>Importe</dt><dd>S/ {{ hecho.total.toFixed(2) }}</dd></div>
+          <div><dt>Fecha</dt><dd>{{ hecho.fecha }}</dd></div>
+          <div><dt>Cajero</dt><dd>{{ hecho.cajero }}</dd></div>
+          <div><dt>Boleta</dt><dd>{{ hecho.boleta || hecho.orderCode }}</dd></div>
+          <div><dt>Pedido</dt><dd>{{ hecho.orderCode }}</dd></div>
+        </dl>
+
+        <!-- La tarjeta se firma; el QR no, que lo confirma el teléfono. -->
+        <div v-if="hecho.paymentType === 'tarjeta'" class="sp-papel__firmas">
+          <div><span>Firma del cliente</span><p>&nbsp;</p></div>
+        </div>
+
+        <p class="sp-papel__pie">
+          Copia para el comercio. Guárdalo: con él se cuadra la caja al
+          cerrar el turno.
+        </p>
+      </div>
+    </Teleport>
+
     <!-- ── Comprobante de la venta cerrada ───────────────────── -->
     <div v-if="hecho" class="caja-ticket-wrap">
       <div id="caja-comprobante" class="caja-ticket">
@@ -133,7 +170,15 @@
 
       <div class="caja-ticket__actions">
         <button class="sp-page-btn" @click="nuevaVenta">Nueva venta</button>
-        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="imprimir">Imprimir</button>
+        <!-- Cuando hay voucher salen los dos papeles en orden: primero el
+             del comercio y encima la boleta del cliente. Reimprimir solo
+             uno se puede, que a veces es lo que falla. -->
+        <button class="sp-drawer-btn sp-drawer-btn--ghost" @click="hecho.voucher ? imprimirTodo() : imprimir()">
+          {{ hecho.voucher ? "Imprimir voucher y boleta" : "Imprimir boleta" }}
+        </button>
+        <button v-if="hecho.voucher" class="sp-drawer-btn sp-drawer-btn--ghost" @click="imprimirVoucher">
+          Solo el voucher
+        </button>
         <a v-if="hecho.whatsapp" :href="hecho.whatsapp" target="_blank" rel="noopener"
           class="sp-drawer-btn sp-drawer-btn--ghost">Avisar por WhatsApp</a>
         <NuxtLink :to="`/admin/pedidos?buscar=${hecho.orderCode}`" class="sp-drawer-btn sp-drawer-btn--ghost">
@@ -280,17 +325,10 @@
             <label>Efectivo recibido</label>
             <input v-model.number="efectivo" type="number" class="sp-drawer-input" min="0" step="0.10" placeholder="0.00" />
           </div>
-          <!-- El nº de operación solo donde hay voucher. En efectivo el
-               comprobante del cajero es el propio dinero, y pedirlo ahí
-               sería un campo que nadie puede rellenar.
-               Es lo que permite contrastar el papel con el sistema al
-               cuadrar: sin él, dos ventas del mismo importe cobradas por
-               error se ven idénticas. -->
-          <div v-else-if="!esPedido" class="caja-field">
-            <label>Nº de operación del voucher</label>
-            <input v-model="voucher" type="text" class="sp-drawer-input"
-                   placeholder="El del voucher de comercio" />
-          </div>
+          <!-- Sin campo para el voucher: el cliente paga, se confirma, y
+               el sistema emite el voucher de comercio con su número. Pedirlo
+               a mano era teclear un dato que ya tenemos y que así podía
+               escribirse mal justo en lo que sirve para cuadrar. -->
         </div>
 
         <dl class="caja-totales">
@@ -474,14 +512,31 @@ function paso(i: number, delta: number) {
 
 // ── Cobro ───────────────────────────────────────────────────
 const { data: opciones } = await useFetch<any>("/api/admin/orders/sale-options");
-const formasDePago = computed(() => opciones.value?.paymentTypes ?? [{ value: "efectivo", label: "Efectivo" }]);
+/*
+ * En el mostrador se cobra con menos formas que en un pedido.
+ *
+ * Nada de transferencia: el cliente está delante y se va con el producto,
+ * y una transferencia hay que esperar a verla en el banco. Y de los QR
+ * solo salen los que el negocio tenga dados de alta —lo decide el
+ * servidor, que es quien sabe cuáles existen—.
+ */
+const formasDePago = computed(() => {
+  const todas = opciones.value?.paymentTypes ?? [{ value: "efectivo", label: "Efectivo" }];
+  if (esPedido.value) return todas;
+  return opciones.value?.cashPaymentTypes ?? [{ value: "efectivo", label: "Efectivo" }];
+});
+
+/* Si se cambia a caja con una forma que allí no vale, hay que moverla: si
+   no, el desplegable se queda en blanco y el cobro revienta al enviarlo. */
+watch(formasDePago, (lista) => {
+  if (lista.length && !lista.some((f: any) => f.value === formaDePago.value)) {
+    formaDePago.value = lista[0].value;
+  }
+});
 const canales = computed(() => opciones.value?.channels ?? [{ value: "whatsapp", label: "WhatsApp" }]);
 
 const canal = ref("whatsapp");
 const formaDePago = ref("efectivo");
-/* El número que trae el voucher de comercio. Se guarda en la venta para
-   que el cuadre pueda contrastar papeles con sistema. */
-const voucher = ref("");
 const descuento = ref(0);
 
 /*
@@ -495,6 +550,10 @@ const descuento = ref(0);
  */
 const puedeTocarPrecios = computed(() => (user.value as any)?.role !== "cajero");
 const cupon = ref("");
+/* El papel del voucher se monta solo mientras se imprime: si se quedara
+   montado, la regla de impresión lo sacaría junto a cualquier otro. */
+const papelVoucher = ref(false);
+const { imprimirPapel } = useImpresion();
 const pagado = ref(true);
 const efectivo = ref<number | null>(null);
 
@@ -530,7 +589,7 @@ const puedeCobrar = computed(() => {
 });
 
 const hecho = ref<null | {
-  orderCode: string; boleta: string | null;
+  orderCode: string; boleta: string | null; voucher: string | null; paymentType: string | null;
   total: number; subtotal: number; descuento: number; cupon: string | null;
   formaDePago: string; recibido: number | null; vuelto: number | null; fecha: string;
   lineas: Linea[]; whatsapp: string | null; cajero: string; cliente: string; unidades: number;
@@ -556,7 +615,6 @@ async function cobrar() {
         paymentType: formaDePago.value,
         paymentStatus: esPedido.value && !pagado.value ? "pending" : "paid",
         cashReceived: formaDePago.value === "efectivo" ? efectivo.value : null,
-        voucherNumber: formaDePago.value === "efectivo" ? null : voucher.value.trim() || null,
       },
     });
 
@@ -567,6 +625,9 @@ async function cobrar() {
       // Null mientras la venta esté por cobrar: la boleta acompaña al
       // dinero, y un pedido de WhatsApp sin pagar todavía no la tiene.
       boleta: res.boleta ?? null,
+      // El voucher de comercio que emitió el sistema. Null en efectivo.
+      voucher: res.voucher ?? null,
+      paymentType: res.paymentType ?? null,
       total: res.total,
       subtotal: res.subtotal,
       descuento: res.discountApplied ?? 0,
@@ -609,9 +670,6 @@ function limpiar() {
   descuento.value = 0;
   cupon.value = "";
   efectivo.value = null;
-  // Si no se limpia, el nº de la venta anterior se arrastra a la siguiente
-  // y el cuadre encuentra dos ventas con el mismo voucher.
-  voucher.value = "";
   pagado.value = true;
   Object.assign(cliente, vacio());
   error.value = "";
@@ -633,6 +691,27 @@ const imprimir = () => {
   window.print();
   document.body.classList.remove("sp-imprimiendo-ticket");
 };
+
+/** El voucher de comercio, que va aparte y antes. */
+async function imprimirVoucher() {
+  if (!hecho.value?.voucher) return;
+  papelVoucher.value = true;
+  await imprimirPapel();
+  papelVoucher.value = false;
+}
+
+/*
+ * Los dos papeles, en el orden en que salen por la impresora.
+ *
+ * Primero el voucher de comercio —que firma el cliente y se queda el
+ * cajero— y encima la boleta que se lleva él. Son dos diálogos de
+ * impresión seguidos a propósito: son dos papeles distintos, y juntarlos
+ * en uno dejaría al cajero recortando.
+ */
+async function imprimirTodo() {
+  await imprimirVoucher();
+  imprimir();
+}
 </script>
 
 <style scoped>
