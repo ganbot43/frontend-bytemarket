@@ -39,6 +39,10 @@
             <tr v-for="order in orders" :key="order.id" class="sp-tr sp-tr--clickable" @click="openOrder(order.id)">
               <td class="sp-td">
                 <span class="orders-code">{{ order.orderCode }}</span>
+                <!-- El número de la boleta: es lo que trae el cliente en la
+                     mano cuando viene a reclamar, y sin verlo aquí no hay
+                     forma de saber qué pedido es. -->
+                <p v-if="order.boleta" class="sp-table-sub">{{ order.boleta }}</p>
               </td>
               <td class="sp-td">
                 <p class="sp-table-title">{{ order.customerName }}</p>

@@ -684,6 +684,42 @@ y si trajera la cifra del cajón, contar sería copiarla.
 Las firmas son el motivo de que esto se imprima, y son físicas: el
 sistema no guarda ninguna "firma digital" que no significaría nada.
 
+
+---
+
+## 28. La boleta lleva serie y correlativo, y acompaña al dinero
+
+Cada venta cobrada sale con su número —`B001-00000123`— impreso en el
+papel que se lleva el cliente.
+
+**Por qué no es un MAX(numero)+1.** Dos cajeros cobrando a la vez leerían
+el mismo máximo y emitirían dos boletas con el mismo número: el error
+clásico de mirar y luego escribir en dos pasos, el mismo que ya mordió en
+el stock (decisión 23). El contador vive en su propia fila, en
+`boleta_series`, y se reserva con la fila bloqueada: las dos ventas se
+ponen en cola y cada una se lleva el suyo. Comprobado con seis cobros
+simultáneos.
+
+**Por qué con el cobro y no con el apunte.** Una venta de mostrador nace
+cobrada y sale con su número. Un pedido de WhatsApp que todavía está por
+cobrar, no: el comprobante acompaña al dinero, y emitir uno por algo que
+nadie ha pagado es un papel que luego hay que anular.
+
+**Por qué no se reutiliza.** Si una venta se anula, su número se queda con
+ella; lo que corresponde es una nota de crédito. Un correlativo que vuelve
+a salir deja dos papeles distintos diciendo ser el mismo comprobante.
+
+**La serie se configura** con `BOLETA_SERIE` (por defecto `B001`). En una
+tienda con varias cajas cada punto de venta suele llevar la suya: con una
+sola compartida, dos cajeros se pelean por el mismo contador y uno de los
+dos espera en cada cobro.
+
+**Lo que esto NO es.** Una boleta electrónica de SUNAT. No hay XML UBL, ni
+firma digital, ni envío a un OSE. Es la numeración interna del negocio, que
+es lo que hace rastreable el papel del mostrador y lo que habría que
+enviar el día que se conecte la facturación electrónica. El pie del
+comprobante lo dice tal cual: darlo por fiscal sin estarlo es un problema
+legal, no de diseño.
 ---
 
 ## Qué está comprobado y qué no
@@ -692,8 +728,8 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 216 pruebas entre
-los cuatro servicios —25 en user, 86 en order, 71 en catalog, 34 en
+**Comprobado con pruebas automáticas y CI en verde.** 224 pruebas entre
+los cuatro servicios —25 en user, 94 en order, 71 en catalog, 34 en
 support—. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en
@@ -709,8 +745,9 @@ verdad y recorriendo los cinco estados: el jefe asigna el fondo y
 habilita, el cajero abre y vende, el jefe arquea por sorpresa sin cerrar
 nada —y el cajero sigue vendiendo—, el cajero cierra, y el cuadre se
 rechaza mientras falte una forma por contar o una diferencia sin
-explicar. Los tres papeles se capturaron en el momento de imprimirlos,
-con su DNI y sus firmas. El arqueo final dio cajón exacto y 54.79 de
+explicar. Los cuatro papeles se capturaron en el momento de
+imprimirlos, con su DNI y sus firmas. El correlativo de boletas se probó
+con seis cobros simultáneos: seis números, ninguno repetido. El arqueo final dio cajón exacto y 54.79 de
 Yape sin abonar —el caso que justifica la decisión 27—. También se
 comprobó lo que cada rol NO puede: el cajero no se apertura la caja, no
 cierra, no lista pedidos y no mueve el precio; y el encargado no se

@@ -34,11 +34,18 @@
           <p v-if="negocio.whatsapp" class="caja-ticket__meta">{{ negocio.whatsapp }}</p>
         </header>
 
-        <p class="caja-ticket__kind">Comprobante de venta</p>
+        <!-- La boleta es lo que se lleva el cliente, así que su número es
+             lo primero y lo más grande. El código interno del pedido baja a
+             ser una referencia: sirve para buscarlo en el panel, no para
+             identificar el comprobante. -->
+        <p class="caja-ticket__kind">
+          {{ hecho.boleta ? "Boleta de venta" : "Comprobante de venta" }}
+        </p>
+        <p v-if="hecho.boleta" class="caja-ticket__boleta">{{ hecho.boleta }}</p>
 
         <dl class="caja-ticket__info">
           <div>
-            <dt>Nº</dt>
+            <dt>Pedido</dt>
             <dd class="caja-ticket__strong">{{ hecho.orderCode }}</dd>
           </div>
           <div>
@@ -112,12 +119,14 @@
 
         <footer class="caja-ticket__foot">
           <p class="caja-ticket__thanks">¡Gracias por su compra!</p>
-          <!-- Se dice explícitamente porque esto NO es una boleta
-               electrónica de SUNAT: es el comprobante interno de la venta.
-               Darlo por fiscal sin estarlo es un problema legal, no de
-               diseño. -->
+          <!-- El papel lleva serie y correlativo, que es lo que lo hace
+               rastreable, pero esto NO es una boleta electrónica de SUNAT:
+               no hay XML firmado ni envío a un OSE. La nota lo dice sin
+               contradecir la cabecera —matiza, no niega— porque darlo por
+               fiscal sin estarlo es un problema legal, no de diseño. -->
           <p class="caja-ticket__legal">
-            Documento interno de venta. No es comprobante de pago electrónico.
+            Numeración interna del negocio. No constituye comprobante de pago
+            electrónico autorizado por SUNAT.
           </p>
         </footer>
       </div>
@@ -511,7 +520,8 @@ const puedeCobrar = computed(() => {
 });
 
 const hecho = ref<null | {
-  orderCode: string; total: number; subtotal: number; descuento: number; cupon: string | null;
+  orderCode: string; boleta: string | null;
+  total: number; subtotal: number; descuento: number; cupon: string | null;
   formaDePago: string; recibido: number | null; vuelto: number | null; fecha: string;
   lineas: Linea[]; whatsapp: string | null; cajero: string; cliente: string; unidades: number;
 }>(null);
@@ -544,6 +554,9 @@ async function cobrar() {
     const waTel = /^9\d{8}$/.test(tel) ? `51${tel}` : tel;
     hecho.value = {
       orderCode: res.orderCode,
+      // Null mientras la venta esté por cobrar: la boleta acompaña al
+      // dinero, y un pedido de WhatsApp sin pagar todavía no la tiene.
+      boleta: res.boleta ?? null,
       total: res.total,
       subtotal: res.subtotal,
       descuento: res.discountApplied ?? 0,
@@ -1121,13 +1134,26 @@ const imprimir = () => {
 }
 
 .caja-ticket__kind {
-  margin: 0.7rem 0;
+  margin: 0.7rem 0 0.15rem;
   text-align: center;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #475569;
+}
+
+/* El número de la boleta, que es lo que identifica el papel: más grande
+   que todo lo demás de la cabecera y con los dígitos alineados, porque es
+   lo que la gente compara cuando viene a reclamar. */
+.caja-ticket__boleta {
+  margin: 0 0 0.7rem;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
 }
 
 /* Datos de la venta, en dos columnas etiqueta/valor. */
@@ -1312,11 +1338,15 @@ const imprimir = () => {
 
   /* Los padres conservan su hueco, así que el comprobante se saca al
      origen de la hoja; si no, aparece desplazado donde estaba en pantalla. */
+  /* 80 mm, el ancho del rollo, igual que los tres papeles de caja.
+     Estaba al 100% de la hoja y en una A4 las etiquetas quedaban a la
+     izquierda del todo y los importes contra el borde derecho: una línea
+     de veinte centímetros que nadie puede leer de un vistazo. */
   body.sp-imprimiendo-ticket #caja-comprobante {
     position: absolute !important;
     left: 0;
     top: 0;
-    width: 100%;
+    width: 80mm;
     max-width: none;
     margin: 0;
     padding: 0;
@@ -1336,7 +1366,8 @@ const imprimir = () => {
   }
 
   body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__desc,
-  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__vuelto {
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__vuelto,
+  body.sp-imprimiendo-ticket #caja-comprobante .caja-ticket__boleta {
     color: #000 !important;
   }
 
