@@ -22,3 +22,9 @@ logs
 .env
 .env.*
 !.env.example
+
+# La especificación del módulo de cajas es un documento suelto, no del
+# repo: vive al lado del proyecto como el resto de los entregables. Va
+# aquí para que no vuelva a colarse con un `git add -A`, que es como
+# entró la primera vez.
+modulo-cajas.md
