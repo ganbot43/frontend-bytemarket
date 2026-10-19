@@ -255,7 +255,11 @@
             <label>Descuento</label>
             <input v-model.number="descuento" type="number" class="sp-drawer-input" min="0" step="0.10" />
           </div>
-          <div class="caja-field">
+          <!-- El cupón es de la tienda web. En el mostrador no se aplica:
+               dejarlo teclear aquí lo convierte en un descuento a mano con
+               otro nombre, y además salta por encima de la regla de que el
+               cajero no descuenta. El servicio lo rechaza igual. -->
+          <div v-if="esPedido" class="caja-field">
             <label>Cupón</label>
             <input v-model="cupon" type="text" class="sp-drawer-input" placeholder="Código" />
           </div>
@@ -363,7 +367,13 @@ const money = (n: number) => formatPrice.format(Number.isFinite(n) ? n : 0);
 
 const esPedido = computed(() => route.query.tipo === "pedido");
 useSeoMeta({ title: () => `${esPedido.value ? "Nuevo pedido" : "Caja"} · Admin` });
-const setModo = (pedido: boolean) => router.replace({ query: pedido ? { tipo: "pedido" } : {} });
+const setModo = (pedido: boolean) => {
+  /* El cupón se queda escrito al cambiar de modo y el campo desaparece,
+     así que de caja saldría un código invisible que el servicio rechaza.
+     Mejor vaciarlo aquí que explicar un error que nadie ve venir. */
+  if (!pedido) cupon.value = "";
+  router.replace({ query: pedido ? { tipo: "pedido" } : {} });
+};
 
 // ── Catálogo ────────────────────────────────────────────────
 // Se reutiliza /api/admin/products, que ya filtra y pagina: no hacía falta
@@ -542,7 +552,7 @@ async function cobrar() {
           unitPrice: Number(l.unitPrice),
         })),
         discount: Number(descuento.value) || 0,
-        couponCode: cupon.value.trim() || null,
+        couponCode: esPedido.value ? cupon.value.trim() || null : null,
         paymentType: formaDePago.value,
         paymentStatus: esPedido.value && !pagado.value ? "pending" : "paid",
         cashReceived: formaDePago.value === "efectivo" ? efectivo.value : null,
