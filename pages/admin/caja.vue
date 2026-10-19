@@ -696,8 +696,14 @@ const imprimir = () => {
 async function imprimirVoucher() {
   if (!hecho.value?.voucher) return;
   papelVoucher.value = true;
-  await imprimirPapel();
-  papelVoucher.value = false;
+  try {
+    await imprimirPapel();
+  } finally {
+    /* En el finally y no después: si la impresión falla, el papel se
+       quedaba montado para siempre. No se ve —vive fuera de la pantalla—
+       pero la siguiente impresión sacaría dos en la misma hoja. */
+    papelVoucher.value = false;
+  }
 }
 
 /*

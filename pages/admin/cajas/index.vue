@@ -865,8 +865,13 @@ async function cuadrar() {
 
 async function imprimir() {
   papel.value = true;
-  await imprimirPapel();
-  papel.value = false;
+  try {
+    await imprimirPapel();
+  } finally {
+    // En el finally: si la impresión falla, el papel se quedaba montado
+    // y la siguiente sacaría dos en la misma hoja.
+    papel.value = false;
+  }
 }
 
 function claseDif(d: any) {

@@ -369,8 +369,13 @@ async function cerrar() {
    cambio que alguien haga aquí. */
 async function imprimir(cual: "apertura" | "cierre") {
   papel.value = cual;
-  await imprimirPapel();
-  papel.value = "";
+  try {
+    await imprimirPapel();
+  } finally {
+    // En el finally: si la impresión falla, el papel se quedaba montado
+    // y la siguiente sacaría dos en la misma hoja.
+    papel.value = "";
+  }
 }
 
 onMounted(cargar);

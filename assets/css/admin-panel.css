@@ -3007,6 +3007,13 @@ html:has(.smart-panel-admin)::-webkit-scrollbar-thumb:hover {
   text-transform: uppercase;
 }
 
+/* Cuando el número va justo debajo del título del papel, las dos líneas
+   de puntos quedan pegadas y parece un error de impresión. Se queda una. */
+.sp-papel__kind + .sp-papel__destacado {
+  margin-top: -2mm;
+  border-top: none;
+}
+
 .sp-papel__info { margin: 0 0 2mm; display: grid; gap: 0.5mm; }
 .sp-papel__info > div { display: flex; justify-content: space-between; gap: 2mm; }
 .sp-papel__info dt { margin: 0; font-weight: 700; }
