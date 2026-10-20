@@ -732,9 +732,15 @@ ponen en cola y cada una se lleva el suyo. Comprobado con seis cobros
 simultáneos.
 
 **Por qué con el cobro y no con el apunte.** Una venta de mostrador nace
-cobrada y sale con su número. Un pedido de WhatsApp que todavía está por
-cobrar, no: el comprobante acompaña al dinero, y emitir uno por algo que
-nadie ha pagado es un papel que luego hay que anular.
+cobrada y sale con su número. Un pedido que todavía está por cobrar, no:
+el comprobante acompaña al dinero, y emitir uno por algo que nadie ha
+pagado es un papel que luego hay que anular.
+
+Eso vale también para la tienda web, que al principio se quedaba sin
+boleta: el cliente del local se iba con su número y el de internet no
+tenía nada que descargar. Ahora se emite al validar el pago —el momento
+en que alguien da por bueno el voucher y el pedido ya no vuelve atrás—,
+con el mismo contador y la misma regla de no reutilizar.
 
 **Por qué no se reutiliza.** Si una venta se anula, su número se queda con
 ella; lo que corresponde es una nota de crédito. Un correlativo que vuelve
@@ -762,9 +768,11 @@ Lo escrito arriba son decisiones tomadas; esto es hasta dónde llega la
 comprobación de cada una. Vale la pena mirarlo antes de dar algo por
 seguro.
 
-**Comprobado con pruebas automáticas y CI en verde.** 230 pruebas entre
-los cuatro servicios —25 en user, 100 en order, 71 en catalog, 34 en
-support—. Cubren las reglas de negocio, la invariante del kardex, el plan
+**Comprobado con pruebas automáticas y CI en verde.** 237 pruebas entre
+los cuatro servicios —25 en user, 102 en order, 71 en catalog, 39 en
+support—. Entre ellas, las plantillas de los correos se renderizan de
+verdad: ahí un fallo no se nota, porque el envío captura la excepción a
+propósito y se convierte en una línea de log que nadie mira. Cubren las reglas de negocio, la invariante del kardex, el plan
 de carga del pedido, el ciclo completo de una reserva —apartar, consumir,
 liberar, caducar— y el arqueo por forma de pago, contra una base en
 memoria.

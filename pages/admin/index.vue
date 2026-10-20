@@ -70,6 +70,26 @@
       <div class="dash-chart__body">
         <AdminChartsVentasChart :days="diasGrafico" />
       </div>
+
+      <!-- Lo de hoy, partido por canal.
+           La cifra de arriba suma mostrador y tienda, y son dos negocios
+           con costes distintos: con el total solo no se decide ni el stock
+           ni a quién poner en la caja. -->
+      <div v-if="porCanalHoy.length" class="dash-canales">
+        <p class="dash-canales__label">Hoy por canal</p>
+        <div class="dash-canales__lista">
+          <div v-for="c in porCanalHoy" :key="c.label" class="dash-canal">
+            <span class="dash-canal__nombre">{{ nombreCanal(c.label) }}</span>
+            <strong class="dash-canal__monto">{{ formatPrice.format(Number(c.amount)) }}</strong>
+            <span class="dash-canal__pedidos">{{ c.orders }} venta(s)</span>
+            <!-- La barra es la proporción, que es lo que se lee de un
+                 vistazo: "hoy el mostrador fue dos tercios". -->
+            <span class="dash-canal__barra">
+              <span :style="{ width: proporcion(c) }" />
+            </span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ── Automatización ── -->
@@ -351,6 +371,30 @@ const lowStockItems = computed(() =>
 );
 const followUpItems = computed(() => followUpsData.value?.data ?? []);
 const topProducts = computed(() => reportsData.value?.topProducts ?? []);
+
+/* El desglose de hoy por canal. Llega del mismo sitio que las tarjetas,
+   así que las cifras cuadran entre sí. */
+const porCanalHoy = computed<any[]>(() => (reportsData.value as any)?.todayByChannel ?? []);
+
+const NOMBRE_CANAL: Record<string, string> = {
+  caja: "Mostrador",
+  web: "Tienda web",
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  telefono: "Teléfono",
+  otro: "Otro",
+};
+const nombreCanal = (c: string) => NOMBRE_CANAL[c] ?? c;
+
+const totalHoyCanales = computed(() =>
+  porCanalHoy.value.reduce((a, c) => a + Number(c.amount || 0), 0)
+);
+const proporcion = (c: any) => {
+  const t = totalHoyCanales.value;
+  if (!t) return "0%";
+  return `${Math.round((Number(c.amount || 0) / t) * 100)}%`;
+};
 
 async function refreshAutomation() {
   automationLoading.value = true;
