@@ -31,6 +31,13 @@
         <div>
           <h1 class="dp__title">Pedido {{ order.orderCode }}</h1>
           <p class="dp__date">Realizado el {{ formatearFecha(order.createdAt) }}</p>
+          <!-- La boleta aparece cuando el pago queda validado: antes no
+               existe, porque el comprobante acompaña al dinero. Sin esto
+               el número se emitía y el cliente no lo veía por ningún
+               lado, que es como no emitirlo. -->
+          <p v-if="order.boleta" class="dp__boleta">
+            Boleta <strong>{{ order.boleta }}</strong>
+          </p>
         </div>
         <EcommerceEstadoPedido :status="order.status" />
       </header>
@@ -261,6 +268,18 @@ const formatearFechaHora = (valor: string) =>
   font-weight: var(--fw-black);
   letter-spacing: var(--tracking-display);
   color: var(--ink-strong);
+}
+
+/* El número del comprobante: lo que el cliente cita si reclama. */
+.dp__boleta {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+.dp__boleta strong {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #0f172a;
 }
 
 .dp__date {
