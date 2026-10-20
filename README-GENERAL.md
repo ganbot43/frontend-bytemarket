@@ -1,8 +1,16 @@
 # ByteMarket
 
-Tienda de repuestos y accesorios para celulares. Son **siete repositorios**:
-seis microservicios Spring Boot y un frontend Nuxt 3, orquestados desde aquí
-con Docker Compose.
+Tienda de repuestos y accesorios para celulares: pantallas, baterías,
+cargadores, carcasas, micas y cables. No vende líneas ni servicio telefónico.
+
+Vende por **dos canales sobre un mismo inventario**: el mostrador del local y
+la web. Y no son dos sistemas con la misma marca: una venta de caja y una venta
+web descuentan del mismo stock por la misma cola de RabbitMQ, y toman su número
+de boleta del mismo correlativo. La contabilidad del negocio es una sola, haya
+cobrado el cajero o la web.
+
+Son **siete repositorios**: seis microservicios Spring Boot y un frontend
+Nuxt 3, orquestados desde aquí con Docker Compose.
 
 ```
 navegador ──> frontend :3000 ──> gateway :8085 ──┬─> user-service    :8081 ─> bytemarket_user
@@ -31,7 +39,7 @@ Eso es todo. Queda en **http://localhost:3000**.
 | `eureka` | 8761 | Registro de servicios (tiene panel web) |
 | `user-service` | 8081 | Cuentas, login, JWT, perfiles |
 | `catalog-service` | 8082 | Productos, categorías, banners, inventario |
-| `order-service` | 8083 | Pedidos, pagos, cupones, reportes |
+| `order-service` | 8083 | Pedidos, pagos, cupones, reportes y la caja del local |
 | `support-service` | 8084 | Libro de reclamaciones |
 | `mysql` | **3308** | Un esquema por servicio (dentro de Docker sigue siendo el 3306) |
 
