@@ -11,7 +11,10 @@
  * verdad—, pero enseñar entradas que acaban en un 403 es peor que no
  * enseñarlas.
  */
-export type Permiso = { view: boolean; edit: boolean }
+/** Las cuatro acciones, tal como las reparte la pantalla de Roles. */
+export type Accion = 'view' | 'create' | 'edit' | 'delete'
+
+export type Permiso = Record<Accion, boolean>
 
 export type MisPermisos = {
   role: string
@@ -66,8 +69,12 @@ export function usePermisos() {
   const puedeEditar = (modulo: string) =>
     Boolean(estado.value?.permissions?.[modulo]?.edit)
 
+  /** Para una acción concreta: el menú solo mira "ver", las pantallas el resto. */
+  const puede = (modulo: string, accion: Accion) =>
+    Boolean(estado.value?.permissions?.[modulo]?.[accion])
+
   /** Los roles cuyos permisos puede administrar: la pirámide hacia abajo. */
   const rolesEditables = computed(() => estado.value?.editableRoles ?? [])
 
-  return { permisos: estado, cargar, puedeVer, puedeEditar, rolesEditables }
+  return { permisos: estado, cargar, puedeVer, puedeEditar, puede, rolesEditables }
 }
