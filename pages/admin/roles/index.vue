@@ -472,10 +472,18 @@ async function guardar() {
   color: var(--sp-text-muted, #9ca3af);
 }
 
+/* Mismos reseteos que la casilla: admin-panel.css le pone a todo input
+   min-height de 2.6rem, padding y un borde pensados para un campo suelto, y
+   aquí el borde y el alto los pone el envoltorio .rol-buscar. */
 .rol-buscar__input {
   flex: 1;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
   border: 0;
   outline: 0;
+  box-shadow: none;
   background: transparent;
   font-size: .8rem;
   color: var(--sp-text, #111827);
@@ -585,15 +593,31 @@ async function guardar() {
 
 .rol-fila__accion { text-align: center; }
 
-/* La casilla, dibujada a mano: la del sistema se perdía sobre el fondo claro
-   del panel y la fila parecía no tener nada que marcar. */
+/*
+ * La casilla, dibujada a mano.
+ *
+ * La del sistema se perdía sobre el fondo claro del panel y la fila parecía
+ * no tener nada que marcar.
+ *
+ * Los tres reseteos de abajo NO son de adorno: admin-panel.css le da a todo
+ * input del panel `width: 100%`, `min-height: 2.6rem` y `padding: .65rem
+ * .9rem`, pensando en campos de texto. Fijar solo width y height no basta
+ * —min-height gana sobre height, y con border-box un padding de .9rem a cada
+ * lado fuerza el ancho aunque el width declarado sea menor—, y el resultado
+ * eran rectángulos de 50px en vez de casillas.
+ */
 .rol-check {
   appearance: none;
-  width: .85rem;
-  height: .85rem;
+  width: .9rem;
+  height: .9rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  flex: none;
   border: 1.5px solid var(--sp-border-strong, #cbd5e1);
   border-radius: 4px;
   background: var(--sp-surface, #fff);
+  box-shadow: none;
   cursor: pointer;
   position: relative;
   transition: background .12s ease, border-color .12s ease;
@@ -610,13 +634,15 @@ async function guardar() {
 .rol-check:checked::after {
   content: "";
   position: absolute;
-  left: 3.8px;
-  top: 1px;
+  left: 50%;
+  top: 46%;
   width: 3px;
   height: 6.5px;
   border: solid #fff;
   border-width: 0 1.5px 1.5px 0;
-  transform: rotate(45deg);
+  /* Centrado con transform y no con left/top a pelo: así no hay que volver
+     a medir si la casilla cambia de tamaño. */
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .rol-check:focus-visible {
