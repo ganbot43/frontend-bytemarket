@@ -329,7 +329,7 @@
 <script setup lang="ts">
 import { Plus, CreditCard, Pencil, Trash2, X, Loader2, AlertCircle, Smartphone, Landmark, MonitorSmartphone } from "lucide-vue-next";
 
-definePageMeta({ middleware: ["auth", "superadmin"], layout: "admin" });
+definePageMeta({ middleware: "auth", layout: "admin" });
 useSeoMeta({ title: "Métodos de Pago · Admin" });
 
 const { data, refresh } = useFetch<{ data: any[] }>(

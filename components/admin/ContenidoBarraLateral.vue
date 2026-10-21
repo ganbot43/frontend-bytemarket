@@ -64,7 +64,7 @@
 
 <script setup lang="ts">
 import { 
-  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart, Calculator, Wallet, Users
+  LayoutDashboard, ShoppingBag, Package, Archive, Tags, Layers, GalleryHorizontalEnd, BookOpen, Ticket, Star, CreditCard, Settings, ExternalLink, BarChart, Calculator, Wallet, Users, ShieldCheck
 } from "lucide-vue-next";
 
 const props = defineProps<{ user: any }>();
@@ -87,139 +87,62 @@ const ETIQUETA_ROL: Record<string, string> = {
 /*
  * Qué ve cada rol.
  *
- * El menú no es seguridad —el backend decide, y ahí está la regla de
- * verdad— pero enseñar entradas que acaban en un 403 es peor que no
- * enseñarlas: el cajero no tiene por qué descubrir a base de errores que
- * no puede entrar a Productos.
+ * Ya no está escrito aquí: cada entrada declara a qué MÓDULO pertenece y
+ * quién lo ve sale de la matriz que el gerente edita en Roles y permisos.
+ * Antes eran dos listas de roles a mano —SOLO_GESTION y CON_EL_JEFE— que
+ * había que mantener a la par de los SecurityConfig de cuatro servicios.
  *
- * `roles` ausente = lo ven todos los que llegan al panel.
+ * El menú no es seguridad: el backend decide, y ahí está la regla de
+ * verdad. Pero enseñar entradas que acaban en un 403 es peor que no
+ * enseñarlas: el cajero no tiene por qué descubrir a base de errores que no
+ * puede entrar a Productos.
  */
-const SOLO_GESTION = ["admin", "superadmin"];
-const CON_EL_JEFE = ["jefe_ventas", "admin", "superadmin"];
+const { cargar, puedeVer } = usePermisos();
+await cargar();
 
 const baseItems = [
-  {
-    to: "/admin",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/caja",
-    label: "Caja",
-    icon: Calculator,
-  },
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, mod: "dashboard" },
+  { to: "/admin/caja", label: "Caja", icon: Calculator, mod: "caja" },
   /* Aperturas, fondos y arqueo. Separada de "Caja" porque es de otra
      persona: el cajero cobra, el jefe le entrega el fondo y le cuadra el
      cajón. Juntarlas en una pantalla con pestañas haría parecer que son
      dos vistas del mismo trabajo. */
-  {
-    to: "/admin/cajas",
-    label: "Cajas",
-    icon: Wallet,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/reportes",
-    label: "Reportes",
-    icon: BarChart,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/pedidos",
-    label: "Pedidos",
-    icon: ShoppingBag,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/productos",
-    label: "Productos",
-    icon: Package,
-    roles: SOLO_GESTION,
-  },
-  {
-    to: "/admin/inventario",
-    label: "Inventario",
-    icon: Archive,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/categorias",
-    label: "Categorías",
-    icon: Tags,
-    roles: SOLO_GESTION,
-  },
-  {
-    to: "/admin/subcategories",
-    label: "Subcategorías",
-    icon: Layers,
-    roles: SOLO_GESTION,
-  },
+  { to: "/admin/cajas", label: "Cajas", icon: Wallet, mod: "cajas" },
+  { to: "/admin/reportes", label: "Reportes", icon: BarChart, mod: "reportes" },
+  { to: "/admin/pedidos", label: "Pedidos", icon: ShoppingBag, mod: "pedidos" },
+  { to: "/admin/productos", label: "Productos", icon: Package, mod: "productos" },
+  { to: "/admin/inventario", label: "Inventario", icon: Archive, mod: "inventario" },
+  { to: "/admin/categorias", label: "Categorías", icon: Tags, mod: "categorias" },
+  { to: "/admin/subcategories", label: "Subcategorías", icon: Layers, mod: "subcategorias" },
   /* La página existía desde el principio pero no estaba enlazada aquí:
      sin entrada en el menú, los banners de la portada solo se podían
      editar escribiendo la URL a mano. */
-  {
-    to: "/admin/banners",
-    label: "Banners",
-    icon: GalleryHorizontalEnd,
-    roles: SOLO_GESTION,
-  },
-  {
-    to: "/admin/cupones",
-    label: "Cupones",
-    icon: Ticket,
-    roles: SOLO_GESTION,
-  },
-  {
-    to: "/admin/resenas",
-    label: "Reseñas",
-    icon: Star,
-    roles: SOLO_GESTION,
-  },
-  {
-    to: "/admin/reclamaciones",
-    label: "Libro de Reclamaciones",
-    icon: BookOpen,
-    roles: SOLO_GESTION,
-  },
+  { to: "/admin/banners", label: "Banners", icon: GalleryHorizontalEnd, mod: "banners" },
+  { to: "/admin/cupones", label: "Cupones", icon: Ticket, mod: "cupones" },
+  { to: "/admin/resenas", label: "Reseñas", icon: Star, mod: "resenas" },
+  { to: "/admin/reclamaciones", label: "Libro de Reclamaciones", icon: BookOpen, mod: "reclamaciones" },
 ];
 
 function visiblesPara(items: any[]) {
-  const rol = props.user?.role as string | undefined;
-  return items.filter((i: any) => !i.roles || (rol && i.roles.includes(rol)));
+  return items.filter((i: any) => puedeVer(i.mod));
 }
 
 const itemsVisibles = computed(() => visiblesPara(baseItems));
 
 /*
- * El grupo "Sistema" era superadmin entero, y eso dejaba al jefe de ventas
- * sin la pantalla de Usuarios: podía dar de alta cajeros por API —el
- * servicio se lo permite— pero no tenía por dónde llegar. "Habilita
- * usuarios para que vendan" es parte de su trabajo, así que necesita la
- * puerta.
+ * El grupo "Sistema": lo que configura el negocio en vez de operarlo.
  *
- * Los otros dos siguen siendo del gerente: tocar los métodos de pago o la
- * configuración de la tienda no es operar una caja.
+ * "Roles y permisos" es de quien reparte poder, y la propia matriz decide
+ * quién lo ve: por defecto el gerente y el encargado, porque la pirámide le
+ * deja al encargado solo jefe de ventas y cajero. Darle la entrada a un
+ * cajero sería inofensivo —debajo de él no hay a quién editar—, pero
+ * tampoco tiene sentido enseñársela.
  */
 const itemsDeSistema = [
-  {
-    to: "/admin/metodos-pago",
-    label: "Métodos de Pago",
-    icon: CreditCard,
-    roles: ["superadmin"],
-  },
-  {
-    to: "/admin/usuarios",
-    label: "Usuarios",
-    icon: Users,
-    roles: CON_EL_JEFE,
-  },
-  {
-    to: "/admin/configuracion",
-    label: "Configuración",
-    icon: Settings,
-    roles: ["superadmin"],
-  },
+  { to: "/admin/roles", label: "Roles y permisos", icon: ShieldCheck, mod: "roles" },
+  { to: "/admin/usuarios", label: "Usuarios", icon: Users, mod: "usuarios" },
+  { to: "/admin/metodos-pago", label: "Métodos de Pago", icon: CreditCard, mod: "metodos_pago" },
+  { to: "/admin/configuracion", label: "Configuración", icon: Settings, mod: "configuracion" },
 ];
 
 const itemsSistema = computed(() => visiblesPara(itemsDeSistema));
