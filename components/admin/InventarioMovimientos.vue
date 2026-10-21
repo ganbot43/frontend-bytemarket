@@ -52,7 +52,17 @@
               <td class="sp-td">
                 {{ m.reason || (m.relatedOrderId ? `Venta del pedido #${m.relatedOrderId}` : "—") }}
               </td>
-              <td class="sp-td sp-td--muted">{{ m.createdByName || m.createdBy || "—" }}</td>
+              <!-- El automático se pinta como insignia y la persona como
+                   texto: el nombre lo elige cada usuario sin validación, así
+                   que un "Sistema" escrito a mano no debe poder pasar por el
+                   de verdad. -->
+              <td class="sp-td sp-td--muted">
+                <span v-if="m.createdBySystem" class="sp-badge sp-badge--neutral">
+                  <span class="sp-badge__dot" />
+                  Sistema
+                </span>
+                <template v-else>{{ m.createdByName || "—" }}</template>
+              </td>
               <td class="sp-td sp-td--muted">
                 <span class="sp-table-date">{{ formatDateTimeCompact(m.createdAt) }}</span>
               </td>
