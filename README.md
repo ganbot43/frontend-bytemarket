@@ -81,6 +81,16 @@ Queda en http://localhost:3000 (o el siguiente puerto libre).
 | `npm run build` | Construye para producción en `.output` |
 | `npm run preview` | Sirve lo construido, para comprobarlo antes de desplegar |
 | `npm run typecheck` | Revisa los tipos de **todo** el proyecto |
+| `npm run verificar:permisos` | Comprueba la matriz de permisos contra el sistema levantado |
+
+Sobre `verificar:permisos`: hace falta el sistema corriendo (`docker compose
+up -d`) porque recorre el camino entero —gateway, servicio, matriz real en
+MySQL— con los cuatro puestos del panel. Los tests de cada microservicio
+prueban su propio portero con la matriz simulada; esto comprueba lo que
+ninguno de ellos ve: una ruta que el gateway no enruta, un módulo que no
+concede lo que dice conceder, o una sesión que no trae el rol que debería.
+Un 400 o un 409 en su salida son correctos: el cuerpo va vacío a propósito,
+porque lo que se mira es la puerta y no el formulario.
 
 Sobre `typecheck`: el servidor de tipos del editor solo analiza los archivos
 abiertos, así que un error puede llevar semanas en una página que nadie ha
