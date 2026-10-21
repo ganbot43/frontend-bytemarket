@@ -547,9 +547,9 @@ async function guardar() {
 
 .rol-fila {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) repeat(4, 4.6rem);
+  grid-template-columns: minmax(8rem, 1fr) repeat(4, 3.6rem);
   align-items: center;
-  padding: .42rem .8rem;
+  padding: .3rem .8rem;
   border-bottom: 1px solid color-mix(in srgb, var(--sp-border, #e5e7eb) 60%, transparent);
   cursor: pointer;
 }
@@ -589,10 +589,10 @@ async function guardar() {
    del panel y la fila parecía no tener nada que marcar. */
 .rol-check {
   appearance: none;
-  width: 1.05rem;
-  height: 1.05rem;
+  width: .85rem;
+  height: .85rem;
   border: 1.5px solid var(--sp-border-strong, #cbd5e1);
-  border-radius: 5px;
+  border-radius: 4px;
   background: var(--sp-surface, #fff);
   cursor: pointer;
   position: relative;
@@ -610,12 +610,12 @@ async function guardar() {
 .rol-check:checked::after {
   content: "";
   position: absolute;
-  left: 5px;
+  left: 3.8px;
   top: 1px;
-  width: 4px;
-  height: 9px;
+  width: 3px;
+  height: 6.5px;
   border: solid #fff;
-  border-width: 0 2px 2px 0;
+  border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
 }
 
