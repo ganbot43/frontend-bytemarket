@@ -97,8 +97,15 @@ const ETIQUETA_ROL: Record<string, string> = {
  * enseñarlas: el cajero no tiene por qué descubrir a base de errores que no
  * puede entrar a Productos.
  */
+/* Sin await: esto es un COMPONENTE, no una página. Un await de nivel
+   superior lo convierte en componente asíncrono y pide un <Suspense> que el
+   layout del panel no tiene, y la barra lateral se lleva por delante toda la
+   pantalla. El middleware de ruta ya dejó los permisos cargados antes de que
+   esto se dibuje; la llamada queda por si se renderiza fuera de una
+   navegación, y puedeVer es reactivo, así que el menú se completa solo en
+   cuanto llegan. */
 const { cargar, puedeVer } = usePermisos();
-await cargar();
+cargar();
 
 const baseItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, mod: "dashboard" },

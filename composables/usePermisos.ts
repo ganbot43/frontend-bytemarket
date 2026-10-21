@@ -38,7 +38,18 @@ export function usePermisos() {
     if (cargando.value) return estado.value
     cargando.value = true
     try {
-      estado.value = await $fetch<MisPermisos>('/api/me/permissions')
+      /* useRequestFetch y no $fetch: en SSR, $fetch sale SIN las cookies de
+         la petición del navegador, así que user-service respondía 403 y esto
+         concluía que la persona no tiene permisos. El middleware entonces la
+         mandaba a otra pantalla o la dejaba sin menú, y el panel se veía en
+         blanco aunque la sesión fuera correcta. useRequestFetch reenvía las
+         cabeceras de la petición original. */
+      /* Solo en el servidor: useRequestFetch necesita el contexto de Nuxt, y
+         en el cliente esto también se llama desde un clic —al guardar la
+         matriz se recarga—, donde ese contexto ya no existe. En el navegador
+         las cookies viajan solas, así que $fetch basta. */
+      const conSesion = import.meta.server ? useRequestFetch() : $fetch
+      estado.value = await conSesion<MisPermisos>('/api/me/permissions')
     } catch {
       /* Sin permisos no se inventa nada: queda en null y quien pregunte
          recibe false. Un fallo de red no debe abrir puertas. */

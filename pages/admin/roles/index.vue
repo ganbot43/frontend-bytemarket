@@ -67,7 +67,7 @@
                     <input
                       type="checkbox"
                       :checked="borrador[rol.key]?.[modulo.key]?.view"
-                      :disabled="!rol.editable || !puedoConceder(modulo.key)"
+                      :disabled="!rol.editable || !puedoConceder(modulo.key, 'view')"
                       @change="marcar(rol.key, modulo.key, 'view', ($event.target as HTMLInputElement).checked)"
                     />
                     <span>Ver</span>
@@ -76,7 +76,7 @@
                     <input
                       type="checkbox"
                       :checked="borrador[rol.key]?.[modulo.key]?.edit"
-                      :disabled="!rol.editable || !puedoConceder(modulo.key)"
+                      :disabled="!rol.editable || !puedoConceder(modulo.key, 'edit')"
                       @change="marcar(rol.key, modulo.key, 'edit', ($event.target as HTMLInputElement).checked)"
                     />
                     <span>Editar</span>
@@ -116,7 +116,7 @@ type Permiso = { view: boolean; edit: boolean };
 type Matriz = Record<string, Record<string, Permiso>>;
 
 const toast = useAppToast();
-const { cargar: recargarMisPermisos, puedeEditar } = usePermisos();
+const { cargar: recargarMisPermisos, puedeVer, puedeEditar } = usePermisos();
 
 const modules = ref<Array<{ key: string; label: string }>>([]);
 const roles = ref<Array<{ key: string; label: string; editable: boolean }>>([]);
@@ -132,8 +132,15 @@ const guardando = ref(false);
 
 const haycambios = computed(() => Object.keys(cambiosPendientes()).length > 0);
 
-async function cargarMatriz() {
-  const data = await $fetch<any>("/api/admin/permissions");
+const clonar = (m: Matriz): Matriz => JSON.parse(JSON.stringify(m));
+
+/* useFetch y no $fetch, como el resto de las pantallas del panel: en SSR
+   $fetch sale sin las cookies del navegador, la API responde 403 y el
+   <script setup> lanza, que es una pantalla en blanco sin explicación. */
+const { data: inicial } = await useFetch<any>("/api/admin/permissions");
+
+function aplicar(data: any) {
+  if (!data) return;
   modules.value = data.modules ?? [];
   roles.value = data.roles ?? [];
   gerenteLabel.value = data.gerenteLabel ?? "Gerente";
@@ -141,19 +148,24 @@ async function cargarMatriz() {
   borrador.value = clonar(data.matrix ?? {});
 }
 
-await cargarMatriz();
-
-const clonar = (m: Matriz): Matriz => JSON.parse(JSON.stringify(m));
+aplicar(inicial.value);
+watch(inicial, (v) => aplicar(v));
 
 /**
- * Un módulo solo se puede conceder si quien edita lo tiene.
+ * Un permiso solo se puede conceder si quien edita lo tiene.
  *
- * El backend ya lo rechaza —es la tercera regla de la pirámide— pero
- * dejar la casilla activa para que la API diga no es enseñar una puerta
- * que no abre.
+ * El backend ya lo rechaza —es la tercera regla de la pirámide— pero dejar
+ * la casilla activa para que la API diga no es enseñar una puerta que no
+ * abre.
+ *
+ * Se mira CASILLA por casilla y no el módulo entero: el encargado tiene el
+ * Dashboard en solo ver, y con la comprobación puesta sobre "editar" no
+ * podía concederle al cajero ni el ver, que sí está en su mano. La pantalla
+ * era más estricta que la regla.
  */
-function puedoConceder(modulo: string) {
-  return puedeEditar(modulo) || esGerente.value;
+function puedoConceder(modulo: string, campo: "view" | "edit") {
+  if (esGerente.value) return true;
+  return campo === "edit" ? puedeEditar(modulo) : puedeVer(modulo);
 }
 
 const esGerente = computed(() => roles.value.every((r) => r.editable));
