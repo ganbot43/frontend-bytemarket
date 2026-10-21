@@ -113,6 +113,8 @@ espera CAJERO NO POST /api/admin/products
 espera CAJERO NO GET  /api/admin/reports/dashboard
 espera CAJERO NO GET  /api/admin/users
 espera CAJERO NO GET  /api/admin/permissions
+espera CAJERO NO GET  /api/admin/panel-roles
+espera CAJERO NO POST /api/admin/panel-roles
 espera CAJERO NO GET  /api/admin/reclamaciones
 
 echo
@@ -142,6 +144,7 @@ espera ENCARG SI PUT  /api/admin/orders/1/status
 espera ENCARG SI GET  /api/admin/reclamaciones
 espera ENCARG SI POST /api/admin/categories
 espera ENCARG SI GET  /api/admin/permissions
+espera ENCARG SI GET  /api/admin/panel-roles
 echo "   y lo que es solo del gerente:"
 espera ENCARG NO GET  /api/admin/business-config
 espera ENCARG NO PUT  /api/admin/business-config
@@ -153,6 +156,7 @@ espera GERENTE SI GET  /api/admin/business-config
 espera GERENTE SI PUT  /api/admin/business-config
 espera GERENTE SI GET  /api/admin/payment-methods
 espera GERENTE SI GET  /api/admin/permissions
+espera GERENTE SI GET  /api/admin/panel-roles
 espera GERENTE SI POST /api/admin/products
 espera GERENTE SI POST /api/admin/caja/1/cuadrar
 espera GERENTE SI GET  /api/admin/reclamaciones
